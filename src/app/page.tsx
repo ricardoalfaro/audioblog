@@ -553,7 +553,7 @@ export default function Home() {
             {filteredArticles.map((article) => {
               const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
               return (
-                <a href={`/articles/${article.id}?autoplay=true`} key={article.id} className="article-card">
+                <a href={`/articles/${article.id}`} key={article.id} className="article-card">
                   {/* Delete Button */}
                   <button
                     className="trash-btn"
@@ -628,7 +628,7 @@ export default function Home() {
                 const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
                 return (
                   <a
-                    href={`/articles/${article.id}?autoplay=true`}
+                    href={`/articles/${article.id}`}
                     key={article.id}
                     className="list-row-item"
                   >

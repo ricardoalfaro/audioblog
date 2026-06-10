@@ -918,19 +918,21 @@ p {
   margin-top: 24px;
 }
 
+.reader-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 @media (min-width: 900px) {
   .reader-layout {
     grid-template-columns: 280px 1fr;
     align-items: start;
   }
-}
-
-.reader-sidebar {
-  position: sticky;
-  top: 88px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  .reader-sidebar {
+    position: sticky;
+    top: 88px;
+  }
 }
 
 .back-link {

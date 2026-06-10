@@ -64,8 +64,9 @@ export default function ArticleReader() {
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('device');
   const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('es-ES-AlvaroNeural');
   
-  // Autoplay flow control
-  const [pendingAutoplay, setPendingAutoplay] = useState(false);
+  // Accordion state
+  const [isMetaExpanded, setIsMetaExpanded] = useState(true);
+  const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -86,14 +87,6 @@ export default function ArticleReader() {
           throw new Error('No se pudo encontrar el artículo.');
         }
         setArticle(data);
-
-        // Check for autoplay query parameter
-        if (typeof window !== 'undefined') {
-          const searchParams = new URLSearchParams(window.location.search);
-          if (searchParams.get('autoplay') === 'true') {
-            setPendingAutoplay(true);
-          }
-        }
       } catch (err: any) {
         setError(err.message || 'Error al cargar el artículo.');
       } finally {
@@ -102,6 +95,15 @@ export default function ArticleReader() {
     };
     fetchArticle();
   }, [id]);
+
+  // Collapse sidebar cards on mobile by default
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 900;
+      setIsMetaExpanded(!isMobile);
+      setIsSettingsExpanded(!isMobile);
+    }
+  }, []);
 
   // Load browser voices
   useEffect(() => {
@@ -315,25 +317,7 @@ export default function ArticleReader() {
     }
   };
 
-  // Autoplay Trigger: Runs when both article and voices are loaded and autoplay is requested
-  useEffect(() => {
-    if (pendingAutoplay && article && (audioEngine === 'edge' || voices.length > 0)) {
-      setPendingAutoplay(false);
-      setIsPlaying(true);
-      setIsPaused(false);
-      
-      // Delay slightly for engine initialization
-      const timer = setTimeout(() => {
-        if (audioEngine === 'edge') {
-          playEdgeParagraph(0);
-        } else {
-          speakParagraph(0);
-        }
-      }, 400);
 
-      return () => clearTimeout(timer);
-    }
-  }, [pendingAutoplay, article, voices, audioEngine]);
 
   const handlePlayPause = () => {
     if (typeof window === 'undefined') return;
@@ -581,99 +565,121 @@ export default function ArticleReader() {
         </a>
 
         <div className="sidebar-card glass">
-          <span className="sidebar-category">{article.category}</span>
-          <h2 className="sidebar-title">{article.title}</h2>
-          
-          <div className="sidebar-meta">
-            <div className="meta-item">
-              <span className="meta-label">Autor:</span>
-              <span style={{ fontWeight: 500 }}>{article.author}</span>
-            </div>
-            {article.url && article.url !== 'manual' && (
-              <div className="meta-item">
-                <span className="meta-label">Fuente:</span>
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                >
-                  Ver original <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
-                </a>
-              </div>
-            )}
-            <div className="meta-item">
-              <span className="meta-label">Párrafos:</span>
-              <span>{article.paragraphs.length}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Restante:</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(remainingTime)}</span>
-            </div>
+          <div
+            onClick={() => setIsMetaExpanded(!isMetaExpanded)}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          >
+            <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <i className="fa-solid fa-circle-info" style={{ color: 'var(--color-primary)' }}></i> Detalles del Artículo
+            </h3>
+            <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'}`} style={{ fontSize: '10px', color: 'var(--text-muted)' }}></i>
           </div>
+
+          {isMetaExpanded && (
+            <div style={{ marginTop: '16px', animation: 'fadeIn 0.2s ease-out' }}>
+              <span className="sidebar-category">{article.category}</span>
+              <h2 className="sidebar-title" style={{ marginTop: '4px', marginBottom: '12px' }}>{article.title}</h2>
+              
+              <div className="sidebar-meta" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                <div className="meta-item">
+                  <span className="meta-label">Autor:</span>
+                  <span style={{ fontWeight: 500 }}>{article.author}</span>
+                </div>
+                {article.url && article.url !== 'manual' && (
+                  <div className="meta-item">
+                    <span className="meta-label">Fuente:</span>
+                    <a
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      Ver original <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
+                    </a>
+                  </div>
+                )}
+                <div className="meta-item">
+                  <span className="meta-label">Párrafos:</span>
+                  <span>{article.paragraphs.length}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Restante:</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(remainingTime)}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="sidebar-card glass" style={{ marginTop: '12px' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <i className="fa-solid fa-sliders" style={{ color: 'var(--color-primary)' }}></i> Ajustes de Reproducción
-          </h3>
+          <div
+            onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          >
+            <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <i className="fa-solid fa-sliders" style={{ color: 'var(--color-primary)' }}></i> Ajustes de Reproducción
+            </h3>
+            <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'}`} style={{ fontSize: '10px', color: 'var(--text-muted)' }}></i>
+          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="audio-switch-container">
-              <div className="audio-switch-label">
-                <span>{audioEngine === 'device' ? '🌐 Voz Local' : '✨ Voz Neuronal (CarPlay)'}</span>
+          {isSettingsExpanded && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', animation: 'fadeIn 0.2s ease-out' }}>
+              <div className="audio-switch-container">
+                <div className="audio-switch-label">
+                  <span>{audioEngine === 'device' ? '🌐 Voz Local' : '✨ Voz Neuronal (CarPlay)'}</span>
+                </div>
+                <label className="switch" title={audioEngine === 'device' ? 'Cambiar a Voz Neuronal (Fondo / CarPlay)' : 'Cambiar a Voz Local (Dispositivo)'}>
+                  <input
+                    type="checkbox"
+                    checked={audioEngine === 'edge'}
+                    onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')}
+                  />
+                  <span className="slider"></span>
+                </label>
               </div>
-              <label className="switch" title={audioEngine === 'device' ? 'Cambiar a Voz Neuronal (Fondo / CarPlay)' : 'Cambiar a Voz Local (Dispositivo)'}>
-                <input
-                  type="checkbox"
-                  checked={audioEngine === 'edge'}
-                  onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Voz de Lectura</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Voz de Lectura</label>
+                {audioEngine === 'device' ? (
+                  <select
+                    className="player-select"
+                    value={selectedVoiceName}
+                    onChange={handleVoiceChange}
+                    style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  >
+                    {sortedVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    className="player-select"
+                    value={selectedEdgeVoice}
+                    onChange={handleEdgeVoiceChange}
+                    style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  >
+                    {EDGE_VOICES.map((voice) => (
+                      <option key={voice.value} value={voice.value}>
+                        {voice.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
               {audioEngine === 'device' ? (
-                <select
-                  className="player-select"
-                  value={selectedVoiceName}
-                  onChange={handleVoiceChange}
-                  style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                >
-                  {sortedVoices.map((voice) => (
-                    <option key={voice.name} value={voice.name}>
-                      {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
-                    </option>
-                  ))}
-                </select>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
+                  ⚠️ El motor local se pausa al bloquear la pantalla o abrir otra app. Usa el motor <strong>Neuronal</strong> para reproducción continua y CarPlay.
+                </div>
               ) : (
-                <select
-                  className="player-select"
-                  value={selectedEdgeVoice}
-                  onChange={handleEdgeVoiceChange}
-                  style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                >
-                  {EDGE_VOICES.map((voice) => (
-                    <option key={voice.value} value={voice.value}>
-                      {voice.name}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
+                  ✅ Reproducción de fondo activa. Compatible con mandos de bloqueo y CarPlay / Bluetooth.
+                </div>
               )}
             </div>
-
-            {audioEngine === 'device' ? (
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
-                ⚠️ El motor local se pausa al bloquear la pantalla o abrir otra app. Usa el motor <strong>Neuronal</strong> para reproducción continua y CarPlay.
-              </div>
-            ) : (
-              <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
-                ✅ Reproducción de fondo activa. Compatible con mandos de bloqueo y CarPlay / Bluetooth.
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </aside>
 
