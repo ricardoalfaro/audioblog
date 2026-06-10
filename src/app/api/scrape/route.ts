@@ -159,6 +159,12 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in scrape endpoint:', error);
-    return NextResponse.json({ error: error.message || 'Error interno al procesar el artículo.' }, { status: 500 });
+    const detailedError = error.stack
+      ? `${error.message}\nStack: ${error.stack.split('\n').slice(0, 3).join('\n')}`
+      : error.message;
+    return NextResponse.json(
+      { error: detailedError || 'Error interno al procesar el artículo.' },
+      { status: 500 }
+    );
   }
 }

@@ -300,11 +300,18 @@ export default function Home() {
         body: JSON.stringify({ url: scrapeUrl, translateTo }),
       });
 
-      const scrapeData = await scrapeRes.json();
-
       if (!scrapeRes.ok) {
-        throw new Error(scrapeData.error || 'Ocurrió un error al extraer el artículo.');
+        let errorMsg = 'Ocurrió un error al extraer el artículo.';
+        try {
+          const errData = await scrapeRes.json();
+          errorMsg = errData.error || errorMsg;
+        } catch {
+          errorMsg = `Error del servidor (${scrapeRes.status}): ${scrapeRes.statusText || 'Respuesta no válida'}`;
+        }
+        throw new Error(errorMsg);
       }
+
+      const scrapeData = await scrapeRes.json();
 
       if (scrapeCategory !== 'auto') {
         scrapeData.category = scrapeCategory;
