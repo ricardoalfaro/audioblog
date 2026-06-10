@@ -2,9 +2,32 @@ import { NextResponse } from 'next/server';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 
+// Helper function to translate text using Google Translate free endpoint
+async function translateText(text: string, targetLang: string): Promise<string> {
+  if (!text || !targetLang || targetLang === 'original') return text;
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      }
+    });
+    
+    if (!res.ok) return text;
+    
+    const json = await res.json();
+    // Google Translate returns: [[[translatedSegment, originalSegment, ...], ...], ...]
+    const translatedParts = json[0]?.map((part: any) => part[0]).join('') || text;
+    return translatedParts;
+  } catch (error) {
+    console.error('Error translating paragraph:', error);
+    return text; // Fallback to original text on translation failure
+  }
+}
+
 export async function POST(request: Request) {
   try {
-    const { url } = await request.json();
+    const { url, translateTo } = await request.json();
     if (!url) {
       return NextResponse.json({ error: 'La URL es requerida' }, { status: 400 });
     }
@@ -48,12 +71,11 @@ export async function POST(request: Request) {
     
     // Select elements that represent paragraphs, list items or headers
     const elements = doc.querySelectorAll('p, h1, h2, h3, h4, li');
-    const paragraphs: string[] = [];
+    let paragraphs: string[] = [];
     
     elements.forEach((el) => {
       const text = el.textContent?.trim();
       if (text) {
-        // We include header lines as section headers and paragraphs of reasonable length
         const isHeader = ['H1', 'H2', 'H3', 'H4'].includes(el.tagName);
         if (isHeader || text.length > 20) {
           paragraphs.push(text);
@@ -74,13 +96,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No se encontraron párrafos de texto legibles.' }, { status: 422 });
     }
 
-    // Guess domain host as author fallback
+    // Clean up title, author and excerpt
+    let title = article.title || 'Artículo sin título';
     const domain = new URL(url).hostname.replace('www.', '');
     const author = article.byline || domain;
+    let excerpt = article.excerpt || paragraphs[0].slice(0, 160) + '...';
 
-    // Detect category
+    // Detect category based on original text
     let category = 'Tecnología';
-    const combinedText = (article.title + ' ' + (article.excerpt || '') + ' ' + article.textContent).toLowerCase();
+    const combinedText = (title + ' ' + excerpt + ' ' + (article.textContent || '')).toLowerCase();
     
     if (combinedText.includes('design') || combinedText.includes('diseño') || combinedText.includes('css') || combinedText.includes('ux') || combinedText.includes('art') || combinedText.includes('arte')) {
       category = 'Diseño';
@@ -94,13 +118,29 @@ export async function POST(request: Request) {
       category = 'Literatura';
     }
 
+    // Apply translation if chosen and not 'original'
+    if (translateTo && translateTo !== 'original') {
+      try {
+        title = await translateText(title, translateTo);
+        excerpt = await translateText(excerpt, translateTo);
+        
+        // Translate all paragraphs in parallel (concurrently) to maintain fast speed
+        paragraphs = await Promise.all(
+          paragraphs.map((p) => translateText(p, translateTo))
+        );
+      } catch (transErr) {
+        console.error('Failed to translate content:', transErr);
+        // Fall back to original language on translation crash
+      }
+    }
+
     return NextResponse.json({
-      title: article.title || 'Artículo sin título',
-      author: author,
-      url: url,
-      excerpt: article.excerpt || paragraphs[0].slice(0, 160) + '...',
-      paragraphs: paragraphs,
-      category: category,
+      title,
+      author,
+      url,
+      excerpt,
+      paragraphs,
+      category,
     });
   } catch (error: any) {
     console.error('Error in scrape endpoint:', error);
