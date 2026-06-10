@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { JSDOM } from 'jsdom';
+import { parseHTML } from 'linkedom';
 import { Readability } from '@mozilla/readability';
 
 // Helper function to translate text using Google Translate free endpoint
@@ -54,20 +54,19 @@ export async function POST(request: Request) {
 
     const html = await response.text();
 
-    // Parse with JSDOM
-    const dom = new JSDOM(html, { url });
+    // Parse with linkedom
+    const { document } = parseHTML(html);
     
     // Check if Readability can parse it
-    const reader = new Readability(dom.window.document);
+    const reader = new Readability(document);
     const article = reader.parse();
 
     if (!article) {
       return NextResponse.json({ error: 'No se pudo extraer contenido legible de este sitio web. Intenta copiarlo manualmente.' }, { status: 422 });
     }
 
-    // Parse readability's clean HTML content using JSDOM to split it into structural paragraphs/headers
-    const contentDom = new JSDOM(article.content || '');
-    const doc = contentDom.window.document;
+    // Parse readability's clean HTML content using linkedom to split it into structural paragraphs/headers
+    const { document: doc } = parseHTML(article.content || '');
     
     let paragraphs: string[] = [];
     
@@ -94,9 +93,7 @@ export async function POST(request: Request) {
       }
     }
 
-    if (doc.body) {
-      traverse(doc.body);
-    }
+    traverse(doc);
 
     // Fallback if DOM traversal yielded nothing
     if (paragraphs.length === 0 && article.textContent) {
