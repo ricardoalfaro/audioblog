@@ -619,44 +619,18 @@ export default function ArticleReader() {
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Motor de Audio</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                <button
-                  className="btn-toggle"
-                  onClick={() => handleEngineChange('device')}
-                  style={{
-                    border: 'none',
-                    padding: '6px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    background: audioEngine === 'device' ? 'var(--bg-card)' : 'transparent',
-                    color: audioEngine === 'device' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    boxShadow: audioEngine === 'device' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
-                  }}
-                >
-                  🌐 Local
-                </button>
-                <button
-                  className="btn-toggle"
-                  onClick={() => handleEngineChange('edge')}
-                  style={{
-                    border: 'none',
-                    padding: '6px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    background: audioEngine === 'edge' ? 'var(--bg-card)' : 'transparent',
-                    color: audioEngine === 'edge' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    boxShadow: audioEngine === 'edge' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
-                  }}
-                >
-                  ✨ Neuronal (Fondo)
-                </button>
+            <div className="audio-switch-container">
+              <div className="audio-switch-label">
+                <span>{audioEngine === 'device' ? '🌐 Voz Local' : '✨ Voz Neuronal (CarPlay)'}</span>
               </div>
+              <label className="switch" title={audioEngine === 'device' ? 'Cambiar a Voz Neuronal (Fondo / CarPlay)' : 'Cambiar a Voz Local (Dispositivo)'}>
+                <input
+                  type="checkbox"
+                  checked={audioEngine === 'edge'}
+                  onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')}
+                />
+                <span className="slider"></span>
+              </label>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -852,6 +826,20 @@ export default function ArticleReader() {
               </div>
 
               {/* Voice select */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '4px' }}>
+                <label className="switch" title={audioEngine === 'device' ? 'Cambiar a Voz Neuronal (Fondo / CarPlay)' : 'Cambiar a Voz Local (Dispositivo)'}>
+                  <input
+                    type="checkbox"
+                    checked={audioEngine === 'edge'}
+                    onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')}
+                  />
+                  <span className="slider"></span>
+                </label>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: '40px' }}>
+                  {audioEngine === 'device' ? 'Local' : 'Neural'}
+                </span>
+              </div>
+
               {audioEngine === 'device' ? (
                 <select
                   className="player-select"
