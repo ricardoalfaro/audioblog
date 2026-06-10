@@ -24,3 +24,26 @@ export async function GET(
     return NextResponse.json({ error: error.message || 'Error al obtener el artículo' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const data = await fs.readFile(filePath, 'utf-8');
+    let articles: Article[] = JSON.parse(data);
+    
+    const initialLength = articles.length;
+    articles = articles.filter((a) => a.id !== id);
+    
+    if (articles.length === initialLength) {
+      return NextResponse.json({ error: 'Artículo no encontrado o ya eliminado' }, { status: 404 });
+    }
+    
+    await fs.writeFile(filePath, JSON.stringify(articles, null, 2), 'utf-8');
+    return NextResponse.json({ success: true, id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error al eliminar el artículo' }, { status: 500 });
+  }
+}

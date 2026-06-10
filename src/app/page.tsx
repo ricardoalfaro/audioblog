@@ -8,11 +8,13 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<'url' | 'manual'>('url');
   
   // Scraper form state
   const [scrapeUrl, setScrapeUrl] = useState('');
+  const [scrapeCategory, setScrapeCategory] = useState('auto'); // auto or selected category
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
 
@@ -26,6 +28,11 @@ export default function Home() {
 
   useEffect(() => {
     fetchArticles();
+    // Load view preference
+    const savedView = localStorage.getItem('viewMode') as 'grid' | 'list' | null;
+    if (savedView) {
+      setViewMode(savedView);
+    }
   }, []);
 
   const fetchArticles = async () => {
@@ -64,7 +71,12 @@ export default function Home() {
         throw new Error(scrapeData.error || 'Ocurrió un error al extraer el artículo.');
       }
 
-      // Step 2: Save the scraped article to the JSON database
+      // Step 2: Override category if user chose a specific one
+      if (scrapeCategory !== 'auto') {
+        scrapeData.category = scrapeCategory;
+      }
+
+      // Step 3: Save the scraped article to the JSON database
       const saveRes = await fetch('/api/articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,6 +93,7 @@ export default function Home() {
       setArticles((prev) => [saveData, ...prev]);
       setIsModalOpen(false);
       setScrapeUrl('');
+      setScrapeCategory('auto');
     } catch (err: any) {
       setScrapeError(err.message || 'Error al importar el artículo.');
     } finally {
@@ -99,7 +112,6 @@ export default function Home() {
     setManualError('');
 
     try {
-      // Split content by double newlines to form paragraphs
       const paragraphs = manualContent
         .split(/\n\s*\n/)
         .map((p) => p.trim())
@@ -129,7 +141,6 @@ export default function Home() {
         throw new Error(data.error || 'Error al crear el artículo.');
       }
 
-      // Refresh list, close modal, reset inputs
       setArticles((prev) => [data, ...prev]);
       setIsModalOpen(false);
       setManualTitle('');
@@ -141,6 +152,40 @@ export default function Home() {
     } finally {
       setIsSavingManual(false);
     }
+  };
+
+  const handleDeleteArticle = async (e: React.MouseEvent, id: string, title: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar "${title}" de tu historial?`);
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`/api/articles/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (res.ok) {
+        setArticles((prev) => prev.filter((a) => a.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Error al eliminar el artículo.');
+      }
+    } catch (err) {
+      console.error('Error deleting article:', err);
+      alert('Error de conexión al eliminar el artículo.');
+    }
+  };
+
+  const toggleViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('viewMode', mode);
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    return `${mins} min`;
   };
 
   // Extract unique categories
@@ -156,40 +201,17 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    return `${mins} min`;
-  };
-
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Hero Section */}
       <section className="hero">
-        <h1>Transforma la Web en tus Audiolibros Personales</h1>
-        <p className="readable-text">
-          Importa artículos, tutoriales o ensayos de tus blogs favoritos y escúchalos con una experiencia
-          de lectura inmersiva y enfocada.
-        </p>
+        <h1>Escucha tus artículos favoritos</h1>
         <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ marginRight: '4px' }}
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Importar artículo
+          <i className="fa-solid fa-plus"></i> Importar artículo
         </button>
       </section>
 
-      {/* Filters & Search */}
+      {/* Filters, Search & View Toggle Bar */}
       <section className="filter-bar">
         <div className="categories">
           {categories.map((category) => (
@@ -203,87 +225,149 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="search-box">
-          <svg
-            className="search-icon"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar por título, autor..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="search-box">
+            <i className="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Buscar documentos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="view-toggles">
+            <button
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => toggleViewMode('grid')}
+              title="Vista de cuadrícula"
+            >
+              <i className="fa-solid fa-grip"></i>
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => toggleViewMode('list')}
+              title="Vista de lista"
+            >
+              <i className="fa-solid fa-list"></i>
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Articles Grid */}
+      {/* Articles Canvas */}
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', flex: 1 }}>
           <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }}></div>
         </div>
       ) : filteredArticles.length > 0 ? (
-        <section className="articles-grid">
-          {filteredArticles.map((article) => (
-            <a href={`/articles/${article.id}`} key={article.id} className="article-card glass">
-              <div>
-                <div className="card-top">
-                  <span className="card-category">{article.category}</span>
-                  <span className="card-duration">
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
+        viewMode === 'grid' ? (
+          /* Grid View - Google Docs Styled templates */
+          <section className="articles-grid">
+            {filteredArticles.map((article) => (
+              <a href={`/articles/${article.id}?autoplay=true`} key={article.id} className="article-card">
+                {/* Trash Button */}
+                <button
+                  className="trash-btn"
+                  onClick={(e) => handleDeleteArticle(e, article.id, article.title)}
+                  title="Eliminar artículo"
+                >
+                  <i className="fa-solid fa-trash-can"></i>
+                </button>
+
+                {/* Docs Paper Thumbnail */}
+                <div className="card-thumbnail">
+                  <div className="doc-sheet-preview">
+                    <div className="doc-sheet-lines">
+                      <div className="doc-sheet-line"></div>
+                      <div className="doc-sheet-line"></div>
+                      <div className="doc-sheet-line"></div>
+                      <div className="doc-sheet-line"></div>
+                      <div className="doc-sheet-line"></div>
+                    </div>
+                    <i className="fa-solid fa-file-audio doc-sheet-icon"></i>
+                  </div>
+                </div>
+
+                {/* Footer specs */}
+                <div className="card-details">
+                  <h3 className="card-title" title={article.title}>{article.title}</h3>
+                  <div className="card-meta-row">
+                    <div className="card-meta-left">
+                      <i className="fa-solid fa-user-circle"></i>
+                      <span>{article.author}</span>
+                    </div>
+                    <span className="card-category-badge">{article.category}</span>
+                  </div>
+                  <div className="card-meta-row" style={{ marginTop: '2px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <span>
+                      <i className="fa-solid fa-clock" style={{ marginRight: '4px' }}></i>
+                      {formatDuration(article.duration)} de audio
+                    </span>
+                    <span>{new Date(article.addedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </section>
+        ) : (
+          /* List View - Google Docs Style document table rows */
+          <section className="articles-list-container">
+            <div className="list-header">
+              <span>Nombre</span>
+              <span>Autor</span>
+              <span>Categoría</span>
+              <span>Duración</span>
+              <span style={{ textAlign: 'right' }}>Acciones</span>
+            </div>
+            
+            <div className="list-rows">
+              {filteredArticles.map((article) => (
+                <a
+                  href={`/articles/${article.id}?autoplay=true`}
+                  key={article.id}
+                  className="list-row-item"
+                >
+                  <div className="list-col-name">
+                    <i className="fa-solid fa-file-audio doc-icon"></i>
+                    <span className="card-title" title={article.title}>{article.title}</span>
+                  </div>
+                  
+                  <span className="list-col-author">{article.author}</span>
+                  
+                  <div>
+                    <span className="card-category-badge">{article.category}</span>
+                  </div>
+                  
+                  <span className="list-col-duration">
+                    <i className="fa-solid fa-clock"></i>
                     {formatDuration(article.duration)}
                   </span>
-                </div>
-                <h3 className="card-title">{article.title}</h3>
-                <p className="card-excerpt">{article.excerpt}</p>
-              </div>
-
-              <div className="card-footer">
-                <span className="card-author">Por {article.author}</span>
-                <span className="listen-link">
-                  Escuchar
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-          ))}
-        </section>
+                  
+                  <div className="list-col-actions" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="list-action-btn listen"
+                      onClick={() => window.location.href = `/articles/${article.id}?autoplay=true`}
+                      title="Escuchar artículo"
+                    >
+                      <i className="fa-solid fa-play"></i>
+                    </button>
+                    <button
+                      className="list-action-btn delete"
+                      onClick={(e) => handleDeleteArticle(e, article.id, article.title)}
+                      title="Eliminar artículo"
+                    >
+                      <i className="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )
       ) : (
-        <div className="empty-state glass">
+        <div className="empty-state">
           <div className="empty-state-icon">🎙️</div>
           <h3>No se encontraron artículos</h3>
           <p>
@@ -300,7 +384,7 @@ export default function Home() {
       {/* Import Modal */}
       {isModalOpen && (
         <div className="dialog-overlay">
-          <div className="dialog-content glass">
+          <div className="dialog-content">
             <div className="dialog-header">
               <h2>Añadir a la Biblioteca</h2>
               <button className="dialog-close" onClick={() => setIsModalOpen(false)}>
@@ -339,13 +423,35 @@ export default function Home() {
                     required
                     disabled={isScraping}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="category-select-scrape">
+                    Categoría (Opcional)
+                  </label>
+                  <select
+                    id="category-select-scrape"
+                    className="form-input"
+                    value={scrapeCategory}
+                    onChange={(e) => setScrapeCategory(e.target.value)}
+                    disabled={isScraping}
+                  >
+                    <option value="auto">✨ Asignar automáticamente (Analizar contenido)</option>
+                    <option value="Tecnología">Tecnología</option>
+                    <option value="Diseño">Diseño</option>
+                    <option value="Filosofía">Filosofía</option>
+                    <option value="Negocios">Negocios</option>
+                    <option value="Ciencia">Ciencia</option>
+                    <option value="Literatura">Literatura</option>
+                    <option value="General">General</option>
+                  </select>
                   <span className="form-help">
-                    Funciona mejor con artículos de Medium, Substack, blogs técnicos o páginas basadas en texto.
+                    Si escoges auto-asignación, analizaremos el texto del artículo para clasificarlo.
                   </span>
                 </div>
 
                 {scrapeError && (
-                  <div style={{ color: 'var(--color-accent)', fontSize: '14px', marginBottom: '16px' }}>
+                  <div style={{ color: 'var(--color-accent)', fontSize: '13px', marginBottom: '16px' }}>
                     ⚠️ {scrapeError}
                   </div>
                 )}
@@ -434,7 +540,7 @@ export default function Home() {
                   <textarea
                     id="content-textarea"
                     className="form-input"
-                    rows={6}
+                    rows={5}
                     placeholder="Escribe o pega el contenido aquí. Usa dos saltos de línea para separar párrafos."
                     value={manualContent}
                     onChange={(e) => setManualContent(e.target.value)}
@@ -445,7 +551,7 @@ export default function Home() {
                 </div>
 
                 {manualError && (
-                  <div style={{ color: 'var(--color-accent)', fontSize: '14px', marginBottom: '16px' }}>
+                  <div style={{ color: 'var(--color-accent)', fontSize: '13px', marginBottom: '16px' }}>
                     ⚠️ {manualError}
                   </div>
                 )}

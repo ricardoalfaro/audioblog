@@ -46,6 +46,9 @@ export default function ArticleReader() {
   const [speechRate, setSpeechRate] = useState(1);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState('');
+  
+  // Autoplay flow control
+  const [pendingAutoplay, setPendingAutoplay] = useState(false);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
@@ -61,6 +64,14 @@ export default function ArticleReader() {
         }
         const data = await res.json();
         setArticle(data);
+
+        // Check for autoplay query parameter
+        if (typeof window !== 'undefined') {
+          const searchParams = new URLSearchParams(window.location.search);
+          if (searchParams.get('autoplay') === 'true') {
+            setPendingAutoplay(true);
+          }
+        }
       } catch (err: any) {
         setError(err.message || 'Error al cargar el artículo.');
       } finally {
@@ -164,6 +175,22 @@ export default function ArticleReader() {
     window.speechSynthesis.speak(utterance);
   };
 
+  // Autoplay Trigger: Runs when both article and voices are loaded and autoplay is requested
+  useEffect(() => {
+    if (pendingAutoplay && article && voices.length > 0) {
+      setPendingAutoplay(false);
+      setIsPlaying(true);
+      setIsPaused(false);
+      
+      // Delay slightly for engine initialization
+      const timer = setTimeout(() => {
+        speakParagraph(0);
+      }, 400);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pendingAutoplay, article, voices]);
+
   const handlePlayPause = () => {
     if (typeof window === 'undefined') return;
 
@@ -178,7 +205,6 @@ export default function ArticleReader() {
     } else {
       setIsPlaying(true);
       setIsPaused(false);
-      // Resume from current paragraph or start from beginning
       const startIndex = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
       speakParagraph(startIndex);
     }
@@ -216,7 +242,6 @@ export default function ArticleReader() {
         setCurrentCharIndex(0);
       }
     } else if (activeParagraphIndex === 0) {
-      // Restart current paragraph
       if (isPlaying) {
         speakParagraph(0);
       } else {
@@ -234,17 +259,14 @@ export default function ArticleReader() {
     }
   };
 
-  // Change voice in real time
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const voiceName = e.target.value;
     setSelectedVoiceName(voiceName);
     if (isPlaying && !isPaused) {
-      // Re-speak current paragraph with new voice
       speakParagraph(activeParagraphIndex);
     }
   };
 
-  // Change rate in real time
   const toggleSpeed = () => {
     const speeds = [1, 1.25, 1.5, 1.75, 2, 0.75];
     const currentIndex = speeds.indexOf(speechRate);
@@ -252,35 +274,29 @@ export default function ArticleReader() {
     setSpeechRate(nextSpeed);
     
     if (isPlaying && !isPaused) {
-      // Re-speak current paragraph with new speed
       speakParagraph(activeParagraphIndex);
     }
   };
 
-  // Calculate article stats
   const getRemainingTime = () => {
     if (!article) return 0;
     
     let remainingWordCount = 0;
-    
-    // Count words in subsequent paragraphs
     for (let i = activeParagraphIndex + 1; i < article.paragraphs.length; i++) {
       remainingWordCount += article.paragraphs[i].split(/\s+/).filter(Boolean).length;
     }
     
-    // Count remaining words in active paragraph
     if (activeParagraphIndex >= 0 && activeParagraphIndex < article.paragraphs.length) {
       const activeText = article.paragraphs[activeParagraphIndex];
       const remainingText = activeText.slice(currentCharIndex);
       remainingWordCount += remainingText.split(/\s+/).filter(Boolean).length;
     } else {
-      // If not started, count all words
       remainingWordCount = article.paragraphs.join(' ').split(/\s+/).filter(Boolean).length;
     }
     
-    const wpm = 160 * speechRate; // speed-adjusted WPM
+    const wpm = 160 * speechRate;
     const minutes = remainingWordCount / wpm;
-    return Math.round(minutes * 60); // remaining seconds
+    return Math.round(minutes * 60);
   };
 
   const formatTime = (secs: number) => {
@@ -289,7 +305,6 @@ export default function ArticleReader() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Calculate total progress percentage
   const getProgressPercentage = () => {
     if (!article || activeParagraphIndex < 0) return 0;
     
@@ -325,7 +340,6 @@ export default function ArticleReader() {
     );
   }
 
-  // Filter voices: Spanish and English first, then others
   const sortedVoices = [...voices].sort((a, b) => {
     const aEs = a.lang.startsWith('es');
     const bEs = b.lang.startsWith('es');
@@ -346,20 +360,7 @@ export default function ArticleReader() {
       {/* Sidebar Controls */}
       <aside className="reader-sidebar">
         <a href="/" className="back-link">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
-          Volver a la biblioteca
+          <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
         </a>
 
         <div className="sidebar-card glass">
@@ -378,9 +379,9 @@ export default function ArticleReader() {
                   href={article.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}
+                  style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  Ver original ↗
+                  Ver original <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
                 </a>
               </div>
             )}
@@ -413,7 +414,6 @@ export default function ArticleReader() {
             const isInactive = activeParagraphIndex >= 0 && !isActive;
             const isHeader = paragraph.length < 80 && (paragraph.startsWith('###') || paragraph.startsWith('##') || paragraph.toUpperCase() === paragraph);
             
-            // Clean up Markdown headers from text if manual
             const cleanParagraph = paragraph.replace(/^#+\s+/, '');
 
             if (isActive) {
@@ -474,7 +474,6 @@ export default function ArticleReader() {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
                 const pct = clickX / rect.width;
-                // Estimate paragraph to jump to
                 const targetIdx = Math.min(
                   article.paragraphs.length - 1,
                   Math.floor(pct * article.paragraphs.length)
@@ -510,10 +509,7 @@ export default function ArticleReader() {
             {/* Play/Pause/Skip */}
             <div className="player-core">
               <button className="player-btn" onClick={handleSkipBackward} title="Párrafo anterior">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="19 20 9 12 19 4 19 20" />
-                  <line x1="5" y1="5" x2="5" y2="19" stroke="currentColor" strokeWidth="3" />
-                </svg>
+                <i className="fa-solid fa-backward-step" style={{ fontSize: '18px' }}></i>
               </button>
               
               <button 
@@ -522,28 +518,18 @@ export default function ArticleReader() {
                 title={isPlaying && !isPaused ? 'Pausar' : 'Escuchar'}
               >
                 {isPlaying && !isPaused ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="6" y="4" width="4" height="16" />
-                    <rect x="14" y="4" width="4" height="16" />
-                  </svg>
+                  <i className="fa-solid fa-pause" style={{ fontSize: '18px' }}></i>
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '2px' }}>
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
+                  <i className="fa-solid fa-play" style={{ fontSize: '18px', marginLeft: '2px' }}></i>
                 )}
               </button>
               
               <button className="player-btn" onClick={handleSkipForward} title="Siguiente párrafo">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="5 4 15 12 5 20 5 4" />
-                  <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" strokeWidth="3" />
-                </svg>
+                <i className="fa-solid fa-forward-step" style={{ fontSize: '18px' }}></i>
               </button>
 
               <button className="player-btn" onClick={handleStop} title="Detener" style={{ marginLeft: '8px', opacity: activeParagraphIndex >= 0 ? 0.7 : 0.2 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="4" y="4" width="16" height="16" />
-                </svg>
+                <i className="fa-solid fa-square" style={{ fontSize: '18px' }}></i>
               </button>
             </div>
 
