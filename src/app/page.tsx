@@ -94,7 +94,12 @@ export default function Home() {
   // --- Audio Player Logic ---
   const speakParagraph = (index: number, targetArticle: Article) => {
     if (typeof window === 'undefined') return;
-    window.speechSynthesis.cancel();
+    
+    try {
+      window.speechSynthesis.cancel();
+    } catch (cancelErr) {
+      console.warn('speechSynthesis.cancel error:', cancelErr);
+    }
 
     if (index < 0 || index >= targetArticle.paragraphs.length) {
       setIsPlaying(false);
@@ -111,8 +116,14 @@ export default function Home() {
     const text = targetArticle.paragraphs[index];
     const utterance = new SpeechSynthesisUtterance(text);
 
-    const voice = voices.find((v) => v.name === selectedVoiceName);
-    if (voice) utterance.voice = voice;
+    // Safeguard voice assignment (WebKit/Safari strict voice checking)
+    try {
+      const voice = voices.find((v) => v.name === selectedVoiceName);
+      if (voice) utterance.voice = voice;
+    } catch (voiceErr) {
+      console.warn('Could not set custom voice, falling back to system default:', voiceErr);
+    }
+    
     utterance.rate = speechRate;
 
     utterance.onboundary = (event) => {
@@ -139,7 +150,15 @@ export default function Home() {
     };
 
     utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    
+    // Safeguard speak call
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (speakErr) {
+      console.error('speechSynthesis.speak error:', speakErr);
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
   };
 
   const handlePlayPause = () => {

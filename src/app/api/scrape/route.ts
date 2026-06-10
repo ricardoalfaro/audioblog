@@ -69,19 +69,34 @@ export async function POST(request: Request) {
     const contentDom = new JSDOM(article.content || '');
     const doc = contentDom.window.document;
     
-    // Select elements that represent paragraphs, list items or headers
-    const elements = doc.querySelectorAll('p, h1, h2, h3, h4, li');
     let paragraphs: string[] = [];
     
-    elements.forEach((el) => {
-      const text = el.textContent?.trim();
-      if (text) {
-        const isHeader = ['H1', 'H2', 'H3', 'H4'].includes(el.tagName);
-        if (isHeader || text.length > 20) {
-          paragraphs.push(text);
+    // Recursive in-order traversal to extract text structures safely without selector engines (nwsapi)
+    function traverse(node: any) {
+      if (!node) return;
+      
+      const tagName = node.tagName;
+      if (tagName) {
+        if (['P', 'H1', 'H2', 'H3', 'H4', 'LI'].includes(tagName)) {
+          const text = node.textContent?.trim();
+          if (text) {
+            const isHeader = ['H1', 'H2', 'H3', 'H4'].includes(tagName);
+            if (isHeader || text.length > 20) {
+              paragraphs.push(text);
+              return; // Stop traversal on this branch to avoid nesting/duplicate text extraction
+            }
+          }
         }
       }
-    });
+      
+      for (let i = 0; i < node.childNodes.length; i++) {
+        traverse(node.childNodes[i]);
+      }
+    }
+
+    if (doc.body) {
+      traverse(doc.body);
+    }
 
     // Fallback if DOM traversal yielded nothing
     if (paragraphs.length === 0 && article.textContent) {

@@ -126,7 +126,11 @@ export default function ArticleReader() {
   const speakParagraph = (index: number) => {
     if (!article || typeof window === 'undefined') return;
 
-    window.speechSynthesis.cancel();
+    try {
+      window.speechSynthesis.cancel();
+    } catch (cancelErr) {
+      console.warn('speechSynthesis.cancel error:', cancelErr);
+    }
 
     if (index < 0 || index >= article.paragraphs.length) {
       setIsPlaying(false);
@@ -142,9 +146,14 @@ export default function ArticleReader() {
     const text = article.paragraphs[index];
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Config voice
-    const voice = voices.find((v) => v.name === selectedVoiceName);
-    if (voice) utterance.voice = voice;
+    // Config voice safely (Safari voice setting protection)
+    try {
+      const voice = voices.find((v) => v.name === selectedVoiceName);
+      if (voice) utterance.voice = voice;
+    } catch (voiceErr) {
+      console.warn('Could not set speechSynthesis voice, falling back to system default:', voiceErr);
+    }
+    
     utterance.rate = speechRate;
 
     // Track word boundary
@@ -176,7 +185,14 @@ export default function ArticleReader() {
     };
 
     utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (speakErr) {
+      console.error('speechSynthesis.speak error:', speakErr);
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
   };
 
   // Autoplay Trigger: Runs when both article and voices are loaded and autoplay is requested
