@@ -29,6 +29,19 @@ function parseTokens(text: string): Token[] {
   return tokens;
 }
 
+const EDGE_VOICES = [
+  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
+  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
+  { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
+  { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
+  { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US' },
+  { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US' },
+  { name: 'Francisca (Brasil, Neural)', value: 'pt-BR-FranciscaNeural', lang: 'pt-BR' },
+  { name: 'Antonio (Brasil, Neural)', value: 'pt-BR-AntonioNeural', lang: 'pt-BR' },
+  { name: 'Denise (Francia, Neural)', value: 'fr-FR-DeniseNeural', lang: 'fr-FR' },
+  { name: 'Henri (Francia, Neural)', value: 'fr-FR-HenriNeural', lang: 'fr-FR' },
+];
+
 export default function ArticleReader() {
   const params = useParams();
   const router = useRouter();
@@ -47,10 +60,15 @@ export default function ArticleReader() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState('');
   
+  // Edge TTS additions
+  const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('device');
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('es-ES-AlvaroNeural');
+  
   // Autoplay flow control
   const [pendingAutoplay, setPendingAutoplay] = useState(false);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Load article
   useEffect(() => {
@@ -111,6 +129,19 @@ export default function ArticleReader() {
     return () => {
       window.speechSynthesis.cancel();
     };
+  }, []);
+
+  // Initialize HTML5 Audio element for Edge TTS
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audio = new Audio();
+      audioRef.current = audio;
+      
+      return () => {
+        audio.pause();
+        audio.src = '';
+      };
+    }
   }, []);
 
   // Sync scroll on active paragraph change
@@ -195,44 +226,154 @@ export default function ArticleReader() {
     }
   };
 
+  const playEdgeParagraph = (index: number) => {
+    if (!article || !audioRef.current) return;
+
+    // Stop local speech
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
+
+    if (index < 0 || index >= article.paragraphs.length) {
+      setIsPlaying(false);
+      setIsPaused(false);
+      setActiveParagraphIndex(-1);
+      setCurrentCharIndex(-1);
+      return;
+    }
+
+    setActiveParagraphIndex(index);
+    setCurrentCharIndex(-1); // No word-by-word highlights in Edge mode
+
+    const text = article.paragraphs[index];
+    const url = `/api/tts?text=${encodeURIComponent(text)}&voice=${selectedEdgeVoice}`;
+    
+    audioRef.current.src = url;
+    audioRef.current.playbackRate = speechRate;
+
+    audioRef.current.onplay = () => {
+      setIsPlaying(true);
+      setIsPaused(false);
+      setupMediaSession();
+    };
+
+    audioRef.current.onpause = () => {
+      setIsPaused(true);
+    };
+
+    audioRef.current.onended = () => {
+      if (index + 1 < article.paragraphs.length) {
+        playEdgeParagraph(index + 1);
+      } else {
+        setIsPlaying(false);
+        setIsPaused(false);
+        setActiveParagraphIndex(-1);
+        setCurrentCharIndex(-1);
+      }
+    };
+
+    audioRef.current.onerror = (e) => {
+      console.error('Audio element error:', e);
+      setIsPlaying(false);
+      setIsPaused(false);
+    };
+
+    audioRef.current.play().catch(err => {
+      console.error('Failed to play audio:', err);
+      setIsPlaying(false);
+      setIsPaused(false);
+    });
+  };
+
+  const setupMediaSession = () => {
+    if (typeof window === 'undefined' || !('mediaSession' in navigator) || !article) return;
+    
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: article.title,
+        artist: article.author,
+        album: 'Audioblog',
+        artwork: [
+          { src: 'https://audioblog-omega.vercel.app/icon.png', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {
+        handlePlayPause();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        handlePlayPause();
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        handleSkipBackward();
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        handleSkipForward();
+      });
+    } catch (err) {
+      console.warn('Error setting up MediaSession:', err);
+    }
+  };
+
   // Autoplay Trigger: Runs when both article and voices are loaded and autoplay is requested
   useEffect(() => {
-    if (pendingAutoplay && article && voices.length > 0) {
+    if (pendingAutoplay && article && (audioEngine === 'edge' || voices.length > 0)) {
       setPendingAutoplay(false);
       setIsPlaying(true);
       setIsPaused(false);
       
       // Delay slightly for engine initialization
       const timer = setTimeout(() => {
-        speakParagraph(0);
+        if (audioEngine === 'edge') {
+          playEdgeParagraph(0);
+        } else {
+          speakParagraph(0);
+        }
       }, 400);
 
       return () => clearTimeout(timer);
     }
-  }, [pendingAutoplay, article, voices]);
+  }, [pendingAutoplay, article, voices, audioEngine]);
 
   const handlePlayPause = () => {
     if (typeof window === 'undefined') return;
 
     if (isPlaying) {
       if (isPaused) {
-        window.speechSynthesis.resume();
+        if (audioEngine === 'edge' && audioRef.current) {
+          audioRef.current.play().catch(e => console.error(e));
+        } else {
+          window.speechSynthesis.resume();
+        }
         setIsPaused(false);
       } else {
-        window.speechSynthesis.pause();
+        if (audioEngine === 'edge' && audioRef.current) {
+          audioRef.current.pause();
+        } else {
+          window.speechSynthesis.pause();
+        }
         setIsPaused(true);
       }
     } else {
       setIsPlaying(true);
       setIsPaused(false);
       const startIndex = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
-      speakParagraph(startIndex);
+      if (audioEngine === 'edge') {
+        playEdgeParagraph(startIndex);
+      } else {
+        speakParagraph(startIndex);
+      }
     }
   };
 
   const handleStop = () => {
     if (typeof window === 'undefined') return;
-    window.speechSynthesis.cancel();
+    if (audioEngine === 'edge' && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    } else {
+      window.speechSynthesis.cancel();
+    }
     setIsPlaying(false);
     setIsPaused(false);
     setActiveParagraphIndex(-1);
@@ -244,7 +385,11 @@ export default function ArticleReader() {
     const nextIndex = activeParagraphIndex + 1;
     if (nextIndex < article.paragraphs.length) {
       if (isPlaying) {
-        speakParagraph(nextIndex);
+        if (audioEngine === 'edge') {
+          playEdgeParagraph(nextIndex);
+        } else {
+          speakParagraph(nextIndex);
+        }
       } else {
         setActiveParagraphIndex(nextIndex);
         setCurrentCharIndex(0);
@@ -256,14 +401,22 @@ export default function ArticleReader() {
     const prevIndex = activeParagraphIndex - 1;
     if (prevIndex >= 0) {
       if (isPlaying) {
-        speakParagraph(prevIndex);
+        if (audioEngine === 'edge') {
+          playEdgeParagraph(prevIndex);
+        } else {
+          speakParagraph(prevIndex);
+        }
       } else {
         setActiveParagraphIndex(prevIndex);
         setCurrentCharIndex(0);
       }
     } else if (activeParagraphIndex === 0) {
       if (isPlaying) {
-        speakParagraph(0);
+        if (audioEngine === 'edge') {
+          playEdgeParagraph(0);
+        } else {
+          speakParagraph(0);
+        }
       } else {
         setCurrentCharIndex(0);
       }
@@ -272,7 +425,11 @@ export default function ArticleReader() {
 
   const handleParagraphClick = (index: number) => {
     if (isPlaying) {
-      speakParagraph(index);
+      if (audioEngine === 'edge') {
+        playEdgeParagraph(index);
+      } else {
+        speakParagraph(index);
+      }
     } else {
       setActiveParagraphIndex(index);
       setCurrentCharIndex(0);
@@ -287,14 +444,54 @@ export default function ArticleReader() {
     }
   };
 
+  const handleEdgeVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const voiceValue = e.target.value;
+    setSelectedEdgeVoice(voiceValue);
+    if (isPlaying && !isPaused) {
+      playEdgeParagraph(activeParagraphIndex);
+    }
+  };
+
+  const handleEngineChange = (engine: 'device' | 'edge') => {
+    const wasPlaying = isPlaying;
+    handleStop();
+    setAudioEngine(engine);
+    
+    // Select a sensible Edge voice based on the article's text language
+    if (engine === 'edge') {
+      const isEnglish = article?.paragraphs.join(' ').toLowerCase().includes(' the ') || false;
+      const defaultVoice = isEnglish ? 'en-US-AriaNeural' : 'es-ES-AlvaroNeural';
+      setSelectedEdgeVoice(defaultVoice);
+    }
+    
+    if (wasPlaying) {
+      setTimeout(() => {
+        setIsPlaying(true);
+        setIsPaused(false);
+        const startIndex = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
+        if (engine === 'edge') {
+          playEdgeParagraph(startIndex);
+        } else {
+          speakParagraph(startIndex);
+        }
+      }, 150);
+    }
+  };
+
   const toggleSpeed = () => {
     const speeds = [1, 1.25, 1.5, 1.75, 2, 0.75];
     const currentIndex = speeds.indexOf(speechRate);
     const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
     setSpeechRate(nextSpeed);
     
-    if (isPlaying && !isPaused) {
-      speakParagraph(activeParagraphIndex);
+    if (audioEngine === 'edge') {
+      if (audioRef.current) {
+        audioRef.current.playbackRate = nextSpeed;
+      }
+    } else {
+      if (isPlaying && !isPaused) {
+        speakParagraph(activeParagraphIndex);
+      }
     }
   };
 
@@ -413,6 +610,95 @@ export default function ArticleReader() {
               <span className="meta-label">Restante:</span>
               <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(remainingTime)}</span>
             </div>
+          </div>
+        </div>
+
+        <div className="sidebar-card glass" style={{ marginTop: '12px' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-sliders" style={{ color: 'var(--color-primary)' }}></i> Ajustes de Reproducción
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Motor de Audio</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', background: 'var(--bg-secondary)', padding: '3px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                <button
+                  className="btn-toggle"
+                  onClick={() => handleEngineChange('device')}
+                  style={{
+                    border: 'none',
+                    padding: '6px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    background: audioEngine === 'device' ? 'var(--bg-card)' : 'transparent',
+                    color: audioEngine === 'device' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    boxShadow: audioEngine === 'device' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
+                  }}
+                >
+                  🌐 Local
+                </button>
+                <button
+                  className="btn-toggle"
+                  onClick={() => handleEngineChange('edge')}
+                  style={{
+                    border: 'none',
+                    padding: '6px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    background: audioEngine === 'edge' ? 'var(--bg-card)' : 'transparent',
+                    color: audioEngine === 'edge' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    boxShadow: audioEngine === 'edge' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
+                  }}
+                >
+                  ✨ Neuronal (Fondo)
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Voz de Lectura</label>
+              {audioEngine === 'device' ? (
+                <select
+                  className="player-select"
+                  value={selectedVoiceName}
+                  onChange={handleVoiceChange}
+                  style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                >
+                  {sortedVoices.map((voice) => (
+                    <option key={voice.name} value={voice.name}>
+                      {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  className="player-select"
+                  value={selectedEdgeVoice}
+                  onChange={handleEdgeVoiceChange}
+                  style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                >
+                  {EDGE_VOICES.map((voice) => (
+                    <option key={voice.value} value={voice.value}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {audioEngine === 'device' ? (
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
+                ⚠️ El motor local se pausa al bloquear la pantalla o abrir otra app. Usa el motor <strong>Neuronal</strong> para reproducción continua y CarPlay.
+              </div>
+            ) : (
+              <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
+                ✅ Reproducción de fondo activa. Compatible con mandos de bloqueo y CarPlay / Bluetooth.
+              </div>
+            )}
           </div>
         </div>
       </aside>
@@ -566,18 +852,33 @@ export default function ArticleReader() {
               </div>
 
               {/* Voice select */}
-              <select
-                className="player-select"
-                value={selectedVoiceName}
-                onChange={handleVoiceChange}
-                title="Seleccionar voz"
-              >
-                {sortedVoices.map((voice) => (
-                  <option key={voice.name} value={voice.name}>
-                    {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
-                  </option>
-                ))}
-              </select>
+              {audioEngine === 'device' ? (
+                <select
+                  className="player-select"
+                  value={selectedVoiceName}
+                  onChange={handleVoiceChange}
+                  title="Seleccionar voz"
+                >
+                  {sortedVoices.map((voice) => (
+                    <option key={voice.name} value={voice.name}>
+                      {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  className="player-select"
+                  value={selectedEdgeVoice}
+                  onChange={handleEdgeVoiceChange}
+                  title="Seleccionar voz"
+                >
+                  {EDGE_VOICES.map((voice) => (
+                    <option key={voice.value} value={voice.value}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {/* Speed toggle */}
               <div className="player-speed" onClick={toggleSpeed} title="Velocidad de reproducción">
