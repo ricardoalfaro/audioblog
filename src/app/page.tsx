@@ -74,12 +74,46 @@ export default function Home() {
     };
   }, [selectedVoiceName]);
 
+  const pruneArticles = (loadedArticles: Article[]): Article[] => {
+    const defaultIds = new Set(defaultArticles.map(a => a.id));
+    const customArticles = loadedArticles.filter(a => !defaultIds.has(a.id));
+    const activeDefaultArticles = loadedArticles.filter(a => defaultIds.has(a.id));
+
+    // Filter out custom articles older than 10 days
+    const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    let prunedCustom = customArticles.filter(a => {
+      if (!a.addedAt) return true; // keep if timestamp is missing
+      const addedTime = new Date(a.addedAt).getTime();
+      return (now - addedTime) < tenDaysMs;
+    });
+
+    // Limit to maximum 15 custom articles (keep the newest ones)
+    const MAX_CUSTOM_ARTICLES = 15;
+    if (prunedCustom.length > MAX_CUSTOM_ARTICLES) {
+      prunedCustom.sort((a, b) => {
+        const timeA = a.addedAt ? new Date(a.addedAt).getTime() : 0;
+        const timeB = b.addedAt ? new Date(b.addedAt).getTime() : 0;
+        return timeB - timeA;
+      });
+      prunedCustom = prunedCustom.slice(0, MAX_CUSTOM_ARTICLES);
+    }
+
+    return [...prunedCustom, ...activeDefaultArticles];
+  };
+
   const fetchArticles = () => {
     try {
       setIsLoading(true);
       const localData = localStorage.getItem('articles');
       if (localData) {
-        setArticles(JSON.parse(localData));
+        const parsed = JSON.parse(localData);
+        const pruned = pruneArticles(parsed);
+        if (parsed.length !== pruned.length) {
+          localStorage.setItem('articles', JSON.stringify(pruned));
+        }
+        setArticles(pruned);
       } else {
         localStorage.setItem('articles', JSON.stringify(defaultArticles));
         setArticles(defaultArticles);
@@ -339,7 +373,7 @@ export default function Home() {
         throw new Error('Este artículo ya ha sido importado.');
       }
 
-      const updatedArticles = [newArticle, ...articles];
+      const updatedArticles = pruneArticles([newArticle, ...articles]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
@@ -389,7 +423,7 @@ export default function Home() {
         paragraphs,
       };
 
-      const updatedArticles = [newArticle, ...articles];
+      const updatedArticles = pruneArticles([newArticle, ...articles]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
@@ -789,6 +823,10 @@ export default function Home() {
               >
                 ✍️ Crear Manualmente
               </div>
+            </div>
+
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px', background: 'rgba(0,0,0,0.03)', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid var(--color-primary)', lineHeight: '1.4' }}>
+              💡 <strong>Límites y Privacidad:</strong> Los artículos se guardan de forma privada en el almacenamiento local de tu navegador (`localStorage`). Para optimizar el espacio, se conservan un máximo de <strong>15 artículos importados</strong> y cada uno se elimina automáticamente <strong>10 días</strong> después de haber sido creado.
             </div>
 
             {modalTab === 'url' ? (
