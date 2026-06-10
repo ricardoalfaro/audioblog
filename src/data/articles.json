@@ -1,0 +1,51 @@
+[
+  {
+    "id": "1",
+    "title": "How to Do Great Work (Excerpt)",
+    "author": "Paul Graham",
+    "url": "https://paulgraham.com/greatwork.html",
+    "addedAt": "2026-06-10T03:00:00.000Z",
+    "category": "Philosophy",
+    "excerpt": "If you collected lists of techniques for doing great work in a lot of different fields, what would the intersection look like? I decided to find out by making it.",
+    "duration": 150,
+    "paragraphs": [
+      "If you collected lists of techniques for doing great work in a lot of different fields, what would the intersection look like? I decided to find out by making it.",
+      "To do great work, you need a lot of time. You can't do it in fragmented blocks. You have to be able to focus on a problem to the exclusion of all else for hours, or even days.",
+      "The first step is to decide what to work on. The work you choose should have three qualities: it has to be something you have a natural aptitude for, that you have a deep interest in, and that offers scope for doing great work.",
+      "In practice you don't have to worry much about the third criterion. If you have deep interest and natural aptitude, the opportunities will present themselves.",
+      "Once you've found something you're interested in, the next step is to learn enough about it to get to the frontier. Knowledge expands exponentially, and the frontier is where the new things are."
+    ]
+  },
+  {
+    "id": "2",
+    "title": "The Golden Age of Personal Websites",
+    "author": "Robin Rendle",
+    "url": "https://robinrendle.com/essays/golden-age/",
+    "addedAt": "2026-06-09T18:30:00.000Z",
+    "category": "Design",
+    "excerpt": "A reflection on why building personal spaces on the web matters now more than ever, and how web design is returning to its artistic, eccentric roots.",
+    "duration": 130,
+    "paragraphs": [
+      "There is a growing movement of people building personal, strange, and beautiful spaces on the web. It feels like the early 2000s again, but with better typography and faster loading times.",
+      "For a long time, the web was dominated by giant social media platforms that squeezed all personality out of our profiles. We were given a text box, an avatar, and a header image. Everything else was strictly standardized.",
+      "But now, people are realizing that a personal website is the ultimate canvas. You can build a digital garden, an interactive resume, or a collection of your favorite music. You don't have to optimize for an algorithm.",
+      "When you own your domain and write your own CSS, you are the designer, editor, and host of your own digital home. It's a wonderful, liberating feeling, and it's bringing the art back to the internet."
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Understanding the Web Model Context Protocol (WebMCP)",
+    "author": "Developer Docs",
+    "url": "https://webmcp.dev/intro",
+    "addedAt": "2026-06-08T12:00:00.000Z",
+    "category": "Technology",
+    "excerpt": "An introduction to WebMCP, a protocol that enables AI assistants to directly interact with client-side applications in the browser.",
+    "duration": 180,
+    "paragraphs": [
+      "WebMCP is a new standard for connecting AI agents directly to the web applications you build. Instead of running scripts in a sandbox or clicking elements blindly, agents can communicate with applications using structured tools.",
+      "This protocol bridges the gap between the AI assistant and the web UI. For example, an agent can ask your app to search, add items to a cart, or play a specific audio track directly through standardized JSON-RPC messages.",
+      "By equipping your website with WebMCP, you make it fully agent-accessible. This opens up a whole new paradigm of user experience, where the user can delegate complex tasks to their assistant, which executes them inside the browser tab.",
+      "Implementing WebMCP is simple: you can use HTML attributes for basic forms or use the Imperative JS API to register custom actions and state listeners that the agent can read and write in real-time."
+    ]
+  }
+]
