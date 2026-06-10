@@ -55,14 +55,18 @@ export default function ArticleReader() {
   // Load article
   useEffect(() => {
     if (!id) return;
-    const fetchArticle = async () => {
+    const fetchArticle = () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`/api/articles/${id}`);
-        if (!res.ok) {
+        const localData = localStorage.getItem('articles');
+        if (!localData) {
+          throw new Error('No se encontró el historial de artículos.');
+        }
+        const articlesList: Article[] = JSON.parse(localData);
+        const data = articlesList.find((a) => a.id === id);
+        if (!data) {
           throw new Error('No se pudo encontrar el artículo.');
         }
-        const data = await res.json();
         setArticle(data);
 
         // Check for autoplay query parameter

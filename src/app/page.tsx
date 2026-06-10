@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Article } from '@/types';
+import { defaultArticles } from '@/data/defaultArticles';
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -73,16 +74,18 @@ export default function Home() {
     };
   }, [selectedVoiceName]);
 
-  const fetchArticles = async () => {
+  const fetchArticles = () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/articles');
-      if (res.ok) {
-        const data = await res.json();
-        setArticles(data);
+      const localData = localStorage.getItem('articles');
+      if (localData) {
+        setArticles(JSON.parse(localData));
+      } else {
+        localStorage.setItem('articles', JSON.stringify(defaultArticles));
+        setArticles(defaultArticles);
       }
     } catch (err) {
-      console.error('Error fetching articles:', err);
+      console.error('Error loading articles from localStorage:', err);
     } finally {
       setIsLoading(false);
     }
@@ -288,19 +291,32 @@ export default function Home() {
         scrapeData.category = scrapeCategory;
       }
 
-      const saveRes = await fetch('/api/articles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scrapeData),
-      });
+      // Calculate reading duration (average speech rate is ~150-180 words per minute)
+      const wordCount = scrapeData.paragraphs?.join(' ').split(/\s+/).filter(Boolean).length || 0;
+      const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60)); // at least 30s
 
-      const saveData = await saveRes.json();
+      const newArticle: Article = {
+        id: Date.now().toString(),
+        title: scrapeData.title || 'Artículo sin título',
+        author: scrapeData.author || 'Desconocido',
+        url: scrapeData.url || 'manual',
+        addedAt: new Date().toISOString(),
+        category: scrapeData.category || 'General',
+        excerpt: scrapeData.excerpt || (scrapeData.paragraphs?.[0] ? scrapeData.paragraphs[0].slice(0, 160) + '...' : ''),
+        duration: durationSeconds,
+        paragraphs: scrapeData.paragraphs || [],
+      };
 
-      if (!saveRes.ok) {
-        throw new Error(saveData.error || 'No se pudo guardar el artículo.');
+      // Check if article with same URL already exists
+      const urlExists = articles.some(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
+      if (urlExists) {
+        throw new Error('Este artículo ya ha sido importado.');
       }
 
-      setArticles((prev) => [saveData, ...prev]);
+      const updatedArticles = [newArticle, ...articles];
+      setArticles(updatedArticles);
+      localStorage.setItem('articles', JSON.stringify(updatedArticles));
+
       setIsModalOpen(false);
       setScrapeUrl('');
       setScrapeCategory('auto');
@@ -332,27 +348,25 @@ export default function Home() {
         throw new Error('El contenido debe tener al menos un párrafo.');
       }
 
-      const newArticle = {
+      const wordCount = paragraphs.join(' ').split(/\s+/).filter(Boolean).length || 0;
+      const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60));
+
+      const newArticle: Article = {
+        id: Date.now().toString(),
         title: manualTitle,
         author: manualAuthor || 'Redacción',
-        category: manualCategory,
-        paragraphs,
         url: 'manual',
+        addedAt: new Date().toISOString(),
+        category: manualCategory,
+        excerpt: manualContent.slice(0, 160) + '...',
+        duration: durationSeconds,
+        paragraphs,
       };
 
-      const res = await fetch('/api/articles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newArticle),
-      });
+      const updatedArticles = [newArticle, ...articles];
+      setArticles(updatedArticles);
+      localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Error al crear el artículo.');
-      }
-
-      setArticles((prev) => [data, ...prev]);
       setIsModalOpen(false);
       setManualTitle('');
       setManualAuthor('');
@@ -365,32 +379,21 @@ export default function Home() {
     }
   };
 
-  const handleDeleteArticle = async (e: React.MouseEvent, id: string, title: string) => {
+  const handleDeleteArticle = (e: React.MouseEvent, id: string, title: string) => {
     e.preventDefault();
     e.stopPropagation();
 
     const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar "${title}" de tu historial?`);
     if (!confirmDelete) return;
 
-    try {
-      const res = await fetch(`/api/articles/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (res.ok) {
-        // If the deleted article is currently playing, stop it
-        if (playingArticle?.id === id) {
-          handleStop();
-        }
-        setArticles((prev) => prev.filter((a) => a.id !== id));
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Error al eliminar el artículo.');
-      }
-    } catch (err) {
-      console.error('Error deleting article:', err);
-      alert('Error de conexión al eliminar el artículo.');
+    // If the deleted article is currently playing, stop it
+    if (playingArticle?.id === id) {
+      handleStop();
     }
+
+    const updatedArticles = articles.filter((a) => a.id !== id);
+    setArticles(updatedArticles);
+    localStorage.setItem('articles', JSON.stringify(updatedArticles));
   };
 
   const toggleViewMode = (mode: 'grid' | 'list') => {
