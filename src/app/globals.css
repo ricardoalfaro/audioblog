@@ -364,13 +364,7 @@ a {
   width: 100%;
 }
 
-.hero h1 {
-  font-size: 32px;
-  font-weight: 800;
-  margin-bottom: 24px;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
-}
+
 
 /* Tabs */
 .tabs-container {
@@ -680,7 +674,7 @@ a {
   height: 28px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
-  color: var(--text-secondary);
+  color: #000000;
   border: none;
   z-index: 10;
   display: flex;
@@ -688,7 +682,7 @@ a {
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .article-card:hover .trash-btn, .article-list-item:hover .trash-btn {
@@ -696,7 +690,7 @@ a {
 }
 
 .trash-btn:hover {
-  color: var(--color-accent);
+  color: #ff3333;
 }
 
 /* Empty State */
@@ -1217,6 +1211,8 @@ input:checked + .slider:before {
 .hero-title {
   color: var(--color-primary);
   font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
   margin-bottom: 16px;
 }
 
