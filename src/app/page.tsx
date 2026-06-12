@@ -288,8 +288,8 @@ function HomeContent() {
 
   const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
 
-  const listeningArticles = filteredArticles.filter(a => a.progress && a.progress > 0 && a.progress < 100);
-  const newArticles = filteredArticles.filter(a => !a.progress || a.progress === 0 || a.progress >= 100);
+  const listeningArticles = filteredArticles.filter(a => a.progress && a.progress > 0 && a.progress < a.paragraphs.length);
+  const newArticles = filteredArticles.filter(a => !a.progress || a.progress === 0);
 
   const getGradientClass = (id: string) => {
     const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);

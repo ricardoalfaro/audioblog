@@ -269,6 +269,7 @@ a {
   }
   .header-content {
     flex-wrap: wrap;
+    position: relative;
   }
   .header-right {
     width: 100%;
@@ -1176,7 +1177,8 @@ input:checked + .slider:before {
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, var(--color-primary), #FF3A3A);
+  background: linear-gradient(135deg, var(--color-primary), #FF3A3A, var(--color-primary));
+  background-size: 200% 200%;
   border-radius: var(--border-radius-xl);
   padding: 80px 24px;
   color: white;
@@ -1185,7 +1187,13 @@ input:checked + .slider:before {
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
-  animation: fadeInDown 0.8s ease-out forwards;
+  animation: fadeInDown 0.8s ease-out forwards, gradientMove 8s ease infinite;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @keyframes fadeInDown {
