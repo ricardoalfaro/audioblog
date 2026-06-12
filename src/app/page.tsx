@@ -369,7 +369,7 @@ function HomeContent() {
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <section className="hero hero-section">
         <div className="hero-content-wrapper">
-          <h1 className="hero-title">Convierte tus lecturas en podcasts</h1>
+          <h1 className="hero-title">Convierte tus lecturas en mini podcasts</h1>
           <p className="hero-subtitle">
             Importa cualquier artículo, newsletter o blog y escúchalo en cualquier lugar usando IA neural avanzada con voces ultrarrealistas.
           </p>

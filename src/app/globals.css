@@ -1216,8 +1216,14 @@ input:checked + .slider:before {
 
 .hero-title {
   color: var(--color-primary);
-  font-size: 42px;
+  font-size: 48px;
   margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .hero-title {
+    font-size: 36px;
+  }
 }
 
 .hero-subtitle {
