@@ -1,0 +1,377 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { Article } from '@/types';
+
+export const EDGE_VOICES = [
+  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
+  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
+  { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
+  { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
+  { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US' },
+  { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US' },
+];
+
+interface AudioPlayerContextType {
+  playingArticle: Article | null;
+  isPlaying: boolean;
+  isPaused: boolean;
+  activeParagraphIndex: number;
+  currentCharIndex: number;
+  speechRate: number;
+  audioEngine: 'device' | 'edge';
+  voices: SpeechSynthesisVoice[];
+  selectedVoiceName: string;
+  selectedEdgeVoice: string;
+  
+  playArticle: (article: Article, forceParagraphIndex?: number) => void;
+  handlePlayPause: () => void;
+  handleStop: () => void;
+  handleSkipForward: () => void;
+  handleSkipBackward: () => void;
+  handleParagraphClick: (index: number) => void;
+  handleEngineChange: (engine: 'device' | 'edge') => void;
+  handleVoiceChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleEdgeVoiceChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  toggleSpeed: () => void;
+  getProgressPercentage: () => number;
+  getRemainingTime: () => number;
+}
+
+const AudioPlayerContext = createContext<AudioPlayerContextType | null>(null);
+
+export function AudioPlayerProvider({ children }: { children: ReactNode }) {
+  const [playingArticle, setPlayingArticle] = useState<Article | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [activeParagraphIndex, setActiveParagraphIndex] = useState(-1);
+  const [currentCharIndex, setCurrentCharIndex] = useState(-1);
+  const [speechRate, setSpeechRate] = useState(1);
+  
+  const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState('');
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('es-ES-AlvaroNeural');
+
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Load local voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      if (availableVoices.length > 0) {
+        setVoices(availableVoices);
+        if (!selectedVoiceName) {
+          const esVoice = availableVoices.find(v => v.lang.startsWith('es'));
+          setSelectedVoiceName(esVoice ? esVoice.name : availableVoices[0].name);
+        }
+      }
+    };
+    loadVoices();
+    if (typeof window !== 'undefined') {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [selectedVoiceName]);
+
+  // Init Edge Audio Element
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audio = new Audio();
+      audioRef.current = audio;
+      
+      return () => {
+        audio.pause();
+        audio.src = '';
+      };
+    }
+  }, []);
+
+  const updateArticleProgress = (article: Article, paragraphIndex: number) => {
+    try {
+      const localData = localStorage.getItem('articles');
+      if (localData) {
+        const articlesList: Article[] = JSON.parse(localData);
+        const index = articlesList.findIndex((a) => a.id === article.id);
+        if (index !== -1) {
+          articlesList[index].progress = paragraphIndex;
+          localStorage.setItem('articles', JSON.stringify(articlesList));
+        }
+      }
+    } catch (err) {
+      console.error('Error updating progress:', err);
+    }
+  };
+
+  const speakParagraph = (index: number, article: Article) => {
+    if (!article || typeof window === 'undefined') return;
+
+    try {
+      window.speechSynthesis.cancel();
+    } catch (cancelErr) {
+      console.warn('speechSynthesis.cancel error:', cancelErr);
+    }
+
+    if (index < 0 || index >= article.paragraphs.length) {
+      handleStop();
+      return;
+    }
+
+    setActiveParagraphIndex(index);
+    setCurrentCharIndex(0);
+    updateArticleProgress(article, index);
+
+    const text = article.paragraphs[index];
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    if (selectedVoiceName) {
+      const voice = voices.find((v) => v.name === selectedVoiceName);
+      if (voice) utterance.voice = voice;
+    }
+    
+    utterance.rate = speechRate;
+
+    utterance.onboundary = (event) => {
+      if (event.name === 'word') {
+        setCurrentCharIndex(event.charIndex);
+      }
+    };
+
+    utterance.onstart = () => {
+      setIsPlaying(true);
+      setIsPaused(false);
+    };
+
+    utterance.onend = () => {
+      if (!isPaused && playingArticle?.id === article.id) {
+        speakParagraph(index + 1, article);
+      }
+    };
+
+    utterance.onerror = () => {
+      setIsPlaying(false);
+      setIsPaused(false);
+    };
+
+    utteranceRef.current = utterance;
+    
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (speakErr) {
+      console.error('speechSynthesis.speak error:', speakErr);
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
+  };
+
+  const playEdgeParagraph = (index: number, article: Article) => {
+    if (!audioRef.current || !article) return;
+
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+
+    if (index < 0 || index >= article.paragraphs.length) {
+      handleStop();
+      return;
+    }
+
+    setActiveParagraphIndex(index);
+    setCurrentCharIndex(-1);
+    updateArticleProgress(article, index);
+
+    const text = article.paragraphs[index];
+    const url = `/api/tts?text=${encodeURIComponent(text)}&voice=${selectedEdgeVoice}`;
+    
+    audioRef.current.src = url;
+    audioRef.current.playbackRate = speechRate;
+
+    audioRef.current.onplay = () => {
+      setIsPlaying(true);
+      setIsPaused(false);
+    };
+
+    audioRef.current.onended = () => {
+      if (!isPaused && playingArticle?.id === article.id) {
+        playEdgeParagraph(index + 1, article);
+      }
+    };
+
+    audioRef.current.onerror = () => {
+      console.error("Edge TTS audio error");
+      setIsPlaying(false);
+      setIsPaused(false);
+    };
+
+    audioRef.current.play().catch(e => {
+      console.error("Audio play failed:", e);
+      setIsPlaying(false);
+      setIsPaused(false);
+    });
+  };
+
+  const handleParagraphClick = (index: number) => {
+    if (!playingArticle) return;
+    if (audioEngine === 'edge') {
+      playEdgeParagraph(index, playingArticle);
+    } else {
+      speakParagraph(index, playingArticle);
+    }
+  };
+
+  const playArticle = (article: Article, forceParagraphIndex?: number) => {
+    setPlayingArticle(article);
+    const startIdx = forceParagraphIndex !== undefined ? forceParagraphIndex : (article.progress || 0);
+    if (audioEngine === 'edge') {
+      playEdgeParagraph(startIdx, article);
+    } else {
+      speakParagraph(startIdx, article);
+    }
+  };
+
+  const handlePlayPause = () => {
+    if (!playingArticle) return;
+    
+    if (audioEngine === 'edge' && audioRef.current) {
+      if (isPlaying && !isPaused) {
+        audioRef.current.pause();
+        setIsPaused(true);
+      } else {
+        if (!audioRef.current.src || activeParagraphIndex === -1) {
+          playEdgeParagraph(playingArticle.progress || 0, playingArticle);
+        } else {
+          audioRef.current.play();
+          setIsPaused(false);
+          setIsPlaying(true);
+        }
+      }
+    } else {
+      if (typeof window !== 'undefined') {
+        if (isPlaying && !isPaused) {
+          window.speechSynthesis.pause();
+          setIsPaused(true);
+        } else {
+          if (activeParagraphIndex === -1) {
+            speakParagraph(playingArticle.progress || 0, playingArticle);
+          } else {
+            window.speechSynthesis.resume();
+            setIsPaused(false);
+            setIsPlaying(true);
+          }
+        }
+      }
+    }
+  };
+
+  const handleStop = () => {
+    if (typeof window !== 'undefined') {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+    setIsPlaying(false);
+    setIsPaused(false);
+    setActiveParagraphIndex(-1);
+    setCurrentCharIndex(-1);
+    setPlayingArticle(null);
+  };
+
+  const handleSkipForward = () => {
+    if (!playingArticle) return;
+    const nextIdx = Math.min(activeParagraphIndex + 1, playingArticle.paragraphs.length - 1);
+    handleParagraphClick(nextIdx);
+  };
+
+  const handleSkipBackward = () => {
+    if (!playingArticle) return;
+    const prevIdx = Math.max(0, activeParagraphIndex - 1);
+    handleParagraphClick(prevIdx);
+  };
+
+  const handleEngineChange = (engine: 'device' | 'edge') => {
+    setAudioEngine(engine);
+    if (isPlaying) {
+      handleStop();
+    }
+  };
+
+  const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedVoiceName(e.target.value);
+    if (isPlaying && audioEngine === 'device') {
+      handleStop();
+    }
+  };
+
+  const handleEdgeVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedEdgeVoice(e.target.value);
+    if (isPlaying && audioEngine === 'edge') {
+      handleStop();
+    }
+  };
+
+  const toggleSpeed = () => {
+    setSpeechRate(prev => {
+      const next = prev >= 2 ? 0.75 : prev + 0.25;
+      if (audioRef.current && audioEngine === 'edge') {
+        audioRef.current.playbackRate = next;
+      }
+      return next;
+    });
+  };
+
+  const getProgressPercentage = () => {
+    if (!playingArticle) return 0;
+    if (activeParagraphIndex < 0) return (playingArticle.progress || 0) / playingArticle.paragraphs.length * 100;
+    return (activeParagraphIndex / playingArticle.paragraphs.length) * 100;
+  };
+
+  const getRemainingTime = () => {
+    if (!playingArticle) return 0;
+    const totalPar = playingArticle.paragraphs.length;
+    const current = activeParagraphIndex >= 0 ? activeParagraphIndex : (playingArticle.progress || 0);
+    const progressFactor = current / totalPar;
+    return playingArticle.duration * (1 - progressFactor);
+  };
+
+  return (
+    <AudioPlayerContext.Provider value={{
+      playingArticle,
+      isPlaying,
+      isPaused,
+      activeParagraphIndex,
+      currentCharIndex,
+      speechRate,
+      audioEngine,
+      voices,
+      selectedVoiceName,
+      selectedEdgeVoice,
+      playArticle,
+      handlePlayPause,
+      handleStop,
+      handleSkipForward,
+      handleSkipBackward,
+      handleParagraphClick,
+      handleEngineChange,
+      handleVoiceChange,
+      handleEdgeVoiceChange,
+      toggleSpeed,
+      getProgressPercentage,
+      getRemainingTime
+    }}>
+      {children}
+    </AudioPlayerContext.Provider>
+  );
+}
+
+export function useAudioPlayer() {
+  const context = useContext(AudioPlayerContext);
+  if (!context) {
+    throw new Error('useAudioPlayer must be used within an AudioPlayerProvider');
+  }
+  return context;
+}

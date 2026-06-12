@@ -8,4 +8,6 @@ export interface Article {
   excerpt: string;
   duration: number; // in seconds
   paragraphs: string[];
+  imageUrl?: string;
+  progress?: number;
 }

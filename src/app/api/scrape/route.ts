@@ -61,6 +61,37 @@ export async function POST(request: Request) {
     const reader = new Readability(document);
     const article = reader.parse();
 
+    // Try to extract an og:image
+    let imageUrl = '';
+    const metaImages = [
+      document.querySelector('meta[property="og:image:secure_url"]'),
+      document.querySelector('meta[property="og:image"]'),
+      document.querySelector('meta[name="twitter:image"]'),
+      document.querySelector('meta[property="twitter:image"]'),
+      document.querySelector('link[rel="image_src"]')
+    ];
+    
+    for (const meta of metaImages) {
+      if (meta) {
+        const content = meta.getAttribute('content') || meta.getAttribute('href');
+        if (content && content.startsWith('http')) {
+          imageUrl = content;
+          break;
+        }
+      }
+    }
+
+    if (!imageUrl && article?.content) {
+      const { document: articleDoc } = parseHTML(article.content);
+      const firstImg = articleDoc.querySelector('img');
+      if (firstImg) {
+        const src = firstImg.getAttribute('src');
+        if (src && src.startsWith('http')) {
+          imageUrl = src;
+        }
+      }
+    }
+
     if (!article) {
       return NextResponse.json({ error: 'No se pudo extraer contenido legible de este sitio web. Intenta copiarlo manualmente.' }, { status: 422 });
     }
@@ -76,6 +107,11 @@ export async function POST(request: Request) {
       
       const tagName = node.tagName;
       if (tagName) {
+        // Skip figures, captions, images
+        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE'].includes(tagName.toUpperCase())) {
+          return; // Skip these subtrees
+        }
+
         if (['P', 'H1', 'H2', 'H3', 'H4', 'LI'].includes(tagName)) {
           const text = node.textContent?.trim();
           if (text) {
@@ -114,20 +150,30 @@ export async function POST(request: Request) {
     const author = article.byline || domain;
     let excerpt = article.excerpt || paragraphs[0].slice(0, 160) + '...';
 
-    // Detect category based on original text
-    let category = 'Tecnología';
+    // Detect category based on original text (fixed list: General, Tecnología, Diseño, Negocios, Pagos, Seguros, Fintech, Política, Historia, Economía, Noticias)
+    let category = 'General';
     const combinedText = (title + ' ' + excerpt + ' ' + (article.textContent || '')).toLowerCase();
     
-    if (combinedText.includes('design') || combinedText.includes('diseño') || combinedText.includes('css') || combinedText.includes('ux') || combinedText.includes('art') || combinedText.includes('arte')) {
-      category = 'Diseño';
-    } else if (combinedText.includes('filosofía') || combinedText.includes('philosophy') || combinedText.includes('mind') || combinedText.includes('life') || combinedText.includes('vida') || combinedText.includes('pensar')) {
-      category = 'Filosofía';
-    } else if (combinedText.includes('negocios') || combinedText.includes('business') || combinedText.includes('startup') || combinedText.includes('finanzas') || combinedText.includes('money') || combinedText.includes('producto')) {
+    if (combinedText.includes('fintech') || combinedText.includes('banca digital')) {
+      category = 'Fintech';
+    } else if (combinedText.includes('pagos') || combinedText.includes('payment') || combinedText.includes('stripe')) {
+      category = 'Pagos';
+    } else if (combinedText.includes('seguros') || combinedText.includes('insurtech') || combinedText.includes('insurance')) {
+      category = 'Seguros';
+    } else if (combinedText.includes('economía') || combinedText.includes('economy') || combinedText.includes('mercado') || combinedText.includes('inflación')) {
+      category = 'Economía';
+    } else if (combinedText.includes('negocios') || combinedText.includes('business') || combinedText.includes('startup') || combinedText.includes('empresa')) {
       category = 'Negocios';
-    } else if (combinedText.includes('ciencia') || combinedText.includes('science') || combinedText.includes('biología') || combinedText.includes('espacio') || combinedText.includes('salud') || combinedText.includes('médico')) {
-      category = 'Ciencia';
-    } else if (combinedText.includes('libros') || combinedText.includes('books') || combinedText.includes('literatura') || combinedText.includes('historia')) {
-      category = 'Literatura';
+    } else if (combinedText.includes('tecnología') || combinedText.includes('tech') || combinedText.includes('software') || combinedText.includes('ia') || combinedText.includes('ai')) {
+      category = 'Tecnología';
+    } else if (combinedText.includes('diseño') || combinedText.includes('design') || combinedText.includes('ux') || combinedText.includes('ui')) {
+      category = 'Diseño';
+    } else if (combinedText.includes('política') || combinedText.includes('politics') || combinedText.includes('gobierno') || combinedText.includes('elecciones')) {
+      category = 'Política';
+    } else if (combinedText.includes('historia') || combinedText.includes('history') || combinedText.includes('pasado')) {
+      category = 'Historia';
+    } else if (combinedText.includes('noticias') || combinedText.includes('news') || combinedText.includes('última hora') || combinedText.includes('reporte')) {
+      category = 'Noticias';
     }
 
     // Apply translation if chosen and not 'original'
@@ -153,6 +199,7 @@ export async function POST(request: Request) {
       excerpt,
       paragraphs,
       category,
+      imageUrl,
     });
   } catch (error: any) {
     console.error('Error in scrape endpoint:', error);
