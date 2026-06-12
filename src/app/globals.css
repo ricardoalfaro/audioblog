@@ -2,32 +2,32 @@
 
 :root {
   /* Light Theme */
-  --bg-main: #FFF8F8;
-  --bg-header: #FFF8F8;
-  --bg-card: #FFEEEE;
-  --bg-card-hover: #FFDDDD;
+  --bg-main: #F5F5F5;
+  --bg-header: #F5F5F5;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #EAEAEA;
   --bg-input: #FFFFFF;
-  --bg-player: rgba(255, 248, 248, 0.90);
+  --bg-player: rgba(245, 245, 245, 0.90);
   --bg-glass: rgba(255, 255, 255, 0.7);
   
-  --border-color: #FFDDDD;
-  --border-color-focus: #ff7777;
+  --border-color: #E0E0E0;
+  --border-color-focus: #478B8D;
   
-  --text-primary: #222222;
-  --text-secondary: #555555;
+  --text-primary: #0D0B61;
+  --text-secondary: #294669;
   --text-muted: #888888;
   
-  --color-primary: #ff7777;
-  --color-primary-glow: rgba(255, 119, 119, 0.15);
-  --color-secondary: #31e1f7;
-  --color-accent: #d800a6; 
+  --color-primary: #478B8D;
+  --color-primary-glow: rgba(71, 139, 141, 0.15);
+  --color-secondary: #294669;
+  --color-accent: #E4D329; 
   
   --gradient-brand: none;
-  --gradient-card: linear-gradient(180deg, rgba(34, 34, 34, 0) 0%, rgba(34, 34, 34, 0.4) 100%);
+  --gradient-card: linear-gradient(180deg, rgba(13, 11, 97, 0) 0%, rgba(13, 11, 97, 0.4) 100%);
   
   /* Missing article detail accordion variables */
-  --article-info-bg: #FFEEEE;
-  --article-info-border: #FFDDDD;
+  --article-info-bg: #FFFFFF;
+  --article-info-border: #E0E0E0;
   
   /* Layout */
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -41,63 +41,63 @@
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.25s ease-in-out;
   
-  --shadow-sm: 0 1px 3px rgba(34, 34, 34, 0.1);
-  --shadow-md: 0 4px 12px rgba(34, 34, 34, 0.15);
-  --shadow-lg: 0 12px 24px rgba(34, 34, 34, 0.2);
-  --shadow-float: 0 8px 32px rgba(34, 34, 34, 0.15);
+  --shadow-sm: 0 1px 3px rgba(13, 11, 97, 0.1);
+  --shadow-md: 0 4px 12px rgba(13, 11, 97, 0.15);
+  --shadow-lg: 0 12px 24px rgba(13, 11, 97, 0.2);
+  --shadow-float: 0 8px 32px rgba(13, 11, 97, 0.15);
   
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --bg-main: #270633;
-  --bg-header: #270633;
-  --bg-card: #400d51;
-  --bg-card-hover: #5a1272;
-  --bg-input: #1a0422;
-  --bg-player: rgba(64, 13, 81, 0.90);
-  --bg-glass: rgba(64, 13, 81, 0.7);
+  --bg-main: #0D0B61;
+  --bg-header: #0D0B61;
+  --bg-card: #294669;
+  --bg-card-hover: #32527A;
+  --bg-input: #080742;
+  --bg-player: rgba(13, 11, 97, 0.90);
+  --bg-glass: rgba(13, 11, 97, 0.7);
   
-  --border-color: #5a1272;
-  --border-color-focus: #ff7777;
+  --border-color: #32527A;
+  --border-color-focus: #E4D329;
   
-  --text-primary: #EEEEEE;
+  --text-primary: #F5F5F5;
   --text-secondary: #BBBBBB;
   --text-muted: #888888;
   
-  --color-primary: #ff7777;
-  --color-primary-glow: rgba(255, 119, 119, 0.25);
-  --color-accent: #d800a6;
+  --color-primary: #E4D329;
+  --color-primary-glow: rgba(228, 211, 41, 0.25);
+  --color-accent: #478B8D;
   
-  --article-info-bg: #400d51;
-  --article-info-border: #5a1272;
+  --article-info-bg: #294669;
+  --article-info-border: #32527A;
   
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg-main: #270633;
-    --bg-header: #270633;
-    --bg-card: #400d51;
-    --bg-card-hover: #5a1272;
-    --bg-input: #1a0422;
-    --bg-player: rgba(64, 13, 81, 0.90);
-    --bg-glass: rgba(64, 13, 81, 0.7);
+    --bg-main: #0D0B61;
+    --bg-header: #0D0B61;
+    --bg-card: #294669;
+    --bg-card-hover: #32527A;
+    --bg-input: #080742;
+    --bg-player: rgba(13, 11, 97, 0.90);
+    --bg-glass: rgba(13, 11, 97, 0.7);
     
-    --border-color: #5a1272;
-    --border-color-focus: #ff7777;
+    --border-color: #32527A;
+    --border-color-focus: #E4D329;
     
-    --text-primary: #EEEEEE;
+    --text-primary: #F5F5F5;
     --text-secondary: #BBBBBB;
     --text-muted: #888888;
     
-    --color-primary: #ff7777;
-    --color-primary-glow: rgba(255, 119, 119, 0.25);
-    --color-accent: #d800a6;
+    --color-primary: #E4D329;
+    --color-primary-glow: rgba(228, 211, 41, 0.25);
+    --color-accent: #478B8D;
     
-    --article-info-bg: #400d51;
-    --article-info-border: #5a1272;
+    --article-info-bg: #294669;
+    --article-info-border: #32527A;
     
     color-scheme: dark;
   }
@@ -1177,7 +1177,7 @@ input:checked + .slider:before {
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, var(--color-primary), #FF3A3A, var(--color-primary));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent), var(--color-primary));
   background-size: 200% 200%;
   border-radius: var(--border-radius-xl);
   padding: 80px 24px;
