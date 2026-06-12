@@ -263,7 +263,7 @@ function HomeContent() {
   const renderArticleCard = (article: Article, shapeClass: string) => {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
     
-    if (viewMode === 'list' && shapeClass !== 'card-vertical') {
+    if (viewMode === 'list') {
       return (
         <div key={article.id} className="article-list-item" onClick={() => router.push(`/articles/${article.id}`)}>
           <div className={`list-img-wrapper ${!article.imageUrl ? getGradientClass(article.id) : ''}`}>
@@ -331,11 +331,27 @@ function HomeContent() {
 
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <section className="hero">
-        <h1>Escucha tus artículos favoritos</h1>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <i className="fa-solid fa-plus"></i> Importar artículo
-        </button>
+      <section className="hero" style={{ 
+        background: 'linear-gradient(135deg, var(--color-primary), #FF3A3A)', 
+        borderRadius: 'var(--border-radius-xl)',
+        padding: '80px 24px',
+        color: 'white',
+        marginBottom: '40px',
+        boxShadow: 'var(--shadow-md)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', width: '100%' }}>
+          <h1 style={{ color: 'white', fontSize: '42px', marginBottom: '16px' }}>Convierte tus lecturas en podcasts</h1>
+          <p style={{ fontSize: '18px', opacity: 0.9, marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>
+            Importa cualquier artículo, newsletter o blog y escúchalo en cualquier lugar usando IA neural avanzada con voces ultrarrealistas.
+          </p>
+          <button className="btn" onClick={() => setIsModalOpen(true)} style={{ background: 'white', color: 'var(--color-primary)', fontSize: '16px', padding: '12px 24px' }}>
+            <i className="fa-solid fa-plus"></i> Importar mi primer artículo
+          </button>
+        </div>
+        <div style={{ position: 'absolute', top: '-50%', right: '-10%', width: '400px', height: '400px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(50px)' }}></div>
+        <div style={{ position: 'absolute', bottom: '-50%', left: '-10%', width: '300px', height: '300px', background: 'rgba(0,0,0,0.15)', borderRadius: '50%', filter: 'blur(40px)' }}></div>
       </section>
 
       <section className="tabs-container">
@@ -369,7 +385,7 @@ function HomeContent() {
           {listeningArticles.length > 0 && (
             <section>
               <h2 className="section-title"><i className="fa-solid fa-volume-high" style={{marginRight: '8px'}}></i> Estás escuchando</h2>
-              <div className="listening-carousel">
+              <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                 {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
               </div>
             </section>

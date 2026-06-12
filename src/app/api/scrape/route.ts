@@ -107,9 +107,15 @@ export async function POST(request: Request) {
       
       const tagName = node.tagName;
       if (tagName) {
-        // Skip figures, captions, images
-        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE'].includes(tagName.toUpperCase())) {
+        // Skip figures, captions, images, and superscripts (like "Imagen generada con IA" footnotes)
+        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB', 'STYLE', 'SCRIPT'].includes(tagName.toUpperCase())) {
           return; // Skip these subtrees
+        }
+
+        // Convert <br> tags to newlines to help TTS pausing
+        if (tagName.toUpperCase() === 'BR') {
+          paragraphs.push('\n');
+          return;
         }
 
         if (['P', 'H1', 'H2', 'H3', 'H4', 'LI'].includes(tagName)) {

@@ -23,6 +23,7 @@ interface AudioPlayerContextType {
   voices: SpeechSynthesisVoice[];
   selectedVoiceName: string;
   selectedEdgeVoice: string;
+  isLoading: boolean;
   
   playArticle: (article: Article, forceParagraphIndex?: number) => void;
   handlePlayPause: () => void;
@@ -46,6 +47,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [isPaused, setIsPaused] = useState(false);
   const [activeParagraphIndex, setActiveParagraphIndex] = useState(-1);
   const [currentCharIndex, setCurrentCharIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
   const [speechRate, setSpeechRate] = useState(1);
   
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
@@ -145,6 +147,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     utterance.onstart = () => {
       setIsPlaying(true);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
     utterance.onend = () => {
@@ -156,12 +159,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     utterance.onerror = () => {
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
     utteranceRef.current = utterance;
     
     try {
       window.speechSynthesis.speak(utterance);
+      setIsLoading(true);
     } catch (speakErr) {
       console.error('speechSynthesis.speak error:', speakErr);
       setIsPlaying(false);
@@ -192,6 +197,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     audioRef.current.onplay = () => {
       setIsPlaying(true);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
     audioRef.current.onended = () => {
@@ -204,12 +210,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       console.error("Edge TTS audio error");
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
+    setIsLoading(true);
     audioRef.current.play().catch(e => {
       console.error("Audio play failed:", e);
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
     });
   };
 
@@ -346,6 +355,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       activeParagraphIndex,
       currentCharIndex,
       speechRate,
+      isLoading,
       audioEngine,
       voices,
       selectedVoiceName,
