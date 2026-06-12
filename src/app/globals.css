@@ -8,6 +8,7 @@
   --bg-card-hover: #EADCB5;
   --bg-input: #FFFFFF;
   --bg-player: rgba(250, 243, 225, 0.90);
+  --bg-glass: rgba(255, 255, 255, 0.7);
   
   --border-color: #EADCB5;
   --border-color-focus: #FF6D1F;
@@ -55,6 +56,7 @@
   --bg-card-hover: #333333;
   --bg-input: #2A2A2A;
   --bg-player: rgba(34, 34, 34, 0.90);
+  --bg-glass: rgba(34, 34, 34, 0.7);
   
   --border-color: #333333;
   --border-color-focus: #FF6D1F;
@@ -81,6 +83,7 @@
     --bg-card-hover: #333333;
     --bg-input: #2A2A2A;
     --bg-player: rgba(34, 34, 34, 0.90);
+    --bg-glass: rgba(34, 34, 34, 0.7);
     
     --border-color: #333333;
     --border-color-focus: #FF6D1F;
@@ -258,6 +261,28 @@ a {
 .header-search {
   position: relative;
   width: 240px;
+}
+
+@media (max-width: 600px) {
+  .main-header {
+    height: auto;
+    padding: 12px 0;
+  }
+  .header-content {
+    flex-wrap: wrap;
+  }
+  .header-right {
+    width: 100%;
+    margin-top: 12px;
+  }
+  .header-search {
+    width: 100%;
+  }
+  .avatar-dropdown {
+    position: absolute;
+    top: 14px;
+    right: 24px;
+  }
 }
 
 .header-search input {
@@ -682,7 +707,7 @@ a {
 /* Bottom Player (Apple Music Pill Style) */
 .bottom-player-container {
   position: fixed;
-  bottom: 24px;
+  bottom: 40px;
   left: 0;
   right: 0;
   display: flex;
@@ -1050,12 +1075,9 @@ a {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--bg-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-}
-[data-theme="dark"] .glass {
-  background: rgba(34, 34, 34, 0.7);
 }
 
 /* Switch toggle */

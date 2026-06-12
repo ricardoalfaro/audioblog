@@ -33,6 +33,31 @@ export default function HeaderActions() {
     }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Audioblog | Minimalist',
+      text: '¡Mira esta increíble plataforma para escuchar artículos y newsletters como podcasts!',
+      url: window.location.origin,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        alert('Enlace copiado al portapapeles');
+      } catch (err) {
+        console.error('Error copying to clipboard:', err);
+      }
+    }
+    setIsDropdownOpen(false);
+  };
+
   return (
     <div className="header-right">
       <form className="header-search" onSubmit={handleSearchSubmit}>
@@ -60,6 +85,17 @@ export default function HeaderActions() {
               <span>Tema:</span>
               <ThemeSwitcher />
             </div>
+            <button 
+              onClick={handleShare}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', width: '100%', 
+                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none', 
+                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)', 
+                cursor: 'pointer', fontSize: '14px', textAlign: 'left'
+              }}
+            >
+              <i className="fa-solid fa-share-nodes" style={{ color: 'var(--color-primary)' }}></i> Compartir Audioblog
+            </button>
           </div>
         )}
       </div>
