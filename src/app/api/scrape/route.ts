@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         const tagName = (node.tagName || '').toUpperCase();
         
         // Skip figures, captions, images, superscripts (like "Imagen generada con IA"), scripts
-        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB', 'STYLE', 'SCRIPT'].includes(tagName)) {
+        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB', 'STYLE', 'SCRIPT', 'LABEL', 'CITE', 'NOSCRIPT'].includes(tagName)) {
           return;
         }
 
@@ -137,7 +137,8 @@ export async function POST(request: Request) {
 
         // Flush before traversing children if we hit a block boundary
         if (isBlock && currentParagraph.length > 0) {
-          const joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+          let joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+          joined = joined.replace(/Imagen generada con IA/gi, '').trim();
           if (joined.length > 20 || ['H1','H2','H3','H4'].includes(tagName)) {
             paragraphs.push(joined);
           }
@@ -150,7 +151,8 @@ export async function POST(request: Request) {
 
         // Flush after traversing children if we are at a block boundary
         if (isBlock && currentParagraph.length > 0) {
-          const joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+          let joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+          joined = joined.replace(/Imagen generada con IA/gi, '').trim();
           if (joined.length > 20 || ['H1','H2','H3','H4'].includes(tagName)) {
             paragraphs.push(joined);
           }
@@ -163,7 +165,8 @@ export async function POST(request: Request) {
     
     // Final flush
     if (currentParagraph.length > 0) {
-      const joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+      let joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+      joined = joined.replace(/Imagen generada con IA/gi, '').trim();
       if (joined.length > 20) {
         paragraphs.push(joined);
       }

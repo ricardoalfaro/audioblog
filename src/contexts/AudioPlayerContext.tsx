@@ -124,6 +124,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
 
     if (index < 0 || index >= article.paragraphs.length) {
+      if (index >= article.paragraphs.length) {
+        updateArticleProgress(article, index); // Guardar progreso 100%
+      }
       handleStop();
       return;
     }
@@ -184,6 +187,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     try { window.speechSynthesis.cancel(); } catch (e) {}
 
     if (index < 0 || index >= article.paragraphs.length) {
+      if (index >= article.paragraphs.length) {
+        updateArticleProgress(article, index); // Guardar progreso 100%
+      }
       handleStop();
       return;
     }
