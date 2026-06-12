@@ -100,42 +100,74 @@ export async function POST(request: Request) {
     const { document: doc } = parseHTML(article.content || '');
     
     let paragraphs: string[] = [];
-    
-    // Recursive in-order traversal to extract text structures safely without selector engines (nwsapi)
+    let currentParagraph: string[] = [];
+
+    // Recursive in-order traversal to extract text structures safely
     function traverse(node: any) {
       if (!node) return;
       
-      const tagName = node.tagName;
-      if (tagName) {
-        // Skip figures, captions, images, and superscripts (like "Imagen generada con IA" footnotes)
-        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB', 'STYLE', 'SCRIPT'].includes(tagName.toUpperCase())) {
-          return; // Skip these subtrees
+      const nodeType = node.nodeType;
+      
+      // TEXT_NODE
+      if (nodeType === 3) {
+        // node.textContent in linkedom for text nodes is node.nodeValue
+        const text = (node.nodeValue || node.textContent || '').trim();
+        if (text) {
+          currentParagraph.push(text);
         }
+        return;
+      }
 
-        // Convert <br> tags to newlines to help TTS pausing
-        if (tagName.toUpperCase() === 'BR') {
-          paragraphs.push('\n');
+      // ELEMENT_NODE
+      if (nodeType === 1) {
+        const tagName = (node.tagName || '').toUpperCase();
+        
+        // Skip figures, captions, images, superscripts (like "Imagen generada con IA"), scripts
+        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB', 'STYLE', 'SCRIPT'].includes(tagName)) {
           return;
         }
 
-        if (['P', 'H1', 'H2', 'H3', 'H4', 'LI'].includes(tagName)) {
-          const text = node.textContent?.trim();
-          if (text) {
-            const isHeader = ['H1', 'H2', 'H3', 'H4'].includes(tagName);
-            if (isHeader || text.length > 20) {
-              paragraphs.push(text);
-              return; // Stop traversal on this branch to avoid nesting/duplicate text extraction
-            }
-          }
+        // Convert <br> tags to newlines
+        if (tagName === 'BR') {
+          currentParagraph.push('\n');
+          return;
         }
-      }
-      
-      for (let i = 0; i < node.childNodes.length; i++) {
-        traverse(node.childNodes[i]);
+
+        const isBlock = ['P', 'H1', 'H2', 'H3', 'H4', 'LI', 'DIV', 'ARTICLE', 'SECTION', 'UL', 'OL', 'BLOCKQUOTE'].includes(tagName);
+
+        // Flush before traversing children if we hit a block boundary
+        if (isBlock && currentParagraph.length > 0) {
+          const joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+          if (joined.length > 20 || ['H1','H2','H3','H4'].includes(tagName)) {
+            paragraphs.push(joined);
+          }
+          currentParagraph = [];
+        }
+        
+        for (let i = 0; i < node.childNodes.length; i++) {
+          traverse(node.childNodes[i]);
+        }
+
+        // Flush after traversing children if we are at a block boundary
+        if (isBlock && currentParagraph.length > 0) {
+          const joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+          if (joined.length > 20 || ['H1','H2','H3','H4'].includes(tagName)) {
+            paragraphs.push(joined);
+          }
+          currentParagraph = [];
+        }
       }
     }
 
     traverse(doc);
+    
+    // Final flush
+    if (currentParagraph.length > 0) {
+      const joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
+      if (joined.length > 20) {
+        paragraphs.push(joined);
+      }
+    }
 
     // Fallback if DOM traversal yielded nothing
     if (paragraphs.length === 0 && article.textContent) {

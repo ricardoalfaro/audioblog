@@ -1,33 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Roboto:wght@300;400;500;700&display=swap');
 
 :root {
-  /* Minimalist Theme (Apple Music Vibe) */
-  --bg-main: #FAF3E1; /* Light Cream */
-  --bg-header: #FAF3E1;
-  --bg-card: #F5E7C6; /* Darker Cream */
-  --bg-card-hover: #EADCB5;
+  /* Light Theme */
+  --bg-main: #FFF8F8;
+  --bg-header: #FFF8F8;
+  --bg-card: #FFEEEE;
+  --bg-card-hover: #FFDDDD;
   --bg-input: #FFFFFF;
-  --bg-player: rgba(250, 243, 225, 0.90);
+  --bg-player: rgba(255, 248, 248, 0.90);
   --bg-glass: rgba(255, 255, 255, 0.7);
   
-  --border-color: #EADCB5;
-  --border-color-focus: #FF6D1F;
+  --border-color: #FFDDDD;
+  --border-color-focus: #ff7777;
   
   --text-primary: #222222;
   --text-secondary: #555555;
   --text-muted: #888888;
   
-  --color-primary: #FF6D1F;
-  --color-primary-glow: rgba(255, 109, 31, 0.15);
-  --color-secondary: #12b886;
-  --color-accent: #FF6D1F; 
+  --color-primary: #ff7777;
+  --color-primary-glow: rgba(255, 119, 119, 0.15);
+  --color-secondary: #31e1f7;
+  --color-accent: #d800a6; 
   
   --gradient-brand: none;
   --gradient-card: linear-gradient(180deg, rgba(34, 34, 34, 0) 0%, rgba(34, 34, 34, 0.4) 100%);
   
   /* Missing article detail accordion variables */
-  --article-info-bg: #F5E7C6;
-  --article-info-border: #EADCB5;
+  --article-info-bg: #FFEEEE;
+  --article-info-border: #FFDDDD;
   
   /* Layout */
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -50,54 +50,54 @@
 }
 
 :root[data-theme="dark"] {
-  --bg-main: #181818;
-  --bg-header: #181818;
-  --bg-card: #222222;
-  --bg-card-hover: #333333;
-  --bg-input: #2A2A2A;
-  --bg-player: rgba(34, 34, 34, 0.90);
-  --bg-glass: rgba(34, 34, 34, 0.7);
+  --bg-main: #270633;
+  --bg-header: #270633;
+  --bg-card: #400d51;
+  --bg-card-hover: #5a1272;
+  --bg-input: #1a0422;
+  --bg-player: rgba(64, 13, 81, 0.90);
+  --bg-glass: rgba(64, 13, 81, 0.7);
   
-  --border-color: #333333;
-  --border-color-focus: #FF6D1F;
+  --border-color: #5a1272;
+  --border-color-focus: #ff7777;
   
   --text-primary: #EEEEEE;
-  --text-secondary: #AAAAAA;
-  --text-muted: #777777;
+  --text-secondary: #BBBBBB;
+  --text-muted: #888888;
   
-  --color-primary: #FF6D1F;
-  --color-primary-glow: rgba(255, 109, 31, 0.25);
-  --color-accent: #FF6D1F;
+  --color-primary: #ff7777;
+  --color-primary-glow: rgba(255, 119, 119, 0.25);
+  --color-accent: #d800a6;
   
-  --article-info-bg: #222222;
-  --article-info-border: #333333;
+  --article-info-bg: #400d51;
+  --article-info-border: #5a1272;
   
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg-main: #181818;
-    --bg-header: #181818;
-    --bg-card: #222222;
-    --bg-card-hover: #333333;
-    --bg-input: #2A2A2A;
-    --bg-player: rgba(34, 34, 34, 0.90);
-    --bg-glass: rgba(34, 34, 34, 0.7);
+    --bg-main: #270633;
+    --bg-header: #270633;
+    --bg-card: #400d51;
+    --bg-card-hover: #5a1272;
+    --bg-input: #1a0422;
+    --bg-player: rgba(64, 13, 81, 0.90);
+    --bg-glass: rgba(64, 13, 81, 0.7);
     
-    --border-color: #333333;
-    --border-color-focus: #FF6D1F;
+    --border-color: #5a1272;
+    --border-color-focus: #ff7777;
     
     --text-primary: #EEEEEE;
-    --text-secondary: #AAAAAA;
-    --text-muted: #777777;
+    --text-secondary: #BBBBBB;
+    --text-muted: #888888;
     
-    --color-primary: #FF6D1F;
-    --color-primary-glow: rgba(255, 109, 31, 0.25);
-    --color-accent: #FF6D1F;
+    --color-primary: #ff7777;
+    --color-primary-glow: rgba(255, 119, 119, 0.25);
+    --color-accent: #d800a6;
     
-    --article-info-bg: #222222;
-    --article-info-border: #333333;
+    --article-info-bg: #400d51;
+    --article-info-border: #5a1272;
     
     color-scheme: dark;
   }
@@ -227,7 +227,6 @@ a {
   top: 0;
   z-index: 100;
   background: var(--bg-header);
-  border-bottom: 1px solid var(--border-color);
 }
 
 .header-content {
@@ -280,7 +279,7 @@ a {
   }
   .avatar-dropdown {
     position: absolute;
-    top: 14px;
+    top: 8px;
     right: 24px;
   }
 }
@@ -453,11 +452,13 @@ a {
 /* Horizontal Carousel (Estás Escuchando) */
 .listening-carousel {
   display: flex;
-  gap: 20px;
   overflow-x: auto;
+  gap: 16px;
   padding-bottom: 16px;
-  margin-bottom: 32px;
   scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }
 
 /* Apple Music Card Styling */
@@ -1173,6 +1174,94 @@ input:checked + .slider:before {
   color: var(--text-primary);
 }
 
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, var(--color-primary), #FF3A3A);
+  border-radius: var(--border-radius-xl);
+  padding: 80px 24px;
+  color: white;
+  margin-top: 24px;
+  margin-bottom: 40px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInDown 0.8s ease-out forwards;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-content-wrapper {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  width: 100%;
+}
+
+.hero-title {
+  color: white;
+  font-size: 42px;
+  margin-bottom: 16px;
+}
+
+.hero-subtitle {
+  font-size: 18px;
+  opacity: 0.9;
+  margin-bottom: 32px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-hero {
+  background: white;
+  color: var(--color-primary);
+  font-size: 16px;
+  padding: 12px 24px;
+}
+
+.hero-bg-circle-1 {
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  filter: blur(50px);
+}
+
+.hero-bg-circle-2 {
+  position: absolute;
+  bottom: -50%;
+  left: -10%;
+  width: 300px;
+  height: 300px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 50%;
+  filter: blur(40px);
+}
+
+@media (max-width: 600px) {
+  .hero-section {
+    padding: 40px 16px;
+    margin-top: 16px;
+  }
+  .hero-title {
+    font-size: 32px;
+  }
+  .hero-subtitle {
+    font-size: 16px;
+  }
+}
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
