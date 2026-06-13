@@ -1172,7 +1172,7 @@ input:checked + .slider:before {
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, rgba(20, 33, 61, 0.92), rgba(0, 0, 0, 0.96)), url('/bg_03.jpg');
+  background: linear-gradient(135deg, rgba(20, 33, 61, 0.92), rgba(0, 0, 0, 0.96)), url('/bg_01.jpg');
   background-size: 200% 200%;
   border-radius: var(--border-radius-xl);
   padding: 80px 24px;
