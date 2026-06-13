@@ -56,8 +56,7 @@ export default function RootLayout({
           <header className="main-header">
             <div className="container header-content">
               <Link href="/" className="logo">
-                <i className="fa-solid fa-headphones logo-icon"></i>
-                <span>Audiodocs Player</span>
+                <img src="/main_logo_audiodocs.png" alt="Audiodocs Player" style={{ height: '32px', width: 'auto' }} />
               </Link>
               
               <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn">?</button></div></div>}>
