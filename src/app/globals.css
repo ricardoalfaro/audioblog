@@ -275,28 +275,7 @@ a {
   width: 240px;
 }
 
-@media (max-width: 600px) {
-  .main-header {
-    height: auto;
-    padding: 12px 0;
-  }
-  .header-content {
-    flex-wrap: wrap;
-    position: relative;
-  }
-  .header-right {
-    width: 100%;
-    margin-top: 12px;
-  }
-  .header-search {
-    width: 100%;
-  }
-  .avatar-dropdown {
-    position: absolute;
-    top: 8px;
-    right: 24px;
-  }
-}
+
 
 .header-search input {
   width: 100%;
@@ -354,6 +333,29 @@ a {
   padding: 8px;
   box-shadow: var(--shadow-md);
   min-width: 160px;
+}
+
+@media (max-width: 600px) {
+  .main-header {
+    height: auto;
+    padding: 12px 0;
+  }
+  .header-content {
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .header-right {
+    width: 100%;
+    margin-top: 12px;
+  }
+  .header-search {
+    width: 100%;
+  }
+  .avatar-dropdown {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+  }
 }
 
 /* Theme Switcher in Dropdown */
