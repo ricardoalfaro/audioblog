@@ -7,7 +7,7 @@ import "./globals.css";
 import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
-  title: "Audiodocs Player | Convierte tus lecturas en podcasts",
+  title: "Audiodocs | Convierte tus lecturas en mini podcasts",
   description: "Una plataforma premium para escuchar tus artículos.",
 };
 

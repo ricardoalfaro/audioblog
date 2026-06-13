@@ -520,7 +520,7 @@ function HomeContent() {
     
       <footer className="main-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '40px 0 120px 0', marginTop: 'auto', textAlign: 'center', color: 'var(--text-muted)' }}>
         <p>
-          Un proyecto de Ricardo Alfaro co-creado con IA - <a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Github</a>
+          © 2026 Audiodocs es un proyecto opencode de Ricardo Alfaro co-construido con IA - <a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Github</a>
         </p>
       </footer>
     </main>
