@@ -1210,7 +1210,7 @@ input:checked + .slider:before {
 
 .hero-title {
   color: var(--color-primary);
-  font-size: 48px;
+  font-size: 38px;
   font-weight: 800;
   letter-spacing: -0.5px;
   margin-bottom: 16px;
