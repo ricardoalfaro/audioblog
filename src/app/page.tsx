@@ -419,7 +419,7 @@ function HomeContent() {
           )}
 
           {newArticles.length > 0 && (
-            <section style={{ marginTop: '48px' }}>
+            <section style={{ marginTop: '24px' }}>
               <h2 className="section-title">Sin leer</h2>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
                 {newArticles.map(article => renderArticleCard(article, 'card-square'))}
