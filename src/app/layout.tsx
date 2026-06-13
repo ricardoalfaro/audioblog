@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import HeaderActions from "@/components/HeaderActions";
 import { Suspense } from 'react';
 import Link from 'next/link';
@@ -7,8 +7,15 @@ import "./globals.css";
 import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
-  title: "Audioblog | Minimalist",
+  title: "Audiodocs | Convierte tus lecturas en mini podcasts",
   description: "Una plataforma premium para escuchar tus artículos.",
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -49,8 +56,8 @@ export default function RootLayout({
           <header className="main-header">
             <div className="container header-content">
               <Link href="/" className="logo">
-                <i className="fa-solid fa-headphones logo-icon"></i>
-                <span>Audioblog</span>
+                <img src="/main_logo_audiodocs_light.png" alt="Audiodocs Player" className="logo-light" style={{ height: '32px', width: 'auto' }} />
+                <img src="/main_logo_audiodocs_dark.png" alt="Audiodocs Player" className="logo-dark" style={{ height: '32px', width: 'auto' }} />
               </Link>
               
               <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn">?</button></div></div>}>
