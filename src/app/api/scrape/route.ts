@@ -54,6 +54,13 @@ export async function POST(request: Request) {
 
     const html = await response.text();
 
+    // Detect Cloudflare bot challenge (common on Medium and similar sites)
+    if (html.includes('id="challenge-running"') || html.includes('cf-browser-verification') || (html.includes('Just a moment') && html.includes('cloudflare'))) {
+      return NextResponse.json({
+        error: 'Este sitio bloquea el acceso automático (protección anti-bots). Puedes copiar el texto del artículo y agregarlo usando la pestaña "Manual".'
+      }, { status: 422 });
+    }
+
     // Parse with linkedom
     const { document } = parseHTML(html);
     
@@ -161,6 +168,15 @@ export async function POST(request: Request) {
       if (node.nodeType === 3) {
         const text = (node.nodeValue || '').trim();
         if (text) currentParagraph.push(text);
+        return;
+      }
+
+      // DOCUMENT_NODE (nodeType 9) — linkedom wraps parsed HTML in a document;
+      // descend into its children directly
+      if (node.nodeType === 9) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          traverse(node.childNodes[i]);
+        }
         return;
       }
 
