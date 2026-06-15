@@ -147,9 +147,9 @@ export async function POST(request: Request) {
       const joined = currentParagraph.join(' ').replace(/\s+/g, ' ').trim();
       currentParagraph = [];
       if (!joined) return;
-      // Keep headers even if short; otherwise require ≥ 30 chars of real content
+      // Keep headers even if short; body paragraphs need ≥ 15 chars
       const isHeader = HEADER_TAGS.has(tagName);
-      if (!isHeader && joined.length < 30) return;
+      if (!isHeader && joined.length < 15) return;
       if (JUNK_RE.some(rx => rx.test(joined))) return;
       paragraphs.push(joined);
     }
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
       const rawLines = article.textContent
         .split('\n')
         .map((line: string) => line.trim())
-        .filter((line: string) => line.length > 30 && !JUNK_RE.some(rx => rx.test(line)));
+        .filter((line: string) => line.length > 15 && !JUNK_RE.some(rx => rx.test(line)));
       paragraphs.push(...rawLines);
     }
 
