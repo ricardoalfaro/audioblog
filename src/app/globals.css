@@ -957,15 +957,21 @@ a {
   color: var(--color-primary);
 }
 
-/* Sticky topbar for back navigation in article reader */
+/* Fixed topbar for back navigation in article reader */
 .reader-topbar {
-  position: sticky;
+  position: fixed;
   top: 64px;
+  left: 0;
+  right: 0;
   z-index: 90;
   background: var(--bg-primary);
-  padding: 10px 0;
+  padding: 10px 24px;
   border-bottom: 1px solid var(--border-color);
-  margin-bottom: 24px;
+}
+
+/* Offset the reader layout so it starts below the fixed topbar */
+.reader-layout {
+  padding-top: 20px;
 }
 
 .reader-header {
@@ -1140,9 +1146,9 @@ a {
 @media (min-width: 901px) {
   .reader-sidebar {
     position: sticky;
-    top: calc(64px + 45px); /* header + topbar */
+    top: calc(64px + 45px + 20px); /* header + topbar + gap */
     align-self: start;
-    max-height: calc(100vh - 64px - 60px);
+    max-height: calc(100vh - 64px - 65px);
     overflow-y: auto;
   }
 }
