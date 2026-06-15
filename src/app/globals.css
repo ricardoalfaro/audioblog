@@ -959,38 +959,22 @@ a {
   color: var(--color-primary);
 }
 
-/* Fixed topbar for back navigation in article reader (desktop only) */
+/* Fixed topbar for back navigation in article reader */
 .reader-topbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
-  margin-bottom: 8px;
 }
 
 .reader-topbar-inner {
-  padding: 10px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 24px;
 }
 
-@media (min-width: 601px) {
-  .reader-topbar {
-    position: fixed;
-    top: 64px;
-    left: 0;
-    right: 0;
-    z-index: 90;
-    background: var(--bg-primary);
-  }
-  .reader-topbar-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 10px 24px;
-  }
-}
-
-/* Offset the reader main so content starts below the fixed topbar (desktop) */
-@media (min-width: 601px) {
-  .reader-main {
-    padding-top: 45px;
-  }
-}
 
 .reader-header {
   margin-top: 32px;

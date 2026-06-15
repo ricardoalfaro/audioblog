@@ -96,6 +96,18 @@ export default function ArticleReader() {
     }
   }, []);
 
+  // Track header height so the fixed topbar always sits right below it
+  const [headerHeight, setHeaderHeight] = useState(64);
+  useEffect(() => {
+    const header = document.querySelector('.main-header') as HTMLElement | null;
+    if (!header) return;
+    const update = () => setHeaderHeight(header.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(header);
+    return () => ro.disconnect();
+  }, []);
+
 
 
   // Sync scroll on active paragraph change
@@ -156,9 +168,9 @@ export default function ArticleReader() {
   };
 
   return (
-    <main className="container reader-main">
-      {/* Fixed back-link bar — sits below the sticky header */}
-      <div className="reader-topbar">
+    <main className="container" style={{ paddingTop: 45 }}>
+      {/* Fixed back-link bar — sits right below the sticky header at measured height */}
+      <div className="reader-topbar" style={{ top: headerHeight }}>
         <div className="reader-topbar-inner">
           <Link href="/" className="back-link">
             <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
