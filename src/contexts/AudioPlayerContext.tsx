@@ -59,8 +59,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [selectedVoiceName, setSelectedVoiceName] = useState('');
   const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('es-ES-AlvaroNeural');
 
+  // Keep ref in sync so async prefetch callbacks always use the current voice
+  useEffect(() => { selectedEdgeVoiceRef.current = selectedEdgeVoice; }, [selectedEdgeVoice]);
+
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Prefetch state for Edge TTS double-buffering
+  const prefetchedBlobUrlRef = useRef<string | null>(null);
+  const prefetchedIndexRef = useRef<number>(-1);
+  const selectedEdgeVoiceRef = useRef('es-ES-AlvaroNeural');
 
   // Load local voices
   useEffect(() => {
@@ -181,6 +189,44 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const revokePrefetchedBlob = () => {
+    if (prefetchedBlobUrlRef.current) {
+      URL.revokeObjectURL(prefetchedBlobUrlRef.current);
+      prefetchedBlobUrlRef.current = null;
+      prefetchedIndexRef.current = -1;
+    }
+  };
+
+  const prefetchNextParagraph = (index: number, article: Article) => {
+    const nextIndex = index + 1;
+    if (nextIndex >= article.paragraphs.length) return;
+    // Already prefetched this index
+    if (prefetchedIndexRef.current === nextIndex) return;
+
+    revokePrefetchedBlob();
+
+    const text = article.paragraphs[nextIndex];
+    const voice = selectedEdgeVoiceRef.current;
+    const url = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) return;
+        // Abort if the article or voice changed while fetching
+        if (
+          playingArticleIdRef.current !== article.id ||
+          selectedEdgeVoiceRef.current !== voice
+        ) return;
+        return res.blob();
+      })
+      .then(blob => {
+        if (!blob) return;
+        prefetchedBlobUrlRef.current = URL.createObjectURL(blob);
+        prefetchedIndexRef.current = nextIndex;
+      })
+      .catch(() => {});
+  };
+
   const playEdgeParagraph = (index: number, article: Article) => {
     if (!audioRef.current || !article) return;
 
@@ -188,7 +234,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     if (index < 0 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
-        updateArticleProgress(article, index); // Guardar progreso 100%
+        updateArticleProgress(article, index);
       }
       handleStop();
       return;
@@ -198,16 +244,28 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentCharIndex(-1);
     updateArticleProgress(article, index);
 
-    const text = article.paragraphs[index];
-    const url = `/api/tts?text=${encodeURIComponent(text)}&voice=${selectedEdgeVoice}`;
-    
-    audioRef.current.src = url;
+    // Use prefetched blob if available for this index, otherwise fall back to API URL
+    let src: string;
+    if (prefetchedIndexRef.current === index && prefetchedBlobUrlRef.current) {
+      src = prefetchedBlobUrlRef.current;
+      // Clear ref so we don't revoke it before the audio element finishes reading it
+      prefetchedBlobUrlRef.current = null;
+      prefetchedIndexRef.current = -1;
+    } else {
+      src = `/api/tts?text=${encodeURIComponent(article.paragraphs[index])}&voice=${selectedEdgeVoice}`;
+    }
+
+    audioRef.current.src = src;
     audioRef.current.playbackRate = speechRate;
 
     audioRef.current.onplay = () => {
       setIsPlaying(true);
       setIsPaused(false);
       setIsLoading(false);
+      // Revoke blob URL now that the audio element has loaded it
+      if (src.startsWith('blob:')) URL.revokeObjectURL(src);
+      // Kick off prefetch for the paragraph after this one
+      prefetchNextParagraph(index, article);
     };
 
     audioRef.current.onended = () => {
@@ -300,6 +358,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.pause();
       audioRef.current.src = '';
     }
+    revokePrefetchedBlob();
     setIsPlaying(false);
     setIsPaused(false);
     isPausedRef.current = false;
@@ -337,6 +396,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const handleEdgeVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedEdgeVoice(e.target.value);
+    revokePrefetchedBlob(); // discard prefetch — wrong voice
     if (isPlaying && audioEngine === 'edge') {
       handleStop();
     }
