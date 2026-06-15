@@ -98,91 +98,117 @@ export async function POST(request: Request) {
 
     // Parse readability's clean HTML content using linkedom to split it into structural paragraphs/headers
     const { document: doc } = parseHTML(article.content || '');
-    
+
     let paragraphs: string[] = [];
     let currentParagraph: string[] = [];
 
-    // Recursive in-order traversal to extract text structures safely
+    // Tags whose subtree we skip entirely (decorative / metadata)
+    const SKIP_TAGS = new Set([
+      'FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB',
+      'STYLE', 'SCRIPT', 'NOSCRIPT', 'LABEL', 'CITE',
+      'BUTTON', 'NAV', 'FORM', 'INPUT', 'FOOTER', 'ASIDE',
+    ]);
+
+    // Block-level elements that act as paragraph boundaries
+    const BLOCK_TAGS = new Set([
+      'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+      'LI', 'DIV', 'ARTICLE', 'SECTION', 'UL', 'OL', 'BLOCKQUOTE', 'TD', 'TH',
+    ]);
+
+    const HEADER_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+
+    // Patterns that identify junk paragraphs (image credits, read-time, bylines…)
+    const JUNK_RE = [
+      /^\d+\s*min(ute)?\s*(read|de lectura)/i,
+      /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d/i,
+      /^(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+\d/i,
+      /^press enter or (space|click)/i,
+      /^imagen generada/i,
+      /^image generated/i,
+      /^(photo|foto)\s*(by|por|credit|:)/i,
+      /^(fuente|source|credit|crédito)\s*:/i,
+      /^--+$/,
+      /^·+$/,
+    ];
+
+    function isNoise(node: any): boolean {
+      if (!node.getAttribute) return false;
+      // Medium metadata elements only — matched by specific testId values
+      const testId = node.getAttribute('data-testid') || '';
+      if (testId && ['authorName','storyReadTime','storyPublishDate','publicationName',
+                     'post-footer','overflow-button'].some(id => testId.includes(id))) return true;
+      // NOTE: deliberately NOT checking aria-hidden — some CMSes (HubSpot) set
+      // aria-hidden="true" on the main article container, which would skip all content.
+      return false;
+    }
+
+    function flushParagraph(tagName: string) {
+      if (currentParagraph.length === 0) return;
+      const joined = currentParagraph.join(' ').replace(/\s+/g, ' ').trim();
+      currentParagraph = [];
+      if (!joined) return;
+      // Keep headers even if short; body paragraphs need ≥ 15 chars
+      const isHeader = HEADER_TAGS.has(tagName);
+      if (!isHeader && joined.length < 15) return;
+      if (JUNK_RE.some(rx => rx.test(joined))) return;
+      paragraphs.push(joined);
+    }
+
     function traverse(node: any) {
       if (!node) return;
-      
-      const nodeType = node.nodeType;
-      
-      // TEXT_NODE
-      if (nodeType === 3) {
-        // node.textContent in linkedom for text nodes is node.nodeValue
-        const text = (node.nodeValue || node.textContent || '').trim();
-        if (text) {
-          currentParagraph.push(text);
-        }
+
+      // TEXT_NODE (nodeType 3)
+      if (node.nodeType === 3) {
+        const text = (node.nodeValue || '').trim();
+        if (text) currentParagraph.push(text);
         return;
       }
 
-      // ELEMENT_NODE
-      if (nodeType === 1) {
-        const tagName = (node.tagName || '').toUpperCase();
-        
-        // Skip figures, captions, images, superscripts (like "Imagen generada con IA"), scripts
-        if (['FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB', 'STYLE', 'SCRIPT', 'LABEL', 'CITE', 'NOSCRIPT'].includes(tagName)) {
-          return;
-        }
+      // ELEMENT_NODE (nodeType 1)
+      if (node.nodeType !== 1) return;
 
-        // Convert <br> tags to newlines
-        if (tagName === 'BR') {
-          currentParagraph.push('\n');
-          return;
-        }
+      const tagName = (node.tagName || '').toUpperCase();
 
-        const isBlock = ['P', 'H1', 'H2', 'H3', 'H4', 'LI', 'DIV', 'ARTICLE', 'SECTION', 'UL', 'OL', 'BLOCKQUOTE'].includes(tagName);
+      if (SKIP_TAGS.has(tagName)) return;
+      if (isNoise(node)) return;
 
-        // Flush before traversing children if we hit a block boundary
-        if (isBlock && currentParagraph.length > 0) {
-          let joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
-          joined = joined.replace(/Imagen generada con IA/gi, '').trim();
-          if (joined.length > 20 || ['H1','H2','H3','H4'].includes(tagName)) {
-            paragraphs.push(joined);
-          }
-          currentParagraph = [];
-        }
-        
-        for (let i = 0; i < node.childNodes.length; i++) {
-          traverse(node.childNodes[i]);
-        }
-
-        // Flush after traversing children if we are at a block boundary
-        if (isBlock && currentParagraph.length > 0) {
-          let joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
-          joined = joined.replace(/Imagen generada con IA/gi, '').trim();
-          if (joined.length > 20 || ['H1','H2','H3','H4'].includes(tagName)) {
-            paragraphs.push(joined);
-          }
-          currentParagraph = [];
-        }
+      // <br> is a hard paragraph break (common in HubSpot / CMS editors)
+      if (tagName === 'BR') {
+        flushParagraph('BR');
+        return;
       }
+
+      const isBlock = BLOCK_TAGS.has(tagName);
+
+      if (isBlock) flushParagraph(tagName);
+
+      for (let i = 0; i < node.childNodes.length; i++) {
+        traverse(node.childNodes[i]);
+      }
+
+      if (isBlock) flushParagraph(tagName);
     }
 
     traverse(doc);
-    
-    // Final flush
-    if (currentParagraph.length > 0) {
-      let joined = currentParagraph.join(' ').replace(/ \n /g, '\n').replace(/\n /g, '\n').trim();
-      joined = joined.replace(/Imagen generada con IA/gi, '').trim();
-      if (joined.length > 20) {
-        paragraphs.push(joined);
-      }
-    }
+    flushParagraph('DIV'); // final flush
 
     // Fallback if DOM traversal yielded nothing
     if (paragraphs.length === 0 && article.textContent) {
       const rawLines = article.textContent
         .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 20);
+        .map((line: string) => line.trim())
+        .filter((line: string) => line.length > 15 && !JUNK_RE.some(rx => rx.test(line)));
       paragraphs.push(...rawLines);
     }
 
     if (paragraphs.length === 0) {
-      return NextResponse.json({ error: 'No se encontraron párrafos de texto legibles.' }, { status: 422 });
+      return NextResponse.json({
+        error: 'No se encontraron párrafos de texto legibles.',
+        _debug: {
+          readabilityContentLength: article.content?.length ?? 0,
+          readabilityTextSnippet: article.textContent?.slice(0, 500) ?? '',
+        }
+      }, { status: 422 });
     }
 
     // Clean up title, author and excerpt
