@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 
 export default function GlobalPlayer() {
@@ -19,6 +19,25 @@ export default function GlobalPlayer() {
     audioEngine,
     handleEngineChange
   } = useAudioPlayer();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        handlePlayPause();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleSkipForward();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleSkipBackward();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handlePlayPause, handleSkipForward, handleSkipBackward]);
 
   if (!playingArticle) return null;
 
