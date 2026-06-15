@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
+import BottomPlayer from "@/components/BottomPlayer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -41,23 +43,26 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <header className="main-header">
-          <div className="container header-content">
-            <a href="/" className="logo">
-              <div className="logo-icon">
-                <i className="fa-solid fa-headphones"></i>
+        <AudioPlayerProvider>
+          <header className="main-header">
+            <div className="container header-content">
+              <a href="/" className="logo">
+                <div className="logo-icon">
+                  <i className="fa-solid fa-headphones"></i>
+                </div>
+                <span>
+                  Audio<span className="gradient-text">blog</span>
+                </span>
+              </a>
+              <div className="header-actions">
+                <ThemeSwitcher />
               </div>
-              <span>
-                Audio<span className="gradient-text">blog</span>
-              </span>
-            </a>
-            <div className="header-actions">
-              <ThemeSwitcher />
             </div>
-          </div>
-        </header>
+          </header>
 
-        {children}
+          {children}
+          <BottomPlayer />
+        </AudioPlayerProvider>
       </body>
     </html>
   );

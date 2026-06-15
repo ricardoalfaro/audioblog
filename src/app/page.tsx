@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Article } from '@/types';
 import { defaultArticles } from '@/data/defaultArticles';
+import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -12,7 +13,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<'url' | 'manual'>('url');
-  
+
   // Scraper form state
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [scrapeCategory, setScrapeCategory] = useState('auto');
@@ -28,74 +29,33 @@ export default function Home() {
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState('');
 
-  // --- Home Page Audio Player State ---
-  const [playingArticle, setPlayingArticle] = useState<Article | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [activeParagraphIndex, setActiveParagraphIndex] = useState(-1);
-  const [currentCharIndex, setCurrentCharIndex] = useState(-1);
-  const [speechRate, setSpeechRate] = useState(1);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoiceName, setSelectedVoiceName] = useState('');
+  const { playingArticle, isPlaying, isPaused, playArticle, handlePlayPause, formatTime } = useAudioPlayer();
 
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  // Load articles & initial configs
   useEffect(() => {
     fetchArticles();
     const savedView = localStorage.getItem('viewMode') as 'grid' | 'list' | null;
-    if (savedView) {
-      setViewMode(savedView);
-    }
+    if (savedView) setViewMode(savedView);
   }, []);
-
-  // Load voices & clean up audio on unmount/navigation
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const loadVoices = () => {
-      const allVoices = window.speechSynthesis.getVoices();
-      setVoices(allVoices);
-      if (allVoices.length > 0 && !selectedVoiceName) {
-        const defaultVoice =
-          allVoices.find((v) => v.default) ||
-          allVoices.find((v) => v.lang.startsWith('es')) ||
-          allVoices.find((v) => v.lang.startsWith('en')) ||
-          allVoices[0];
-        setSelectedVoiceName(defaultVoice.name);
-      }
-    };
-
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, [selectedVoiceName]);
 
   const pruneArticles = (loadedArticles: Article[]): Article[] => {
     const defaultIds = new Set(defaultArticles.map(a => a.id));
     const customArticles = loadedArticles.filter(a => !defaultIds.has(a.id));
     const activeDefaultArticles = loadedArticles.filter(a => defaultIds.has(a.id));
 
-    // Filter out custom articles older than 10 days
     const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    
+
     let prunedCustom = customArticles.filter(a => {
-      if (!a.addedAt) return true; // keep if timestamp is missing
-      const addedTime = new Date(a.addedAt).getTime();
-      return (now - addedTime) < tenDaysMs;
+      if (!a.addedAt) return true;
+      return (now - new Date(a.addedAt).getTime()) < tenDaysMs;
     });
 
-    // Limit to maximum 15 custom articles (keep the newest ones)
     const MAX_CUSTOM_ARTICLES = 15;
     if (prunedCustom.length > MAX_CUSTOM_ARTICLES) {
       prunedCustom.sort((a, b) => {
-        const timeA = a.addedAt ? new Date(a.addedAt).getTime() : 0;
-        const timeB = b.addedAt ? new Date(b.addedAt).getTime() : 0;
-        return timeB - timeA;
+        const tA = a.addedAt ? new Date(a.addedAt).getTime() : 0;
+        const tB = b.addedAt ? new Date(b.addedAt).getTime() : 0;
+        return tB - tA;
       });
       prunedCustom = prunedCustom.slice(0, MAX_CUSTOM_ARTICLES);
     }
@@ -110,9 +70,7 @@ export default function Home() {
       if (localData) {
         const parsed = JSON.parse(localData);
         const pruned = pruneArticles(parsed);
-        if (parsed.length !== pruned.length) {
-          localStorage.setItem('articles', JSON.stringify(pruned));
-        }
+        if (parsed.length !== pruned.length) localStorage.setItem('articles', JSON.stringify(pruned));
         setArticles(pruned);
       } else {
         localStorage.setItem('articles', JSON.stringify(defaultArticles));
@@ -125,201 +83,17 @@ export default function Home() {
     }
   };
 
-  // --- Audio Player Logic ---
-  const speakParagraph = (index: number, targetArticle: Article) => {
-    if (typeof window === 'undefined') return;
-    
-    try {
-      window.speechSynthesis.cancel();
-    } catch (cancelErr) {
-      console.warn('speechSynthesis.cancel error:', cancelErr);
-    }
-
-    if (index < 0 || index >= targetArticle.paragraphs.length) {
-      setIsPlaying(false);
-      setIsPaused(false);
-      setActiveParagraphIndex(-1);
-      setCurrentCharIndex(-1);
-      setPlayingArticle(null);
-      return;
-    }
-
-    setActiveParagraphIndex(index);
-    setCurrentCharIndex(0);
-
-    const text = targetArticle.paragraphs[index];
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Safeguard voice assignment (WebKit/Safari strict voice checking)
-    try {
-      const voice = voices.find((v) => v.name === selectedVoiceName);
-      if (voice) utterance.voice = voice;
-    } catch (voiceErr) {
-      console.warn('Could not set custom voice, falling back to system default:', voiceErr);
-    }
-    
-    utterance.rate = speechRate;
-
-    utterance.onboundary = (event) => {
-      if (event.name === 'word') {
-        setCurrentCharIndex(event.charIndex);
-      }
-    };
-
-    utterance.onend = () => {
-      if (index + 1 < targetArticle.paragraphs.length) {
-        speakParagraph(index + 1, targetArticle);
-      } else {
-        setIsPlaying(false);
-        setIsPaused(false);
-        setActiveParagraphIndex(-1);
-        setCurrentCharIndex(-1);
-        setPlayingArticle(null);
-      }
-    };
-
-    utterance.onerror = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-    };
-
-    utteranceRef.current = utterance;
-    
-    // Safeguard speak call
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch (speakErr) {
-      console.error('speechSynthesis.speak error:', speakErr);
-      setIsPlaying(false);
-      setIsPaused(false);
-    }
-  };
-
-  const handlePlayPause = () => {
-    if (typeof window === 'undefined' || !playingArticle) return;
-
-    if (isPlaying) {
-      if (isPaused) {
-        window.speechSynthesis.resume();
-        setIsPaused(false);
-      } else {
-        window.speechSynthesis.pause();
-        setIsPaused(true);
-      }
-    } else {
-      setIsPlaying(true);
-      setIsPaused(false);
-      const startIndex = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
-      speakParagraph(startIndex, playingArticle);
-    }
-  };
-
-  const handleStop = () => {
-    if (typeof window === 'undefined') return;
-    window.speechSynthesis.cancel();
-    setIsPlaying(false);
-    setIsPaused(false);
-    setActiveParagraphIndex(-1);
-    setCurrentCharIndex(-1);
-    setPlayingArticle(null);
-  };
-
-  const handleSkipForward = () => {
-    if (!playingArticle) return;
-    const nextIndex = activeParagraphIndex + 1;
-    if (nextIndex < playingArticle.paragraphs.length) {
-      speakParagraph(nextIndex, playingArticle);
-    }
-  };
-
-  const handleSkipBackward = () => {
-    if (!playingArticle) return;
-    const prevIndex = activeParagraphIndex - 1;
-    if (prevIndex >= 0) {
-      speakParagraph(prevIndex, playingArticle);
-    } else if (activeParagraphIndex === 0) {
-      speakParagraph(0, playingArticle);
-    }
-  };
-
   const handlePlayDirectly = (e: React.MouseEvent, article: Article) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (playingArticle?.id === article.id) {
-      // Toggle play/pause for same article
       handlePlayPause();
     } else {
-      // Start playing new article
-      setPlayingArticle(article);
-      setIsPlaying(true);
-      setIsPaused(false);
-      speakParagraph(0, article);
+      playArticle(article, 0);
     }
   };
 
-  // Change voice in real time
-  const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const voiceName = e.target.value;
-    setSelectedVoiceName(voiceName);
-    if (playingArticle && isPlaying && !isPaused) {
-      speakParagraph(activeParagraphIndex, playingArticle);
-    }
-  };
-
-  // Change rate in real time
-  const toggleSpeed = () => {
-    const speeds = [1, 1.25, 1.5, 1.75, 2, 0.75];
-    const currentIndex = speeds.indexOf(speechRate);
-    const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
-    setSpeechRate(nextSpeed);
-    
-    if (playingArticle && isPlaying && !isPaused) {
-      speakParagraph(activeParagraphIndex, playingArticle);
-    }
-  };
-
-  const getRemainingTime = () => {
-    if (!playingArticle) return 0;
-    
-    let remainingWordCount = 0;
-    for (let i = activeParagraphIndex + 1; i < playingArticle.paragraphs.length; i++) {
-      remainingWordCount += playingArticle.paragraphs[i].split(/\s+/).filter(Boolean).length;
-    }
-    
-    if (activeParagraphIndex >= 0 && activeParagraphIndex < playingArticle.paragraphs.length) {
-      const activeText = playingArticle.paragraphs[activeParagraphIndex];
-      const remainingText = activeText.slice(currentCharIndex);
-      remainingWordCount += remainingText.split(/\s+/).filter(Boolean).length;
-    } else {
-      remainingWordCount = playingArticle.paragraphs.join(' ').split(/\s+/).filter(Boolean).length;
-    }
-    
-    const wpm = 160 * speechRate;
-    return Math.round((remainingWordCount / wpm) * 60);
-  };
-
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  const getProgressPercentage = () => {
-    if (!playingArticle || activeParagraphIndex < 0) return 0;
-    
-    const totalLength = playingArticle.paragraphs.join('').length;
-    let readLength = 0;
-    
-    for (let i = 0; i < activeParagraphIndex; i++) {
-      readLength += playingArticle.paragraphs[i].length;
-    }
-    
-    readLength += Math.max(0, currentCharIndex);
-    return Math.min(100, (readLength / totalLength) * 100);
-  };
-
-  // --- Scraper / Import form submissions ---
   const handleScrapeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!scrapeUrl) return;
@@ -347,13 +121,10 @@ export default function Home() {
 
       const scrapeData = await scrapeRes.json();
 
-      if (scrapeCategory !== 'auto') {
-        scrapeData.category = scrapeCategory;
-      }
+      if (scrapeCategory !== 'auto') scrapeData.category = scrapeCategory;
 
-      // Calculate reading duration (average speech rate is ~150-180 words per minute)
       const wordCount = scrapeData.paragraphs?.join(' ').split(/\s+/).filter(Boolean).length || 0;
-      const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60)); // at least 30s
+      const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60));
 
       const newArticle: Article = {
         id: Date.now().toString(),
@@ -367,11 +138,8 @@ export default function Home() {
         paragraphs: scrapeData.paragraphs || [],
       };
 
-      // Check if article with same URL already exists
       const urlExists = articles.some(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
-      if (urlExists) {
-        throw new Error('Este artículo ya ha sido importado.');
-      }
+      if (urlExists) throw new Error('Este artículo ya ha sido importado.');
 
       const updatedArticles = pruneArticles([newArticle, ...articles]);
       setArticles(updatedArticles);
@@ -401,12 +169,10 @@ export default function Home() {
     try {
       const paragraphs = manualContent
         .split(/\n\s*\n/)
-        .map((p) => p.trim())
+        .map(p => p.trim())
         .filter(Boolean);
 
-      if (paragraphs.length === 0) {
-        throw new Error('El contenido debe tener al menos un párrafo.');
-      }
+      if (paragraphs.length === 0) throw new Error('El contenido debe tener al menos un párrafo.');
 
       const wordCount = paragraphs.join(' ').split(/\s+/).filter(Boolean).length || 0;
       const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60));
@@ -446,12 +212,7 @@ export default function Home() {
     const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar "${title}" de tu historial?`);
     if (!confirmDelete) return;
 
-    // If the deleted article is currently playing, stop it
-    if (playingArticle?.id === id) {
-      handleStop();
-    }
-
-    const updatedArticles = articles.filter((a) => a.id !== id);
+    const updatedArticles = articles.filter(a => a.id !== id);
     setArticles(updatedArticles);
     localStorage.setItem('articles', JSON.stringify(updatedArticles));
   };
@@ -461,8 +222,7 @@ export default function Home() {
     localStorage.setItem('viewMode', mode);
   };
 
-  // Filter and search articles
-  const filteredArticles = articles.filter((article) => {
+  const filteredArticles = articles.filter(article => {
     const matchesCategory = selectedCategory === 'Todos' || article.category === selectedCategory;
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -471,21 +231,7 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
-  // Unique categories list
-  const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
-
-  const sortedVoices = [...voices].sort((a, b) => {
-    const aEs = a.lang.startsWith('es');
-    const bEs = b.lang.startsWith('es');
-    const aEn = a.lang.startsWith('en');
-    const bEn = b.lang.startsWith('en');
-
-    if (aEs && !bEs) return -1;
-    if (!aEs && bEs) return 1;
-    if (aEn && !bEn) return -1;
-    if (!aEn && bEn) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const categories = ['Todos', ...Array.from(new Set(articles.map(a => a.category)))];
 
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -500,7 +246,7 @@ export default function Home() {
       {/* Filters & View Toggles */}
       <section className="filter-bar">
         <div className="categories">
-          {categories.map((category) => (
+          {categories.map(category => (
             <button
               key={category}
               className={`category-tab ${selectedCategory === category ? 'active' : ''}`}
@@ -519,7 +265,7 @@ export default function Home() {
               className="search-input"
               placeholder="Buscar documentos..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
 
@@ -542,7 +288,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Grid or List View Content */}
+      {/* Content */}
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', flex: 1 }}>
           <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }}></div>
@@ -550,20 +296,18 @@ export default function Home() {
       ) : filteredArticles.length > 0 ? (
         viewMode === 'grid' ? (
           <section className="articles-grid">
-            {filteredArticles.map((article) => {
+            {filteredArticles.map(article => {
               const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
               return (
                 <a href={`/articles/${article.id}`} key={article.id} className="article-card">
-                  {/* Delete Button */}
                   <button
                     className="trash-btn"
-                    onClick={(e) => handleDeleteArticle(e, article.id, article.title)}
+                    onClick={e => handleDeleteArticle(e, article.id, article.title)}
                     title="Eliminar artículo"
                   >
                     <i className="fa-solid fa-trash-can"></i>
                   </button>
 
-                  {/* Document Thumbnail with Play Overlay */}
                   <div className="card-thumbnail">
                     <div className="doc-sheet-preview">
                       <div className="doc-sheet-lines">
@@ -576,21 +320,17 @@ export default function Home() {
                       <i className="fa-solid fa-file-audio doc-sheet-icon"></i>
                     </div>
 
-                    {/* Direct Play Action */}
                     <button
                       className={`card-play-btn ${playingArticle?.id === article.id ? 'is-playing' : ''}`}
-                      onClick={(e) => handlePlayDirectly(e, article)}
+                      onClick={e => handlePlayDirectly(e, article)}
                       title={isCurrentPlaying ? 'Pausar' : 'Reproducir ahora'}
                     >
-                      {isCurrentPlaying ? (
-                        <i className="fa-solid fa-pause"></i>
-                      ) : (
-                        <i className="fa-solid fa-play"></i>
-                      )}
+                      {isCurrentPlaying
+                        ? <i className="fa-solid fa-pause"></i>
+                        : <i className="fa-solid fa-play"></i>}
                     </button>
                   </div>
 
-                  {/* Card Info Details */}
                   <div className="card-details">
                     <h3 className="card-title" title={article.title}>{article.title}</h3>
                     <div className="card-meta-row">
@@ -613,7 +353,6 @@ export default function Home() {
             })}
           </section>
         ) : (
-          /* List View */
           <section className="articles-list-container">
             <div className="list-header">
               <span>Nombre</span>
@@ -622,47 +361,41 @@ export default function Home() {
               <span>Duración</span>
               <span style={{ textAlign: 'right' }}>Acciones</span>
             </div>
-            
+
             <div className="list-rows">
-              {filteredArticles.map((article) => {
+              {filteredArticles.map(article => {
                 const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
                 return (
-                  <a
-                    href={`/articles/${article.id}`}
-                    key={article.id}
-                    className="list-row-item"
-                  >
+                  <a href={`/articles/${article.id}`} key={article.id} className="list-row-item">
                     <div className="list-col-name">
                       <i className="fa-solid fa-file-audio doc-icon"></i>
                       <span className="card-title" title={article.title}>{article.title}</span>
                     </div>
-                    
+
                     <span className="list-col-author" title={article.author}>{article.author}</span>
-                    
+
                     <div>
                       <span className="card-category-badge">{article.category}</span>
                     </div>
-                    
+
                     <span className="list-col-duration">
                       <i className="fa-solid fa-clock" style={{ marginRight: '4px' }}></i>
                       {formatTime(article.duration)}
                     </span>
-                    
-                    <div className="list-col-actions" onClick={(e) => e.stopPropagation()}>
+
+                    <div className="list-col-actions" onClick={e => e.stopPropagation()}>
                       <button
                         className="list-action-btn listen"
-                        onClick={(e) => handlePlayDirectly(e, article)}
+                        onClick={e => handlePlayDirectly(e, article)}
                         title={isCurrentPlaying ? 'Pausar' : 'Escuchar ahora'}
                       >
-                        {isCurrentPlaying ? (
-                          <i className="fa-solid fa-pause"></i>
-                        ) : (
-                          <i className="fa-solid fa-play"></i>
-                        )}
+                        {isCurrentPlaying
+                          ? <i className="fa-solid fa-pause"></i>
+                          : <i className="fa-solid fa-play"></i>}
                       </button>
                       <button
                         className="list-action-btn delete"
-                        onClick={(e) => handleDeleteArticle(e, article.id, article.title)}
+                        onClick={e => handleDeleteArticle(e, article.id, article.title)}
                         title="Eliminar artículo"
                       >
                         <i className="fa-solid fa-trash-can"></i>
@@ -686,116 +419,6 @@ export default function Home() {
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             Importar ahora
           </button>
-        </div>
-      )}
-
-      {/* Floating Bottom Audio Player (only visible when playing an article on the home page) */}
-      {playingArticle && (
-        <div className="bottom-player-container" style={{ animation: 'slideUp 0.3s ease-out' }}>
-          <div className="bottom-player glass">
-            {/* Progress bar */}
-            <div className="player-progress-container">
-              <span className="player-time">
-                {activeParagraphIndex >= 0 ? formatTime(Math.round(((playingArticle.duration - getRemainingTime()) / playingArticle.duration) * playingArticle.duration)) : '0:00'}
-              </span>
-              
-              <div 
-                className="player-slider-wrapper"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const pct = clickX / rect.width;
-                  const targetIdx = Math.min(
-                    playingArticle.paragraphs.length - 1,
-                    Math.floor(pct * playingArticle.paragraphs.length)
-                  );
-                  speakParagraph(targetIdx, playingArticle);
-                }}
-              >
-                <div 
-                  className="player-slider-fill" 
-                  style={{ width: `${getProgressPercentage()}%` }}
-                ></div>
-                <div 
-                  className="player-slider-thumb"
-                  style={{ left: `${getProgressPercentage()}%` }}
-                ></div>
-              </div>
-
-              <span className="player-time">
-                {formatTime(playingArticle.duration)}
-              </span>
-            </div>
-
-            {/* Controls and settings */}
-            <div className="player-main-controls">
-              <div className="player-info">
-                <div className="player-info-text">
-                  <div className="player-info-title">{playingArticle.title}</div>
-                  <div className="player-info-author">
-                    Párrafo {activeParagraphIndex + 1} de {playingArticle.paragraphs.length} • Por {playingArticle.author}
-                  </div>
-                </div>
-              </div>
-
-              <div className="player-core">
-                <button className="player-btn" onClick={handleSkipBackward} title="Párrafo anterior">
-                  <i className="fa-solid fa-backward-step" style={{ fontSize: '18px' }}></i>
-                </button>
-                
-                <button 
-                  className="player-btn player-btn-play" 
-                  onClick={handlePlayPause}
-                  title={isPlaying && !isPaused ? 'Pausar' : 'Escuchar'}
-                >
-                  {isPlaying && !isPaused ? (
-                    <i className="fa-solid fa-pause" style={{ fontSize: '18px' }}></i>
-                  ) : (
-                    <i className="fa-solid fa-play" style={{ fontSize: '18px', marginLeft: '2px' }}></i>
-                  )}
-                </button>
-                
-                <button className="player-btn" onClick={handleSkipForward} title="Siguiente párrafo">
-                  <i className="fa-solid fa-forward-step" style={{ fontSize: '18px' }}></i>
-                </button>
-
-                <button className="player-btn" onClick={handleStop} title="Detener" style={{ marginLeft: '8px' }}>
-                  <i className="fa-solid fa-square" style={{ fontSize: '18px' }}></i>
-                </button>
-              </div>
-
-              <div className="player-settings">
-                {/* Visualizer animation */}
-                <div className="player-visualizer">
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`visualizer-bar ${isPlaying && !isPaused ? 'playing' : ''}`}
-                    />
-                  ))}
-                </div>
-
-                {/* Voice select */}
-                <select
-                  className="player-select"
-                  value={selectedVoiceName}
-                  onChange={handleVoiceChange}
-                  title="Seleccionar voz"
-                >
-                  {sortedVoices.map((voice) => (
-                    <option key={voice.name} value={voice.name}>
-                      {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-
-                {/* Speed toggle */}
-                <div className="player-speed" onClick={toggleSpeed} title="Velocidad de reproducción">
-                  {speechRate}x
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -826,22 +449,20 @@ export default function Home() {
             </div>
 
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px', background: 'rgba(0,0,0,0.03)', padding: '8px 12px', borderRadius: '6px', borderLeft: '3px solid var(--color-primary)', lineHeight: '1.4' }}>
-              💡 <strong>Límites y Privacidad:</strong> Los artículos se guardan de forma privada en el almacenamiento local de tu navegador (`localStorage`). Para optimizar el espacio, se conservan un máximo de <strong>15 artículos importados</strong> y cada uno se elimina automáticamente <strong>10 días</strong> después de haber sido creado.
+              💡 <strong>Límites y Privacidad:</strong> Los artículos se guardan de forma privada en el almacenamiento local de tu navegador. Se conservan un máximo de <strong>15 artículos importados</strong> y cada uno se elimina automáticamente <strong>10 días</strong> después de haber sido creado.
             </div>
 
             {modalTab === 'url' ? (
               <form onSubmit={handleScrapeSubmit}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="url-input">
-                    Enlace del Artículo
-                  </label>
+                  <label className="form-label" htmlFor="url-input">Enlace del Artículo</label>
                   <input
                     id="url-input"
                     type="url"
                     className="form-input"
                     placeholder="https://ejemplo.com/articulo-interesante"
                     value={scrapeUrl}
-                    onChange={(e) => setScrapeUrl(e.target.value)}
+                    onChange={e => setScrapeUrl(e.target.value)}
                     required
                     disabled={isScraping}
                   />
@@ -849,14 +470,12 @@ export default function Home() {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label" htmlFor="category-select-scrape">
-                      Categoría (Opcional)
-                    </label>
+                    <label className="form-label" htmlFor="category-select-scrape">Categoría (Opcional)</label>
                     <select
                       id="category-select-scrape"
                       className="form-input"
                       value={scrapeCategory}
-                      onChange={(e) => setScrapeCategory(e.target.value)}
+                      onChange={e => setScrapeCategory(e.target.value)}
                       disabled={isScraping}
                     >
                       <option value="auto">✨ Asignar automáticamente</option>
@@ -871,14 +490,12 @@ export default function Home() {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label" htmlFor="translate-select">
-                      Traducir a (Opcional)
-                    </label>
+                    <label className="form-label" htmlFor="translate-select">Traducir a (Opcional)</label>
                     <select
                       id="translate-select"
                       className="form-input"
                       value={translateTo}
-                      onChange={(e) => setTranslateTo(e.target.value)}
+                      onChange={e => setTranslateTo(e.target.value)}
                       disabled={isScraping}
                     >
                       <option value="original">🌐 Mantener idioma original</option>
@@ -899,39 +516,27 @@ export default function Home() {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setIsModalOpen(false)}
-                    disabled={isScraping}
-                  >
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} disabled={isScraping}>
                     Cancelar
                   </button>
                   <button type="submit" className="btn btn-primary" disabled={isScraping || !scrapeUrl}>
                     {isScraping ? (
-                      <>
-                        <div className="spinner" style={{ marginRight: '8px' }}></div>
-                        Extrayendo y Traduciendo...
-                      </>
-                    ) : (
-                      'Extraer y Guardar'
-                    )}
+                      <><div className="spinner" style={{ marginRight: '8px' }}></div>Extrayendo y Traduciendo...</>
+                    ) : 'Extraer y Guardar'}
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleManualSubmit}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="title-input">
-                    Título del Artículo
-                  </label>
+                  <label className="form-label" htmlFor="title-input">Título del Artículo</label>
                   <input
                     id="title-input"
                     type="text"
                     className="form-input"
                     placeholder="Título del artículo"
                     value={manualTitle}
-                    onChange={(e) => setManualTitle(e.target.value)}
+                    onChange={e => setManualTitle(e.target.value)}
                     required
                     disabled={isSavingManual}
                   />
@@ -939,29 +544,25 @@ export default function Home() {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label" htmlFor="author-input">
-                      Autor
-                    </label>
+                    <label className="form-label" htmlFor="author-input">Autor</label>
                     <input
                       id="author-input"
                       type="text"
                       className="form-input"
                       placeholder="Nombre del autor"
                       value={manualAuthor}
-                      onChange={(e) => setManualAuthor(e.target.value)}
+                      onChange={e => setManualAuthor(e.target.value)}
                       disabled={isSavingManual}
                     />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label" htmlFor="category-select">
-                      Categoría
-                    </label>
+                    <label className="form-label" htmlFor="category-select">Categoría</label>
                     <select
                       id="category-select"
                       className="form-input"
                       value={manualCategory}
-                      onChange={(e) => setManualCategory(e.target.value)}
+                      onChange={e => setManualCategory(e.target.value)}
                       disabled={isSavingManual}
                     >
                       <option value="Tecnología">Tecnología</option>
@@ -976,16 +577,14 @@ export default function Home() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="content-textarea">
-                    Contenido del Artículo
-                  </label>
+                  <label className="form-label" htmlFor="content-textarea">Contenido del Artículo</label>
                   <textarea
                     id="content-textarea"
                     className="form-input"
                     rows={5}
                     placeholder="Escribe o pega el contenido aquí. Usa dos saltos de línea para separar párrafos."
                     value={manualContent}
-                    onChange={(e) => setManualContent(e.target.value)}
+                    onChange={e => setManualContent(e.target.value)}
                     required
                     disabled={isSavingManual}
                     style={{ resize: 'vertical', fontFamily: 'var(--font-serif)' }}
@@ -999,27 +598,13 @@ export default function Home() {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setIsModalOpen(false)}
-                    disabled={isSavingManual}
-                  >
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)} disabled={isSavingManual}>
                     Cancelar
                   </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isSavingManual || !manualTitle || !manualContent}
-                  >
+                  <button type="submit" className="btn btn-primary" disabled={isSavingManual || !manualTitle || !manualContent}>
                     {isSavingManual ? (
-                      <>
-                        <div className="spinner" style={{ marginRight: '8px' }}></div>
-                        Guardando...
-                      </>
-                    ) : (
-                      'Guardar Artículo'
-                    )}
+                      <><div className="spinner" style={{ marginRight: '8px' }}></div>Guardando...</>
+                    ) : 'Guardar Artículo'}
                   </button>
                 </div>
               </form>
