@@ -23,6 +23,7 @@ interface AudioPlayerContextType {
   voices: SpeechSynthesisVoice[];
   selectedVoiceName: string;
   selectedEdgeVoice: string;
+  isLoading: boolean;
   
   playArticle: (article: Article, forceParagraphIndex?: number) => void;
   handlePlayPause: () => void;
@@ -46,6 +47,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [isPaused, setIsPaused] = useState(false);
   const [activeParagraphIndex, setActiveParagraphIndex] = useState(-1);
   const [currentCharIndex, setCurrentCharIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs to fix stale closures in audio events
+  const isPausedRef = useRef(false);
+  const playingArticleIdRef = useRef<string | null>(null);
   const [speechRate, setSpeechRate] = useState(1);
   
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
@@ -118,6 +124,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
 
     if (index < 0 || index >= article.paragraphs.length) {
+      if (index >= article.paragraphs.length) {
+        updateArticleProgress(article, index); // Guardar progreso 100%
+      }
       handleStop();
       return;
     }
@@ -145,10 +154,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     utterance.onstart = () => {
       setIsPlaying(true);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
     utterance.onend = () => {
-      if (!isPaused && playingArticle?.id === article.id) {
+      if (!isPausedRef.current && playingArticleIdRef.current === article.id) {
         speakParagraph(index + 1, article);
       }
     };
@@ -156,12 +166,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     utterance.onerror = () => {
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
     utteranceRef.current = utterance;
     
     try {
       window.speechSynthesis.speak(utterance);
+      setIsLoading(true);
     } catch (speakErr) {
       console.error('speechSynthesis.speak error:', speakErr);
       setIsPlaying(false);
@@ -175,6 +187,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     try { window.speechSynthesis.cancel(); } catch (e) {}
 
     if (index < 0 || index >= article.paragraphs.length) {
+      if (index >= article.paragraphs.length) {
+        updateArticleProgress(article, index); // Guardar progreso 100%
+      }
       handleStop();
       return;
     }
@@ -192,10 +207,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     audioRef.current.onplay = () => {
       setIsPlaying(true);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
     audioRef.current.onended = () => {
-      if (!isPaused && playingArticle?.id === article.id) {
+      if (!isPausedRef.current && playingArticleIdRef.current === article.id) {
         playEdgeParagraph(index + 1, article);
       }
     };
@@ -204,12 +220,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       console.error("Edge TTS audio error");
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
     };
 
+    setIsLoading(true);
     audioRef.current.play().catch(e => {
       console.error("Audio play failed:", e);
       setIsPlaying(false);
       setIsPaused(false);
+      setIsLoading(false);
     });
   };
 
@@ -224,6 +243,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const playArticle = (article: Article, forceParagraphIndex?: number) => {
     setPlayingArticle(article);
+    playingArticleIdRef.current = article.id;
+    isPausedRef.current = false;
+    
     const startIdx = forceParagraphIndex !== undefined ? forceParagraphIndex : (article.progress || 0);
     if (audioEngine === 'edge') {
       playEdgeParagraph(startIdx, article);
@@ -239,12 +261,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (isPlaying && !isPaused) {
         audioRef.current.pause();
         setIsPaused(true);
+        isPausedRef.current = true;
       } else {
         if (!audioRef.current.src || activeParagraphIndex === -1) {
           playEdgeParagraph(playingArticle.progress || 0, playingArticle);
         } else {
           audioRef.current.play();
           setIsPaused(false);
+          isPausedRef.current = false;
           setIsPlaying(true);
         }
       }
@@ -253,12 +277,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         if (isPlaying && !isPaused) {
           window.speechSynthesis.pause();
           setIsPaused(true);
+          isPausedRef.current = true;
         } else {
           if (activeParagraphIndex === -1) {
             speakParagraph(playingArticle.progress || 0, playingArticle);
           } else {
             window.speechSynthesis.resume();
             setIsPaused(false);
+            isPausedRef.current = false;
             setIsPlaying(true);
           }
         }
@@ -276,9 +302,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     setIsPlaying(false);
     setIsPaused(false);
+    isPausedRef.current = false;
     setActiveParagraphIndex(-1);
     setCurrentCharIndex(-1);
     setPlayingArticle(null);
+    playingArticleIdRef.current = null;
   };
 
   const handleSkipForward = () => {
@@ -346,6 +374,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       activeParagraphIndex,
       currentCharIndex,
       speechRate,
+      isLoading,
       audioEngine,
       voices,
       selectedVoiceName,

@@ -14,6 +14,7 @@ export default function GlobalPlayer() {
     handleSkipBackward,
     getProgressPercentage,
     speechRate,
+    isLoading,
     toggleSpeed,
     audioEngine,
     handleEngineChange
@@ -64,8 +65,12 @@ export default function GlobalPlayer() {
             <button className="player-btn" onClick={handleSkipBackward}>
               <i className="fa-solid fa-backward-step"></i>
             </button>
-            <button className="player-btn player-btn-play" onClick={handlePlayPause}>
-              <i className={`fa-solid ${isPlaying && !isPaused ? 'fa-pause' : 'fa-play'}`}></i>
+            <button className="player-btn player-btn-play" onClick={handlePlayPause} disabled={isLoading}>
+              {isLoading ? (
+                <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '3px' }}></div>
+              ) : (
+                <i className={`fa-solid ${isPlaying && !isPaused ? 'fa-pause' : 'fa-play'}`}></i>
+              )}
             </button>
             <button className="player-btn" onClick={handleSkipForward}>
               <i className="fa-solid fa-forward-step"></i>

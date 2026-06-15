@@ -94,6 +94,40 @@ function HomeContent() {
     }
   }, [playingArticle?.id]);
 
+  useEffect(() => {
+    let startY = 0;
+    let currentY = 0;
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.scrollY === 0) {
+        startY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (startY > 0) {
+        currentY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (startY > 0 && currentY > startY + 120 && window.scrollY === 0) {
+        window.location.reload();
+      }
+      startY = 0;
+      currentY = 0;
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -250,10 +284,12 @@ function HomeContent() {
     return matchesCategory && matchesSearch;
   });
 
+  const hasImportedArticles = articles.some(a => !defaultArticles.find(da => da.id === a.id));
+
   const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
 
-  const listeningArticles = filteredArticles.filter(a => a.progress && a.progress > 0 && a.progress < 100);
-  const newArticles = filteredArticles.filter(a => !a.progress || a.progress === 0 || a.progress >= 100);
+  const listeningArticles = filteredArticles.filter(a => a.progress && a.progress > 0 && a.progress < a.paragraphs.length);
+  const newArticles = filteredArticles.filter(a => !a.progress || a.progress === 0);
 
   const getGradientClass = (id: string) => {
     const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -263,7 +299,7 @@ function HomeContent() {
   const renderArticleCard = (article: Article, shapeClass: string) => {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
     
-    if (viewMode === 'list' && shapeClass !== 'card-vertical') {
+    if (viewMode === 'list') {
       return (
         <div key={article.id} className="article-list-item" onClick={() => router.push(`/articles/${article.id}`)}>
           <div className={`list-img-wrapper ${!article.imageUrl ? getGradientClass(article.id) : ''}`}>
@@ -331,11 +367,18 @@ function HomeContent() {
 
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <section className="hero">
-        <h1>Escucha tus artículos favoritos</h1>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <i className="fa-solid fa-plus"></i> Importar artículo
-        </button>
+      <section className="hero hero-section">
+        <div className="hero-content-wrapper">
+          <h1 className="hero-title">Convierte tus lecturas en mini podcasts</h1>
+          <p className="hero-subtitle">
+            Importa cualquier artículo, newsletter o blog y escúchalo en cualquier lugar usando IA neural avanzada con voces ultrarrealistas.
+          </p>
+          <button className="btn btn-hero" onClick={() => setIsModalOpen(true)}>
+            <i className="fa-solid fa-plus"></i> {hasImportedArticles ? 'Importar un nuevo artículo' : 'Importar mi primer artículo'}
+          </button>
+        </div>
+        <div className="hero-bg-circle-1"></div>
+        <div className="hero-bg-circle-2"></div>
       </section>
 
       <section className="tabs-container">
@@ -369,14 +412,14 @@ function HomeContent() {
           {listeningArticles.length > 0 && (
             <section>
               <h2 className="section-title"><i className="fa-solid fa-volume-high" style={{marginRight: '8px'}}></i> Estás escuchando</h2>
-              <div className="listening-carousel">
+              <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                 {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
               </div>
             </section>
           )}
 
           {newArticles.length > 0 && (
-            <section>
+            <section style={{ marginTop: '24px' }}>
               <h2 className="section-title">Sin leer</h2>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
                 {newArticles.map(article => renderArticleCard(article, 'card-square'))}
@@ -476,7 +519,9 @@ function HomeContent() {
       )}
     
       <footer className="main-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '40px 0 120px 0', marginTop: 'auto', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <p>© 2026 Audioblog Minimalist. Todos los derechos reservados.</p>
+        <p>
+          © 2026 Audiodocs es un proyecto opencode de Ricardo Alfaro co-construido con IA - <a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Github</a>
+        </p>
       </footer>
     </main>
 
