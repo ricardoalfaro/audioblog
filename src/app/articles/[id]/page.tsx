@@ -54,12 +54,13 @@ export default function ArticleReader() {
   const [error, setError] = useState('');
 
   // Accordion state
-  const { 
+  const {
     playingArticle, activeParagraphIndex, currentCharIndex, audioEngine, selectedEdgeVoice, selectedVoiceName, voices, handleEngineChange, handleEdgeVoiceChange, handleVoiceChange, playArticle, handleParagraphClick,
     isPlaying, isPaused, handlePlayPause
   } = useAudioPlayer();
   const [isMetaExpanded, setIsMetaExpanded] = useState(true);
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
   // Load article
@@ -87,12 +88,11 @@ export default function ArticleReader() {
     fetchArticle();
   }, [id]);
 
-  // Collapse sidebar cards on mobile by default
+  // Collapse sidebar on mobile by default
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isMobile = window.innerWidth < 900;
-      setIsMetaExpanded(!isMobile);
-      setIsSettingsExpanded(!isMobile);
+      setIsSidebarOpen(!isMobile);
     }
   }, []);
 
@@ -157,158 +157,138 @@ export default function ArticleReader() {
 
   return (
     <main className="container">
-      <div style={{ padding: '40px 0 20px 0' }}>
-        <Link href="/" className="back-link" style={{ marginBottom: 0 }}>
+      {/* Sticky back-link bar below header */}
+      <div className="reader-topbar">
+        <Link href="/" className="back-link">
           <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
         </Link>
       </div>
+
       <div className="reader-layout">
         {/* Sidebar Controls */}
         <aside className="reader-sidebar">
-
-        <div className="sidebar-card glass">
-          <div
-            onClick={() => setIsMetaExpanded(!isMetaExpanded)}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+          {/* Mobile toggle */}
+          <button
+            className="sidebar-toggle-btn"
+            onClick={() => setIsSidebarOpen(o => !o)}
+            aria-expanded={isSidebarOpen}
           >
-            <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <i className="fa-solid fa-circle-info" style={{ color: 'var(--color-primary)' }}></i> Detalles del Artículo
-            </h3>
-            <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'}`} style={{ fontSize: '10px', color: 'var(--text-muted)' }}></i>
-          </div>
+            <i className={`fa-solid fa-sliders`}></i>
+            <span>Opciones</span>
+            <i className={`fa-solid fa-chevron-${isSidebarOpen ? 'up' : 'down'}`} style={{ marginLeft: 'auto', fontSize: '11px' }}></i>
+          </button>
 
-          {isMetaExpanded && (
-            <div style={{ marginTop: '16px', animation: 'fadeIn 0.2s ease-out' }}>
-              <div className="sidebar-meta" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                {article.url && article.url !== 'manual' && (
-                  <div className="meta-item" style={{ marginBottom: 0 }}>
-                    <span className="meta-label">Fuente:</span>
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      Ver original <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
-                    </a>
+          {/* Unified sidebar card */}
+          <div className={`sidebar-panel glass${isSidebarOpen ? ' is-open' : ''}`}>
+
+            {/* Section: Detalles */}
+            <div className="sidebar-section">
+              <div className="sidebar-section-header" onClick={() => setIsMetaExpanded(v => !v)}>
+                <span><i className="fa-solid fa-circle-info"></i> Detalles del Artículo</span>
+                <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'}`}></i>
+              </div>
+              {isMetaExpanded && (
+                <div className="sidebar-section-body">
+                  {article.url && article.url !== 'manual' && (
+                    <div className="meta-item">
+                      <span className="meta-label">Fuente:</span>
+                      <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        Ver original <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
+                      </a>
+                    </div>
+                  )}
+                  <div className="meta-item">
+                    <span className="meta-label">Párrafos:</span>
+                    <span>{article.paragraphs.length}</span>
                   </div>
-                )}
-                <div className="meta-item" style={{ marginBottom: 0 }}>
-                  <span className="meta-label">Párrafos:</span>
-                  <span>{article.paragraphs.length}</span>
-                </div>
-                <div className="meta-item" style={{ marginBottom: 0 }}>
-                  <span className="meta-label">Restante:</span>
-                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(article.duration)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="sidebar-card glass" style={{ marginTop: '12px' }}>
-          <div
-            onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
-          >
-            <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <i className="fa-solid fa-sliders" style={{ color: 'var(--color-primary)' }}></i> Ajustes de Reproducción
-            </h3>
-            <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'}`} style={{ fontSize: '10px', color: 'var(--text-muted)' }}></i>
-          </div>
-
-          {isSettingsExpanded && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', animation: 'fadeIn 0.2s ease-out' }}>
-              <div className="audio-switch-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {audioEngine === 'device' ? 'Voz Browser' : 'Voz Natural'}
-                </span>
-                <label className="switch" title="Cambiar motor de voz">
-                  <input
-                    type="checkbox"
-                    checked={audioEngine === 'edge'}
-                    onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Voz de Lectura</label>
-                {audioEngine === 'device' ? (
-                  <select
-                    className="player-select"
-                    value={selectedVoiceName}
-                    onChange={handleVoiceChange}
-                    style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  >
-                    {sortedVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name}>
-                        {voice.name} ({voice.lang.split('-')[0].toUpperCase()})
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <select
-                    className="player-select"
-                    value={selectedEdgeVoice}
-                    onChange={handleEdgeVoiceChange}
-                    style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  >
-                    {EDGE_VOICES.map((voice) => (
-                      <option key={voice.value} value={voice.value}>
-                        {voice.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {audioEngine === 'device' ? (
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
-                  ⚠️ El motor local se pausa al bloquear la pantalla o abrir otra app. Usa el motor <strong>Neuronal</strong> para reproducción continua y CarPlay.
-                </div>
-              ) : (
-                <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
-                  ✅ Reproducción de fondo activa. Compatible con mandos de bloqueo y CarPlay / Bluetooth.
+                  <div className="meta-item">
+                    <span className="meta-label">Restante:</span>
+                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(article.duration)}</span>
+                  </div>
                 </div>
               )}
             </div>
-          )}
-        </div>
 
-        <div className="sidebar-card glass" style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <i className="fa-solid fa-tag" style={{ color: 'var(--color-primary)' }}></i> Categoría
-            </h3>
-          </div>
-          <div style={{ marginTop: '16px' }}>
-            <select 
-              className="form-control" 
-              value={article.category || ''} 
-              onChange={(e) => {
-                const updated = { ...article, category: e.target.value };
-                setArticle(updated);
-                const localData = localStorage.getItem('articles');
-                if (localData) {
-                  try {
-                    const articlesList = JSON.parse(localData);
-                    const index = articlesList.findIndex((a: any) => a.id === article.id);
-                    if (index !== -1) {
-                      articlesList[index] = updated;
-                      localStorage.setItem('articles', JSON.stringify(articlesList));
+            <div className="sidebar-divider" />
+
+            {/* Section: Ajustes */}
+            <div className="sidebar-section">
+              <div className="sidebar-section-header" onClick={() => setIsSettingsExpanded(v => !v)}>
+                <span><i className="fa-solid fa-sliders"></i> Ajustes de Reproducción</span>
+                <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'}`}></i>
+              </div>
+              {isSettingsExpanded && (
+                <div className="sidebar-section-body">
+                  <div className="audio-switch-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {audioEngine === 'device' ? 'Voz Browser' : 'Voz Natural'}
+                    </span>
+                    <label className="switch" title="Cambiar motor de voz">
+                      <input type="checkbox" checked={audioEngine === 'edge'} onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')} />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Voz de Lectura</label>
+                    {audioEngine === 'device' ? (
+                      <select className="player-select" value={selectedVoiceName} onChange={handleVoiceChange} style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                        {sortedVoices.map((voice) => (
+                          <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang.split('-')[0].toUpperCase()})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select className="player-select" value={selectedEdgeVoice} onChange={handleEdgeVoiceChange} style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                        {EDGE_VOICES.map((voice) => (
+                          <option key={voice.value} value={voice.value}>{voice.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  {audioEngine === 'device' ? (
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
+                      ⚠️ El motor local se pausa al bloquear la pantalla. Usa <strong>Voz Natural</strong> para reproducción continua y CarPlay.
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
+                      ✅ Reproducción de fondo activa. Compatible con CarPlay / Bluetooth.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="sidebar-divider" />
+
+            {/* Section: Categoría */}
+            <div className="sidebar-section">
+              <div className="sidebar-section-header" style={{ cursor: 'default' }}>
+                <span><i className="fa-solid fa-tag"></i> Categoría</span>
+              </div>
+              <div className="sidebar-section-body">
+                <select
+                  className="form-control"
+                  value={article.category || ''}
+                  onChange={(e) => {
+                    const updated = { ...article, category: e.target.value };
+                    setArticle(updated);
+                    const localData = localStorage.getItem('articles');
+                    if (localData) {
+                      try {
+                        const articlesList = JSON.parse(localData);
+                        const index = articlesList.findIndex((a: any) => a.id === article.id);
+                        if (index !== -1) { articlesList[index] = updated; localStorage.setItem('articles', JSON.stringify(articlesList)); }
+                      } catch (e) {}
                     }
-                  } catch (e) {}
-                }
-              }}
-            >
-              <option value="" disabled>Seleccione categoría...</option>
-              {['General', 'Tecnología', 'Diseño', 'Negocios', 'Pagos', 'Seguros', 'Fintech', 'Política', 'Historia', 'Economía', 'Noticias'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-            </select>
+                  }}
+                >
+                  <option value="" disabled>Seleccione categoría...</option>
+                  {['General', 'Tecnología', 'Diseño', 'Negocios', 'Pagos', 'Seguros', 'Fintech', 'Política', 'Historia', 'Economía', 'Noticias'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+              </div>
+            </div>
+
           </div>
-        </div>
-      </aside>
+        </aside>
 
       {/* Main Reading Canvas */}
       <section className="reader-content">
