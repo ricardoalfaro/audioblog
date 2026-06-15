@@ -53,7 +53,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const isPausedRef = useRef(false);
   const playingArticleIdRef = useRef<string | null>(null);
   const [speechRate, setSpeechRate] = useState(1);
-  
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState('');
@@ -61,6 +60,26 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Keep ref in sync so async prefetch callbacks always use the current voice
   useEffect(() => { selectedEdgeVoiceRef.current = selectedEdgeVoice; }, [selectedEdgeVoice]);
+
+  // Load persisted preferences on mount (client-only)
+  useEffect(() => {
+    try {
+      const engine = localStorage.getItem('pref_audioEngine') as 'device' | 'edge' | null;
+      if (engine) setAudioEngine(engine);
+      const edgeVoice = localStorage.getItem('pref_edgeVoice');
+      if (edgeVoice) setSelectedEdgeVoice(edgeVoice);
+      const voiceName = localStorage.getItem('pref_voiceName');
+      if (voiceName) setSelectedVoiceName(voiceName);
+      const rate = parseFloat(localStorage.getItem('pref_speechRate') || '');
+      if (!isNaN(rate)) setSpeechRate(rate);
+    } catch {}
+  }, []);
+
+  // Persist audio preferences to localStorage
+  useEffect(() => { try { localStorage.setItem('pref_audioEngine', audioEngine); } catch {} }, [audioEngine]);
+  useEffect(() => { try { localStorage.setItem('pref_edgeVoice', selectedEdgeVoice); } catch {} }, [selectedEdgeVoice]);
+  useEffect(() => { try { localStorage.setItem('pref_voiceName', selectedVoiceName); } catch {} }, [selectedVoiceName]);
+  useEffect(() => { try { localStorage.setItem('pref_speechRate', String(speechRate)); } catch {} }, [speechRate]);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
