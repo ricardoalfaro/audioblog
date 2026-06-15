@@ -965,7 +965,7 @@ a {
   left: 0;
   right: 0;
   z-index: 90;
-  background: var(--bg-primary);
+  background: var(--bg-header);
   border-bottom: 1px solid var(--border-color);
 }
 
