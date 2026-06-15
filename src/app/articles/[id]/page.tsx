@@ -156,7 +156,7 @@ export default function ArticleReader() {
   };
 
   return (
-    <main className="container" style={{ paddingTop: '45px' }}>
+    <main className="container reader-main">
       {/* Fixed back-link bar — sits below the sticky header */}
       <div className="reader-topbar">
         <div className="reader-topbar-inner">
