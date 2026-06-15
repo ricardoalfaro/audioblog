@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
+import HeaderActions from "@/components/HeaderActions";
+import { Suspense } from 'react';
+import Link from 'next/link';
 import "./globals.css";
 
+import Providers from '@/components/Providers';
+
 export const metadata: Metadata = {
-  title: "Audioblog | Escucha tus blogs favoritos como audiolibros",
-  description: "Una plataforma premium para importar tus artículos de blog favoritos y escucharlos con narración de voz interactiva y enfoque de lectura sin distracciones.",
+  title: "Audioblog | Minimalist",
+  description: "Una plataforma premium para escuchar tus artículos.",
 };
 
 export default function RootLayout({
@@ -41,23 +45,22 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <header className="main-header">
-          <div className="container header-content">
-            <a href="/" className="logo">
-              <div className="logo-icon">
-                <i className="fa-solid fa-headphones"></i>
-              </div>
-              <span>
-                Audio<span className="gradient-text">blog</span>
-              </span>
-            </a>
-            <div className="header-actions">
-              <ThemeSwitcher />
+        <Providers>
+          <header className="main-header">
+            <div className="container header-content">
+              <Link href="/" className="logo">
+                <i className="fa-solid fa-headphones logo-icon"></i>
+                <span>Audioblog</span>
+              </Link>
+              
+              <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn">?</button></div></div>}>
+                <HeaderActions />
+              </Suspense>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {children}
+          {children}
+        </Providers>
       </body>
     </html>
   );
