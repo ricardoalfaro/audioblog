@@ -133,12 +133,12 @@ export async function POST(request: Request) {
 
     function isNoise(node: any): boolean {
       if (!node.getAttribute) return false;
-      // Medium / HubSpot metadata elements
+      // Medium metadata elements only — matched by specific testId values
       const testId = node.getAttribute('data-testid') || '';
       if (testId && ['authorName','storyReadTime','storyPublishDate','publicationName',
                      'post-footer','overflow-button'].some(id => testId.includes(id))) return true;
-      // Elements hidden from screen readers are usually decorative
-      if (node.getAttribute('aria-hidden') === 'true') return true;
+      // NOTE: deliberately NOT checking aria-hidden — some CMSes (HubSpot) set
+      // aria-hidden="true" on the main article container, which would skip all content.
       return false;
     }
 
@@ -202,7 +202,13 @@ export async function POST(request: Request) {
     }
 
     if (paragraphs.length === 0) {
-      return NextResponse.json({ error: 'No se encontraron párrafos de texto legibles.' }, { status: 422 });
+      return NextResponse.json({
+        error: 'No se encontraron párrafos de texto legibles.',
+        _debug: {
+          readabilityContentLength: article.content?.length ?? 0,
+          readabilityTextSnippet: article.textContent?.slice(0, 500) ?? '',
+        }
+      }, { status: 422 });
     }
 
     // Clean up title, author and excerpt
