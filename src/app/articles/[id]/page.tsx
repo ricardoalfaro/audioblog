@@ -159,9 +159,11 @@ export default function ArticleReader() {
     <main className="container" style={{ paddingTop: '45px' }}>
       {/* Fixed back-link bar — sits below the sticky header */}
       <div className="reader-topbar">
-        <Link href="/" className="back-link">
-          <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
-        </Link>
+        <div className="reader-topbar-inner">
+          <Link href="/" className="back-link">
+            <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
+          </Link>
+        </div>
       </div>
 
       <div className="reader-layout">
