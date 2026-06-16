@@ -10,5 +10,8 @@ export interface Article {
   paragraphs: string[];
   imageUrl?: string;
   progress?: number;
-  lastPlayedAt?: string; // ISO timestamp — used to sort Escuchando carousel
+  lastPlayedAt?: string;
+  preferredEngine?: 'device' | 'edge';
+  preferredEdgeVoice?: string;
+  preferredVoiceName?: string;
 }
