@@ -295,9 +295,9 @@ function HomeContent() {
   const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
 
   const listeningArticles = filteredArticles
-    .filter(a => a.progress && a.progress > 0 && a.progress < a.paragraphs.length)
-    .sort((a, b) => (b.lastPlayedAt || b.addedAt) > (a.lastPlayedAt || a.addedAt) ? 1 : -1);
-  const newArticles = filteredArticles.filter(a => !a.progress || a.progress === 0);
+    .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
+    .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1);
+  const newArticles = filteredArticles.filter(a => !a.lastPlayedAt);
 
   const getGradientClass = (id: string) => {
     const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -368,6 +368,14 @@ function HomeContent() {
               {isCurrentPlaying ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
             </button>
           </div>
+          {article.lastPlayedAt && article.paragraphs.length > 0 && (
+            <div className="card-progress-bar">
+              <div
+                className="card-progress-fill"
+                style={{ width: `${Math.min(100, ((article.progress || 0) / article.paragraphs.length) * 100)}%` }}
+              />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -428,7 +436,7 @@ function HomeContent() {
 
           {newArticles.length > 0 && (
             <section style={{ marginTop: '24px' }}>
-              <h2 className="section-title">Sin leer</h2>
+              <h2 className="section-title">Nuevos</h2>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
                 {newArticles.map(article => renderArticleCard(article, 'card-square'))}
               </div>
