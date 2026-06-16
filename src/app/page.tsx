@@ -37,7 +37,7 @@ function HomeContent() {
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
 
-  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause } = useAudioPlayer();
+  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
   const handlePlayDirectly = (e: React.MouseEvent, targetArticle: Article) => {
     e.preventDefault();
@@ -85,6 +85,12 @@ function HomeContent() {
       setViewMode(savedView);
     }
   }, []);
+
+  // Re-read articles when the player advances paragraphs or stops,
+  // so Escuchando / Archivo sections reflect real-time progress
+  useEffect(() => {
+    if (playingArticle) fetchArticles();
+  }, [activeParagraphIndex, isPlaying]);
 
   useEffect(() => {
     // When playingArticle changes (a new article starts playing), refresh the local storage list
