@@ -152,7 +152,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     if (index < 0 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
-        updateArticleProgress(article, index); // Guardar progreso 100%
+        updateArticleProgress(article, 0); // Artículo terminado: reinicia progreso
       }
       handleStop();
       return;
@@ -253,7 +253,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     if (index < 0 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
-        updateArticleProgress(article, index);
+        updateArticleProgress(article, 0); // Artículo terminado: reinicia progreso
       }
       handleStop();
       return;
@@ -323,7 +323,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     playingArticleIdRef.current = article.id;
     isPausedRef.current = false;
     
-    const startIdx = forceParagraphIndex !== undefined ? forceParagraphIndex : (article.progress || 0);
+    const rawIdx = forceParagraphIndex !== undefined ? forceParagraphIndex : (article.progress || 0);
+    const startIdx = Math.max(0, Math.min(rawIdx, article.paragraphs.length - 1));
     if (audioEngine === 'edge') {
       playEdgeParagraph(startIdx, article);
     } else {
