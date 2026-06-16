@@ -37,7 +37,7 @@ function HomeContent() {
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
 
-  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause } = useAudioPlayer();
+  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
   const handlePlayDirectly = (e: React.MouseEvent, targetArticle: Article) => {
     e.preventDefault();
@@ -85,6 +85,12 @@ function HomeContent() {
       setViewMode(savedView);
     }
   }, []);
+
+  // Re-read articles when the player advances paragraphs or stops,
+  // so Escuchando / Archivo sections reflect real-time progress
+  useEffect(() => {
+    if (playingArticle) fetchArticles();
+  }, [activeParagraphIndex, isPlaying]);
 
   useEffect(() => {
     // When playingArticle changes (a new article starts playing), refresh the local storage list
@@ -288,7 +294,9 @@ function HomeContent() {
 
   const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
 
-  const listeningArticles = filteredArticles.filter(a => a.progress && a.progress > 0 && a.progress < a.paragraphs.length);
+  const listeningArticles = filteredArticles
+    .filter(a => a.progress && a.progress > 0 && a.progress < a.paragraphs.length)
+    .sort((a, b) => (b.lastPlayedAt || b.addedAt) > (a.lastPlayedAt || a.addedAt) ? 1 : -1);
   const newArticles = filteredArticles.filter(a => !a.progress || a.progress === 0);
 
   const getGradientClass = (id: string) => {
