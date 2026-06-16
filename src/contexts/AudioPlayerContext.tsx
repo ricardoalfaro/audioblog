@@ -125,7 +125,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const updateArticleProgress = (article: Article, paragraphIndex: number) => {
+  const updateArticleProgress = (article: Article, paragraphIndex: number, updateLastPlayed = false) => {
     try {
       const localData = localStorage.getItem('articles');
       if (localData) {
@@ -133,6 +133,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         const index = articlesList.findIndex((a) => a.id === article.id);
         if (index !== -1) {
           articlesList[index].progress = paragraphIndex;
+          if (updateLastPlayed) articlesList[index].lastPlayedAt = new Date().toISOString();
           localStorage.setItem('articles', JSON.stringify(articlesList));
         }
       }
@@ -150,9 +151,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       console.warn('speechSynthesis.cancel error:', cancelErr);
     }
 
-    if (index < 0 || index >= article.paragraphs.length) {
+    // index -1 = title; index >= length = finished
+    if (index < -1 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
-        updateArticleProgress(article, article.paragraphs.length); // Marcar como terminado para Archivo
+        updateArticleProgress(article, article.paragraphs.length);
       }
       handleStop();
       return;
@@ -160,9 +162,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     setActiveParagraphIndex(index);
     setCurrentCharIndex(0);
-    updateArticleProgress(article, index);
+    if (index >= 0) updateArticleProgress(article, index);
 
-    const text = article.paragraphs[index];
+    const text = index === -1 ? article.title : article.paragraphs[index];
     const utterance = new SpeechSynthesisUtterance(text);
     
     if (selectedVoiceName) {
@@ -251,9 +253,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     try { window.speechSynthesis.cancel(); } catch (e) {}
 
-    if (index < 0 || index >= article.paragraphs.length) {
+    // index -1 = title; index >= length = finished
+    if (index < -1 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
-        updateArticleProgress(article, article.paragraphs.length); // Marcar como terminado para Archivo
+        updateArticleProgress(article, article.paragraphs.length);
       }
       handleStop();
       return;
@@ -261,17 +264,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     setActiveParagraphIndex(index);
     setCurrentCharIndex(-1);
-    updateArticleProgress(article, index);
+    if (index >= 0) updateArticleProgress(article, index);
+
+    const text = index === -1 ? article.title : article.paragraphs[index];
 
     // Use prefetched blob if available for this index, otherwise fall back to API URL
     let src: string;
-    if (prefetchedIndexRef.current === index && prefetchedBlobUrlRef.current) {
+    if (index >= 0 && prefetchedIndexRef.current === index && prefetchedBlobUrlRef.current) {
       src = prefetchedBlobUrlRef.current;
-      // Clear ref so we don't revoke it before the audio element finishes reading it
       prefetchedBlobUrlRef.current = null;
       prefetchedIndexRef.current = -1;
     } else {
-      src = `/api/tts?text=${encodeURIComponent(article.paragraphs[index])}&voice=${selectedEdgeVoice}`;
+      src = `/api/tts?text=${encodeURIComponent(text)}&voice=${selectedEdgeVoice}`;
     }
 
     audioRef.current.src = src;
@@ -326,10 +330,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const rawIdx = forceParagraphIndex !== undefined ? forceParagraphIndex : (article.progress || 0);
     // If progress is at or beyond end (article was completed), restart from 0
     const startIdx = rawIdx >= article.paragraphs.length ? 0 : Math.max(0, rawIdx);
+    // Read title first when starting from the beginning
+    const firstIdx = startIdx === 0 ? -1 : startIdx;
+    updateArticleProgress(article, startIdx, true); // mark lastPlayedAt
     if (audioEngine === 'edge') {
-      playEdgeParagraph(startIdx, article);
+      playEdgeParagraph(firstIdx, article);
     } else {
-      speakParagraph(startIdx, article);
+      speakParagraph(firstIdx, article);
     }
   };
 
@@ -342,7 +349,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setIsPaused(true);
         isPausedRef.current = true;
       } else {
-        if (!audioRef.current.src || activeParagraphIndex === -1) {
+        if (!audioRef.current.src) {
           playEdgeParagraph(playingArticle.progress || 0, playingArticle);
         } else {
           audioRef.current.play();
@@ -358,7 +365,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           setIsPaused(true);
           isPausedRef.current = true;
         } else {
-          if (activeParagraphIndex === -1) {
+          if (!utteranceRef.current) {
             speakParagraph(playingArticle.progress || 0, playingArticle);
           } else {
             window.speechSynthesis.resume();
