@@ -142,6 +142,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const saveArticleVoicePreference = (articleId: string, patch: Partial<Pick<Article, 'preferredEngine' | 'preferredEdgeVoice' | 'preferredVoiceName'>>) => {
+    try {
+      const localData = localStorage.getItem('articles');
+      if (!localData) return;
+      const list: Article[] = JSON.parse(localData);
+      const idx = list.findIndex(a => a.id === articleId);
+      if (idx !== -1) {
+        Object.assign(list[idx], patch);
+        localStorage.setItem('articles', JSON.stringify(list));
+      }
+    } catch {}
+  };
+
   const speakParagraph = (index: number, article: Article) => {
     if (!article || typeof window === 'undefined') return;
 
@@ -330,10 +343,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const rawIdx = forceParagraphIndex !== undefined ? forceParagraphIndex : (article.progress || 0);
     // If progress is at or beyond end (article was completed), restart from 0
     const startIdx = rawIdx >= article.paragraphs.length ? 0 : Math.max(0, rawIdx);
-    // Read title first when starting from the beginning
     const firstIdx = startIdx === 0 ? -1 : startIdx;
-    updateArticleProgress(article, startIdx, true); // mark lastPlayedAt
-    if (audioEngine === 'edge') {
+    updateArticleProgress(article, startIdx, true);
+
+    // Restore per-article voice preferences if saved
+    const engine = article.preferredEngine ?? audioEngine;
+    if (article.preferredEngine) setAudioEngine(article.preferredEngine);
+    if (article.preferredEdgeVoice) {
+      setSelectedEdgeVoice(article.preferredEdgeVoice);
+      selectedEdgeVoiceRef.current = article.preferredEdgeVoice;
+    }
+    if (article.preferredVoiceName) setSelectedVoiceName(article.preferredVoiceName);
+
+    if (engine === 'edge') {
       playEdgeParagraph(firstIdx, article);
     } else {
       speakParagraph(firstIdx, article);
@@ -423,13 +445,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const handleEngineChange = (engine: 'device' | 'edge') => {
     setAudioEngine(engine);
-    if (isPlaying) {
-      handleStop();
-    }
+    if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEngine: engine });
+    if (isPlaying) handleStop();
   };
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedVoiceName(e.target.value);
+    if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredVoiceName: e.target.value });
     if (isPlaying && audioEngine === 'device') {
       handleStop();
     }
@@ -437,7 +459,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const handleEdgeVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedEdgeVoice(e.target.value);
-    revokePrefetchedBlob(); // discard prefetch — wrong voice
+    if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEdgeVoice: e.target.value });
+    revokePrefetchedBlob();
     if (isPlaying && audioEngine === 'edge') {
       handleStop();
     }
