@@ -387,16 +387,29 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     playingArticleIdRef.current = null;
   };
 
+  const getArticlesList = (): Article[] => {
+    try {
+      const data = localStorage.getItem('articles');
+      return data ? JSON.parse(data) : [];
+    } catch { return []; }
+  };
+
   const handleSkipForward = () => {
     if (!playingArticle) return;
-    const nextIdx = Math.min(activeParagraphIndex + 1, playingArticle.paragraphs.length - 1);
-    handleParagraphClick(nextIdx);
+    const list = getArticlesList();
+    const idx = list.findIndex(a => a.id === playingArticle.id);
+    if (idx !== -1 && idx < list.length - 1) {
+      playArticle(list[idx + 1], 0);
+    }
   };
 
   const handleSkipBackward = () => {
     if (!playingArticle) return;
-    const prevIdx = Math.max(0, activeParagraphIndex - 1);
-    handleParagraphClick(prevIdx);
+    const list = getArticlesList();
+    const idx = list.findIndex(a => a.id === playingArticle.id);
+    if (idx > 0) {
+      playArticle(list[idx - 1], 0);
+    }
   };
 
   const handleEngineChange = (engine: 'device' | 'edge') => {
