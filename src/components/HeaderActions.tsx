@@ -1,18 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export default function HeaderActions() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const initialSearch = searchParams.get('q') || '';
-  const [searchValue, setSearchValue] = useState(initialSearch);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -24,15 +18,6 @@ export default function HeaderActions() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchValue.trim()) {
-      router.push(`/?q=${encodeURIComponent(searchValue.trim())}`);
-    } else {
-      router.push(`/`);
-    }
-  };
 
   const handleShare = async () => {
     const shareData = {
@@ -61,16 +46,6 @@ export default function HeaderActions() {
 
   return (
     <div className="header-right">
-      <form className="header-search" onSubmit={handleSearchSubmit}>
-        <i className="fa-solid fa-magnifying-glass"></i>
-        <input 
-          type="text" 
-          placeholder="Buscar..." 
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-        />
-      </form>
-
       <div className="avatar-dropdown" ref={dropdownRef}>
         <button 
           className="avatar-btn" 

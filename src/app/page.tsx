@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
@@ -22,9 +22,6 @@ function HomeContent() {
   const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams.get('q') || '';
   
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -282,15 +279,9 @@ function HomeContent() {
   };
 
   const filteredArticles = articles.filter((article) => {
-    const matchesCategory = selectedCategory === 'Todos' || article.category === selectedCategory;
-    const matchesSearch =
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return selectedCategory === 'Todos' || article.category === selectedCategory;
   });
 
-  const hasImportedArticles = articles.length > 0;
 
   const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
 
@@ -383,19 +374,6 @@ function HomeContent() {
 
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <section className="hero hero-section">
-        <div className="hero-content-wrapper">
-          <h1 className="hero-title">Escucha tus documentos como un podcast</h1>
-          <p className="hero-subtitle">
-            Importa cualquier artículo, columna o blog y escúchalo en cualquier lugar, en idioma original o traducido con voces realistas.
-          </p>
-          <button className="btn btn-hero" onClick={() => setIsModalOpen(true)}>
-            <i className="fa-solid fa-plus"></i> {hasImportedArticles ? 'Importar un nuevo artículo' : 'Importar mi primer artículo'}
-          </button>
-        </div>
-        <div className="hero-bg-circle-1"></div>
-        <div className="hero-bg-circle-2"></div>
-      </section>
 
       <section className="tabs-container">
         <div className="categories-scroll">
@@ -445,13 +423,31 @@ function HomeContent() {
 
           {filteredArticles.length === 0 && (
             <div className="empty-state">
-              <h3>No hay artículos que mostrar</h3>
-              <p>Intenta importar uno nuevo o cambiar tu búsqueda.</p>
+              {articles.length === 0 ? (
+                <>
+                  <h3>Tu biblioteca está vacía</h3>
+                  <p>Importa tu primer artículo para empezar a escuchar.</p>
+                  <button className="btn btn-primary" style={{ marginTop: '24px', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
+                    <i className="fa-solid fa-plus"></i> Importar mi primer artículo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3>No hay artículos en esta categoría</h3>
+                  <p>Prueba seleccionando otra categoría.</p>
+                </>
+              )}
             </div>
           )}
         </>
       )}
 
+
+      {articles.length > 0 && (
+        <button className="import-fab" onClick={() => setIsModalOpen(true)}>
+          <i className="fa-solid fa-plus"></i> Importar un nuevo artículo
+        </button>
+      )}
 
       {isModalOpen && (
         <div className="modal-overlay">
