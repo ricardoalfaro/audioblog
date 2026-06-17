@@ -426,7 +426,7 @@ function HomeContent() {
                   <i className="fa-solid fa-inbox" style={{ marginRight: '8px', fontSize: '20px' }}></i> Nuevos
                 </h2>
                 <button className="import-inline-btn" onClick={() => setIsModalOpen(true)}>
-                  <i className="fa-solid fa-plus"></i> Importar
+                  <i className="fa-solid fa-plus"></i> Importar nuevo
                 </button>
               </div>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>

@@ -378,6 +378,11 @@ a {
   margin-bottom: 24px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 64px;
+  z-index: 90;
+  background: var(--bg-main);
+  padding-top: 12px;
 }
 
 .categories-scroll {
@@ -1348,25 +1353,25 @@ input:checked + .slider:before {
 
 /* Import inline button (next to section title) */
 .import-inline-btn {
-  background: transparent;
-  border: 1.5px solid var(--color-primary);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  border: none;
+  color: #000000;
   font-family: var(--font-sans);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
 }
 
 .import-inline-btn:hover {
-  background: var(--color-primary);
-  color: #000000;
+  opacity: 0.88;
+  transform: scale(1.02);
 }
 @keyframes fadeIn {
   from { opacity: 0; }
