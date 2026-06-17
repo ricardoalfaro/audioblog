@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Article } from '@/types';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import SplashScreen from '@/components/SplashScreen';
 
 const STATIC_CATEGORIES = ['General', 'Tecnología', 'Diseño', 'Negocios', 'Pagos', 'Seguros', 'Fintech', 'Política', 'Historia', 'Economía', 'Noticias'];
 
@@ -68,8 +69,7 @@ function HomeContent() {
         }
         setArticles(pruned);
       } else {
-        localStorage.setItem('articles', JSON.stringify(defaultArticles));
-        setArticles(defaultArticles);
+        setArticles([]);
       }
     } catch (err) {
       console.error('Error loading articles from localStorage:', err);
@@ -290,7 +290,7 @@ function HomeContent() {
     return matchesCategory && matchesSearch;
   });
 
-  const hasImportedArticles = articles.some(a => !defaultArticles.find(da => da.id === a.id));
+  const hasImportedArticles = articles.length > 0;
 
   const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
 
@@ -385,9 +385,9 @@ function HomeContent() {
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <section className="hero hero-section">
         <div className="hero-content-wrapper">
-          <h1 className="hero-title">Convierte tus lecturas en mini podcasts</h1>
+          <h1 className="hero-title">Escucha tus documentos como un podcast</h1>
           <p className="hero-subtitle">
-            Importa cualquier artículo, newsletter o blog y escúchalo en cualquier lugar usando IA neural avanzada con voces ultrarrealistas.
+            Importa cualquier artículo, columna o blog y escúchalo en cualquier lugar, en idioma original o traducido con voces realistas.
           </p>
           <button className="btn btn-hero" onClick={() => setIsModalOpen(true)}>
             <i className="fa-solid fa-plus"></i> {hasImportedArticles ? 'Importar un nuevo artículo' : 'Importar mi primer artículo'}
@@ -539,6 +539,7 @@ function HomeContent() {
           © 2026 Audiodocs es un proyecto opencode de Ricardo Alfaro co-construido con IA - <a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Github</a>
         </p>
       </footer>
+      <SplashScreen />
     </main>
 
   );
