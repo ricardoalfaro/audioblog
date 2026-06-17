@@ -395,10 +395,10 @@ function HomeContent() {
           ))}
         </div>
         <div className="view-toggles">
-          <button className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => toggleViewMode('grid')}>
+          <button className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => toggleViewMode('grid')} title="Vista en cuadrícula">
             <i className="fa-solid fa-grip"></i>
           </button>
-          <button className={`view-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => toggleViewMode('list')}>
+          <button className={`view-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => toggleViewMode('list')} title="Vista en lista">
             <i className="fa-solid fa-list"></i>
           </button>
         </div>
@@ -425,7 +425,7 @@ function HomeContent() {
                 <h2 className="section-title" style={{ marginBottom: 0 }}>
                   <i className="fa-solid fa-inbox" style={{ marginRight: '8px', fontSize: '20px' }}></i> Nuevos
                 </h2>
-                <button className="import-inline-btn" onClick={() => setIsModalOpen(true)}>
+                <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
                   <i className="fa-solid fa-plus"></i> Importar nuevo
                 </button>
               </div>
@@ -538,10 +538,18 @@ function HomeContent() {
         </div>
       )}
     
-      <footer className="main-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '40px 0 120px 0', marginTop: 'auto', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <p>
-          © 2026 Audiodocs es un proyecto opencode de Ricardo Alfaro co-construido con IA - <a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Github</a>
-        </p>
+      <footer className="main-footer">
+        <div className="footer-inner">
+          <img src="/main_logo_audiodocs_light.png" className="logo-light footer-logo" alt="Audiodocs" />
+          <img src="/main_logo_audiodocs_dark.png" className="logo-dark footer-logo" alt="Audiodocs" />
+          <p className="footer-copy">© 2026 Audiodocs by Ricardo Alfaro + IA</p>
+          <ul className="footer-links">
+            <li><a href="/archive" className="footer-link">Archivo</a></li>
+            <li><a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" className="footer-link">Github</a></li>
+            <li><span className="footer-link footer-link-soon" title="Próximamente">Qué es Audiodocs</span></li>
+            <li><span className="footer-link footer-link-soon" title="Próximamente">Preguntas frecuentes</span></li>
+          </ul>
+        </div>
       </footer>
       <SplashScreen />
     </main>

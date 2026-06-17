@@ -56,8 +56,8 @@ export default function RootLayout({
           <header className="main-header">
             <div className="container header-content">
               <Link href="/" className="logo">
-                <img src="/main_logo_audiodocs_light.png" alt="Audiodocs Player" className="logo-light" style={{ height: '32px', width: 'auto' }} />
-                <img src="/main_logo_audiodocs_dark.png" alt="Audiodocs Player" className="logo-dark" style={{ height: '32px', width: 'auto' }} />
+                <img src="/main_logo_audiodocs_light.png" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-light" style={{ height: '32px', width: 'auto' }} />
+                <img src="/main_logo_audiodocs_dark.png" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-dark" style={{ height: '32px', width: 'auto' }} />
               </Link>
               
               <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn">?</button></div></div>}>

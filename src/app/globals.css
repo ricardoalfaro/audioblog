@@ -1394,11 +1394,11 @@ input:checked + .slider:before {
   overflow: hidden;
   background: linear-gradient(135deg, rgba(20, 33, 61, 0.92), rgba(0, 0, 0, 0.96)), url('/bg_01.jpg');
   background-size: cover;
-  animation: gradientMove 120s ease-in-out infinite, splashFadeIn 0.6s ease-out both;
+  animation: gradientMove 120s ease-in-out infinite, splashFadeIn 0.3s ease-out both;
 }
 
 .splash-overlay.splash-exiting {
-  animation: splashFadeOut 0.5s ease-in forwards;
+  animation: splashFadeOut 0.35s ease-in forwards;
 }
 
 @keyframes splashFadeIn {
@@ -1419,7 +1419,14 @@ input:checked + .slider:before {
   max-width: 680px;
   width: 100%;
   color: rgba(255, 255, 255, 0.9);
-  animation: fadeInDown 0.8s ease-out 0.2s both;
+  animation: fadeInDown 0.4s ease-out 0.05s both;
+}
+
+.splash-logo {
+  height: 36px;
+  width: auto;
+  margin-bottom: 32px;
+  opacity: 0.95;
 }
 
 .splash-title {
@@ -1427,18 +1434,18 @@ input:checked + .slider:before {
   font-size: 52px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   line-height: 1.15;
 }
 
 @media (max-width: 600px) {
   .splash-title {
-    font-size: 36px;
+    font-size: 34px;
   }
 }
 
 .splash-start-btn {
-  margin-top: 48px;
+  margin-top: 40px;
   background: transparent;
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   color: rgba(255, 255, 255, 0.85);
@@ -1451,7 +1458,7 @@ input:checked + .slider:before {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   letter-spacing: 0.3px;
 }
 
@@ -1460,4 +1467,66 @@ input:checked + .slider:before {
   border-color: rgba(255, 255, 255, 0.65);
   color: white;
   transform: translateX(4px);
+}
+
+/* Footer */
+.main-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 48px 0 120px;
+  margin-top: auto;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.footer-logo {
+  height: 22px;
+  width: auto;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.footer-logo:hover {
+  opacity: 0.9;
+}
+
+.footer-copy {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+
+.footer-link:hover {
+  color: var(--text-primary);
+}
+
+.footer-link-soon {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.footer-link-soon:hover {
+  color: var(--text-muted);
 }

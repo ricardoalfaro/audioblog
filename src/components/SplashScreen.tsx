@@ -15,7 +15,7 @@ export default function SplashScreen() {
   const dismiss = () => {
     setExiting(true);
     localStorage.setItem('audiodocs_onboarded', 'true');
-    setTimeout(() => setShow(false), 500);
+    setTimeout(() => setShow(false), 400);
   };
 
   if (!show) return null;
@@ -25,9 +25,14 @@ export default function SplashScreen() {
       <div className="hero-bg-circle-1" />
       <div className="hero-bg-circle-2" />
       <div className="splash-inner">
-        <h1 className="splash-title">Escucha tus documentos como un podcast</h1>
+        <img
+          src="/main_logo_audiodocs_dark.png"
+          alt="Audiodocs"
+          className="splash-logo"
+        />
+        <h1 className="splash-title">Escucha cualquier texto como si fuera un podcast</h1>
         <p className="hero-subtitle">
-          Importa cualquier artículo, columna o blog y escúchalo en cualquier lugar, en idioma original o traducido con voces realistas.
+          Importa cualquier artículo, columna o noticia y escúchalos cuando quieras en su idioma original o traducido con voces ultra realistas.
         </p>
         <button className="splash-start-btn" onClick={dismiss}>
           Empezar <i className="fa-solid fa-arrow-right" />
