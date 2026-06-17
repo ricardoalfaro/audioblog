@@ -37,6 +37,13 @@ function HomeContent() {
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
+  // Listen for import trigger from header dropdown
+  useEffect(() => {
+    const handler = () => setIsModalOpen(true);
+    window.addEventListener('audiodocs:open-import', handler);
+    return () => window.removeEventListener('audiodocs:open-import', handler);
+  }, []);
+
   const handlePlayDirectly = (e: React.MouseEvent, targetArticle: Article) => {
     e.preventDefault();
     if (playingArticle?.id === targetArticle.id) {
@@ -405,7 +412,7 @@ function HomeContent() {
         <>
           {listeningArticles.length > 0 && (
             <section>
-              <h2 className="section-title"><i className="fa-solid fa-volume-high" style={{marginRight: '8px'}}></i> Estás escuchando</h2>
+              <h2 className="section-title"><i className="fa-solid fa-headphones" style={{marginRight: '8px', fontSize: '20px'}}></i> Estás escuchando</h2>
               <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                 {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
               </div>
@@ -414,7 +421,14 @@ function HomeContent() {
 
           {newArticles.length > 0 && (
             <section style={{ marginTop: '24px' }}>
-              <h2 className="section-title">Nuevos</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 className="section-title" style={{ marginBottom: 0 }}>
+                  <i className="fa-solid fa-inbox" style={{ marginRight: '8px', fontSize: '20px' }}></i> Nuevos
+                </h2>
+                <button className="import-inline-btn" onClick={() => setIsModalOpen(true)}>
+                  <i className="fa-solid fa-plus"></i> Importar
+                </button>
+              </div>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
                 {newArticles.map(article => renderArticleCard(article, 'card-square'))}
               </div>
@@ -442,12 +456,6 @@ function HomeContent() {
         </>
       )}
 
-
-      {articles.length > 0 && (
-        <button className="import-fab" onClick={() => setIsModalOpen(true)}>
-          <i className="fa-solid fa-plus"></i> Importar un nuevo artículo
-        </button>
-      )}
 
       {isModalOpen && (
         <div className="modal-overlay">

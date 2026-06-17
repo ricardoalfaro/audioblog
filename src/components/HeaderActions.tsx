@@ -61,13 +61,27 @@ export default function HeaderActions() {
               <span>Tema:</span>
               <ThemeSwitcher />
             </div>
-            <Link 
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('audiodocs:open-import'));
+                setIsDropdownOpen(false);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none',
+                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)',
+                cursor: 'pointer', fontSize: '14px', textAlign: 'left'
+              }}
+            >
+              <i className="fa-solid fa-plus" style={{ color: 'var(--color-primary)' }}></i> Importar artículo
+            </button>
+            <Link
               href="/archive"
               onClick={() => setIsDropdownOpen(false)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px', width: '100%', 
-                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none', 
-                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)', 
+                display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none',
+                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)',
                 cursor: 'pointer', fontSize: '14px', textDecoration: 'none'
               }}
             >
