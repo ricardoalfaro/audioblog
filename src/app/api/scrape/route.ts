@@ -4,7 +4,7 @@ import { Readability } from '@mozilla/readability';
 
 // Helper function to translate text using Google Translate free endpoint
 async function translateText(text: string, targetLang: string): Promise<string> {
-  if (!text || !targetLang || targetLang === 'original') return text;
+  if (!text || !targetLang || targetLang === 'original' || targetLang === 'none') return text;
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
     const res = await fetch(url, {
@@ -260,7 +260,7 @@ export async function POST(request: Request) {
     }
 
     // Apply translation if chosen and not 'original'
-    if (translateTo && translateTo !== 'original') {
+    if (translateTo && translateTo !== 'original' && translateTo !== 'none') {
       try {
         title = await translateText(title, translateTo);
         excerpt = await translateText(excerpt, translateTo);
