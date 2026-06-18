@@ -58,45 +58,24 @@ export default function HeaderActions() {
         {isDropdownOpen && (
           <div className="dropdown-menu">
             <div className="theme-switcher-dropdown">
-              <span>Tema:</span>
+              <i className="fa-solid fa-circle-half-stroke" style={{ color: 'var(--color-primary)', fontSize: '13px' }}></i>
+              <span>Tema</span>
               <ThemeSwitcher />
             </div>
             <button
+              className="dropdown-item"
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('audiodocs:open-import'));
                 setIsDropdownOpen(false);
               }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none',
-                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)',
-                cursor: 'pointer', fontSize: '14px', textAlign: 'left'
-              }}
             >
-              <i className="fa-solid fa-plus" style={{ color: 'var(--color-primary)' }}></i> Importar artículo
+              <i className="fa-solid fa-file-import"></i> Importar artículo
             </button>
-            <Link
-              href="/archive"
-              onClick={() => setIsDropdownOpen(false)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none',
-                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)',
-                cursor: 'pointer', fontSize: '14px', textDecoration: 'none'
-              }}
-            >
-              <i className="fa-solid fa-box-archive" style={{ color: 'var(--color-primary)' }}></i> Archivo
+            <Link href="/archive" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+              <i className="fa-solid fa-clock-rotate-left"></i> Archivo
             </Link>
-            <button 
-              onClick={handleShare}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', width: '100%', 
-                padding: '8px 12px', marginTop: '4px', background: 'none', border: 'none', 
-                borderTop: '1px solid var(--border-color)', color: 'var(--text-primary)', 
-                cursor: 'pointer', fontSize: '14px', textAlign: 'left'
-              }}
-            >
-              <i className="fa-solid fa-share-nodes" style={{ color: 'var(--color-primary)' }}></i> Comparte esta aplicación
+            <button className="dropdown-item" onClick={handleShare}>
+              <i className="fa-solid fa-arrow-up-from-bracket"></i> Compartir app
             </button>
           </div>
         )}

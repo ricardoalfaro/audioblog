@@ -6,6 +6,7 @@ import { Article } from '@/types';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import SplashScreen from '@/components/SplashScreen';
+import Footer from '@/components/Footer';
 
 const STATIC_CATEGORIES = ['General', 'Tecnología', 'Diseño', 'Negocios', 'Pagos', 'Seguros', 'Fintech', 'Política', 'Historia', 'Economía', 'Noticias'];
 
@@ -538,19 +539,7 @@ function HomeContent() {
         </div>
       )}
     
-      <footer className="main-footer">
-        <div className="footer-inner">
-          <img src="/main_logo_audiodocs_light.png" className="logo-light footer-logo" alt="Audiodocs" />
-          <img src="/main_logo_audiodocs_dark.png" className="logo-dark footer-logo" alt="Audiodocs" />
-          <p className="footer-copy">© 2026 Audiodocs by Ricardo Alfaro + IA</p>
-          <ul className="footer-links">
-            <li><a href="/archive" className="footer-link">Archivo</a></li>
-            <li><a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" className="footer-link">Github</a></li>
-            <li><span className="footer-link footer-link-soon" title="Próximamente">Qué es Audiodocs</span></li>
-            <li><span className="footer-link footer-link-soon" title="Próximamente">Preguntas frecuentes</span></li>
-          </ul>
-        </div>
-      </footer>
+      <Footer />
       <SplashScreen />
     </main>
 

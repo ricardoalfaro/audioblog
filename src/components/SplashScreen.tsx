@@ -32,7 +32,7 @@ export default function SplashScreen() {
         />
         <h1 className="splash-title">Escucha cualquier texto como si fuera un podcast</h1>
         <p className="hero-subtitle">
-          Importa cualquier artículo, columna o noticia y escúchalos cuando quieras en su idioma original o traducido con voces ultra realistas.
+          Importa un artículo, columna o noticia y escúchalos cuando quieras en su idioma original o traducido con voces ultra realistas.
         </p>
         <button className="splash-start-btn" onClick={dismiss}>
           Empezar <i className="fa-solid fa-arrow-right" />
