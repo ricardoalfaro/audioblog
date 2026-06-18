@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Article } from '@/types';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import Footer from '@/components/Footer';
+import { STATIC_CATEGORIES } from '@/lib/categories';
 
 interface Token {
   text: string;
@@ -297,7 +298,7 @@ export default function ArticleReader() {
                   }}
                 >
                   <option value="" disabled>Seleccione categoría...</option>
-                  {['General', 'Tecnología', 'Diseño', 'Negocios', 'Pagos', 'Seguros', 'Fintech', 'Política', 'Historia', 'Economía', 'Noticias'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
             </div>
