@@ -243,8 +243,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const voice = selectedEdgeVoiceRef.current;
     const url = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
 
-    fetch(url)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    fetch(url, { signal: controller.signal })
       .then(res => {
+        clearTimeout(timeoutId);
         if (!res.ok) return;
         // Abort if the article or voice changed while fetching
         if (
@@ -258,10 +262,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         prefetchedBlobUrlRef.current = URL.createObjectURL(blob);
         prefetchedIndexRef.current = nextIndex;
       })
-      .catch(() => {});
+      .catch(() => { clearTimeout(timeoutId); });
   };
 
-  const playEdgeParagraph = (index: number, article: Article) => {
+  const playEdgeParagraph = (index: number, article: Article, retries = 0) => {
     if (!audioRef.current || !article) return;
 
     try { window.speechSynthesis.cancel(); } catch (e) {}
@@ -294,14 +298,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     audioRef.current.src = src;
     audioRef.current.playbackRate = speechRate;
 
+    // When playing the title, kick off prefetch for paragraph 0 immediately —
+    // don't wait for onplay, since on cloud networks the title itself takes time
+    // to load and that window is exactly when we should be fetching paragraph 0.
+    if (index === -1) {
+      prefetchNextParagraph(-1, article);
+    }
+
     audioRef.current.onplay = () => {
       setIsPlaying(true);
       setIsPaused(false);
       setIsLoading(false);
-      // Revoke blob URL now that the audio element has loaded it
       if (src.startsWith('blob:')) URL.revokeObjectURL(src);
-      // Kick off prefetch for the paragraph after this one
-      prefetchNextParagraph(index, article);
+      // For body paragraphs, prefetch the next one when current starts playing
+      if (index >= 0) prefetchNextParagraph(index, article);
     };
 
     audioRef.current.onended = () => {
@@ -311,10 +321,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
 
     audioRef.current.onerror = () => {
-      console.error("Edge TTS audio error");
-      setIsPlaying(false);
-      setIsPaused(false);
-      setIsLoading(false);
+      console.error(`Edge TTS error at index ${index}, attempt ${retries + 1}`);
+      if (retries < 1 && playingArticleIdRef.current === article.id && !isPausedRef.current) {
+        // Retry once after a short delay, clearing any stale prefetch
+        setTimeout(() => {
+          if (playingArticleIdRef.current === article.id && !isPausedRef.current) {
+            revokePrefetchedBlob();
+            playEdgeParagraph(index, article, retries + 1);
+          }
+        }, 1500);
+      } else {
+        setIsPlaying(false);
+        setIsPaused(false);
+        setIsLoading(false);
+      }
     };
 
     setIsLoading(true);
