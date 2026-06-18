@@ -32,9 +32,11 @@ function HomeContent() {
   // Scraper form state
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [scrapeCategory, setScrapeCategory] = useState('auto');
-  const [translateTo, setTranslateTo] = useState('original');
+  const [translateTo, setTranslateTo] = useState('none');
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
+  const [scrapeStep, setScrapeStep] = useState<0|1|2|3>(0);
+  const [importSuccess, setImportSuccess] = useState(false);
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
@@ -44,6 +46,15 @@ function HomeContent() {
     window.addEventListener('audiodocs:open-import', handler);
     return () => window.removeEventListener('audiodocs:open-import', handler);
   }, []);
+
+  // Close modal on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen && !isScraping) setIsModalOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, isScraping]);
 
   const handlePlayDirectly = (e: React.MouseEvent, targetArticle: Article) => {
     e.preventDefault();
@@ -59,6 +70,7 @@ function HomeContent() {
   const [manualAuthor, setManualAuthor] = useState('');
   const [manualCategory, setManualCategory] = useState('Tecnología');
   const [manualContent, setManualContent] = useState('');
+  const [manualImageUrl, setManualImageUrl] = useState('');
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState('');
 
@@ -154,6 +166,9 @@ function HomeContent() {
 
     setIsScraping(true);
     setScrapeError('');
+    setScrapeStep(1);
+
+    const stepTimer = setTimeout(() => setScrapeStep(2), 2500);
 
     try {
       const scrapeRes = await fetch('/api/scrape', {
@@ -161,6 +176,8 @@ function HomeContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: scrapeUrl, translateTo }),
       });
+
+      clearTimeout(stepTimer);
 
       if (!scrapeRes.ok) {
         let errorMsg = 'Ocurrió un error al extraer el artículo.';
@@ -173,6 +190,7 @@ function HomeContent() {
         throw new Error(errorMsg);
       }
 
+      setScrapeStep(3);
       const scrapeData = await scrapeRes.json();
 
       if (scrapeCategory !== 'auto') {
@@ -205,13 +223,20 @@ function HomeContent() {
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
-      setIsModalOpen(false);
-      setScrapeUrl('');
-      setScrapeCategory('auto');
-      setTranslateTo('original');
+      setIsScraping(false);
+      setScrapeStep(0);
+      setImportSuccess(true);
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setImportSuccess(false);
+        setScrapeUrl('');
+        setScrapeCategory('auto');
+        setTranslateTo('none');
+      }, 1600);
     } catch (err: any) {
+      clearTimeout(stepTimer);
+      setScrapeStep(0);
       setScrapeError(err.message || 'Error al importar el artículo.');
-    } finally {
       setIsScraping(false);
     }
   };
@@ -246,6 +271,7 @@ function HomeContent() {
         excerpt: manualContent.slice(0, 160) + '...',
         duration: durationSeconds,
         paragraphs,
+        imageUrl: manualImageUrl || undefined,
         progress: 0,
       };
 
@@ -253,14 +279,19 @@ function HomeContent() {
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
-      setIsModalOpen(false);
-      setManualTitle('');
-      setManualAuthor('');
-      setManualCategory('Tecnología');
-      setManualContent('');
+      setIsSavingManual(false);
+      setImportSuccess(true);
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setImportSuccess(false);
+        setManualTitle('');
+        setManualAuthor('');
+        setManualCategory('Tecnología');
+        setManualContent('');
+        setManualImageUrl('');
+      }, 1600);
     } catch (err: any) {
       setManualError(err.message || 'Error al guardar el artículo.');
-    } finally {
       setIsSavingManual(false);
     }
   };
@@ -459,81 +490,117 @@ function HomeContent() {
 
 
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
-            <h2 style={{ marginBottom: '24px', fontSize: '24px', fontWeight: 600 }}>Añadir a la biblioteca</h2>
-            
-            <div className="modal-tabs" style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <button 
-                className={`tab-btn ${modalTab === 'url' ? 'active' : ''}`}
-                onClick={() => setModalTab('url')}
-                style={{ background: 'none', border: 'none', fontSize: '16px', fontWeight: modalTab === 'url' ? 600 : 400, color: modalTab === 'url' ? 'var(--primary-color)' : 'var(--text-secondary)', cursor: 'pointer' }}
-              >
-                Por URL
-              </button>
-              <button 
-                className={`tab-btn ${modalTab === 'manual' ? 'active' : ''}`}
-                onClick={() => setModalTab('manual')}
-                style={{ background: 'none', border: 'none', fontSize: '16px', fontWeight: modalTab === 'manual' ? 600 : 400, color: modalTab === 'manual' ? 'var(--primary-color)' : 'var(--text-secondary)', cursor: 'pointer' }}
-              >
-                Manual
-              </button>
-            </div>
+        <div className="modal-overlay" onClick={() => { if (!isScraping && !isSavingManual) setIsModalOpen(false); }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual} aria-label="Cerrar">
+              <i className="fa-solid fa-xmark" />
+            </button>
 
-            {modalTab === 'url' && (
-              <form onSubmit={handleScrapeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label className="form-label">URL del artículo</label>
-                  <input type="url" className="form-control" value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} placeholder="https://..." required />
+            {importSuccess ? (
+              <div className="import-success">
+                <i className="fa-solid fa-circle-check success-icon" />
+                <p>¡Artículo guardado!</p>
+                <span>Ya está disponible en tu biblioteca</span>
+              </div>
+            ) : (
+              <>
+                <div className="modal-header">
+                  <h2>{modalTab === 'url' ? 'Importar artículo' : 'Crear artículo'}</h2>
                 </div>
-                <div>
-                  <label className="form-label">Categoría</label>
-                  <select className="form-control" value={scrapeCategory} onChange={e => setScrapeCategory(e.target.value)}>
-                    <option value="auto">Automática (IA)</option>
-                    {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Traducir a (opcional)</label>
-                  <select className="form-control" value={translateTo} onChange={e => setTranslateTo(e.target.value)}>
-                    <option value="none">No traducir (idioma original)</option>
-                    <option value="es">Español</option>
-                    <option value="en">Inglés</option>
-                  </select>
-                </div>
-                {scrapeError && <p style={{ color: 'var(--primary-color)', fontSize: '14px' }}>{scrapeError}</p>}
-                <button type="submit" className="btn btn-primary" disabled={isScraping} style={{ width: '100%', justifyContent: 'center' }}>
-                  {isScraping ? 'Procesando...' : 'Importar'}
-                </button>
-              </form>
-            )}
 
-            {modalTab === 'manual' && (
-              <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label className="form-label">Título</label>
-                  <input type="text" className="form-control" value={manualTitle} onChange={e => setManualTitle(e.target.value)} required />
+                <div className="modal-tabs">
+                  <button className={`modal-tab-btn ${modalTab === 'url' ? 'active' : ''}`} onClick={() => setModalTab('url')}>
+                    Por URL
+                  </button>
+                  <button className={`modal-tab-btn ${modalTab === 'manual' ? 'active' : ''}`} onClick={() => setModalTab('manual')}>
+                    Manual
+                  </button>
                 </div>
-                <div>
-                  <label className="form-label">Autor</label>
-                  <input type="text" className="form-control" value={manualAuthor} onChange={e => setManualAuthor(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="form-label">Categoría</label>
-                  <select className="form-control" value={manualCategory} onChange={e => setManualCategory(e.target.value)}>
-                    {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Contenido (párrafos separados por salto de línea)</label>
-                  <textarea className="form-control" value={manualContent} onChange={e => setManualContent(e.target.value)} rows={5} required />
-                </div>
-                {manualError && <p style={{ color: 'var(--primary-color)', fontSize: '14px' }}>{manualError}</p>}
-                <button type="submit" className="btn btn-primary" disabled={isSavingManual} style={{ width: '100%', justifyContent: 'center' }}>
-                  {isSavingManual ? 'Guardando...' : 'Guardar Artículo'}
-                </button>
-              </form>
+
+                {modalTab === 'url' && (
+                  isScraping ? (
+                    <div className="import-loading">
+                      <div className="import-steps">
+                        <div className={`import-step ${scrapeStep >= 1 ? 'active' : ''} ${scrapeStep > 1 ? 'done' : ''}`}>
+                          <span className="step-icon">
+                            {scrapeStep > 1 ? <i className="fa-solid fa-check" /> : scrapeStep === 1 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                          </span>
+                          Leyendo página
+                        </div>
+                        <div className={`import-step ${scrapeStep >= 2 ? 'active' : ''} ${scrapeStep > 2 ? 'done' : ''}`}>
+                          <span className="step-icon">
+                            {scrapeStep > 2 ? <i className="fa-solid fa-check" /> : scrapeStep === 2 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                          </span>
+                          Extrayendo texto
+                        </div>
+                        <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''}`}>
+                          <span className="step-icon">
+                            {scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                          </span>
+                          Guardando
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleScrapeSubmit} className="modal-form">
+                      <div>
+                        <label className="form-label">URL del artículo</label>
+                        <input type="url" className="form-control" value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} placeholder="https://..." required autoFocus />
+                      </div>
+                      <div>
+                        <label className="form-label">Categoría</label>
+                        <select className="form-control" value={scrapeCategory} onChange={e => setScrapeCategory(e.target.value)}>
+                          <option value="auto">Automática (IA)</option>
+                          {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">Traducir a <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+                        <select className="form-control" value={translateTo} onChange={e => setTranslateTo(e.target.value)}>
+                          <option value="none">No traducir — idioma original</option>
+                          <option value="es">Español</option>
+                          <option value="en">Inglés</option>
+                        </select>
+                      </div>
+                      {scrapeError && <p className="modal-error">{scrapeError}</p>}
+                      <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                        <i className="fa-solid fa-file-import" /> Importar
+                      </button>
+                    </form>
+                  )
+                )}
+
+                {modalTab === 'manual' && (
+                  <form onSubmit={handleManualSubmit} className="modal-form">
+                    <div>
+                      <label className="form-label">Título</label>
+                      <input type="text" className="form-control" value={manualTitle} onChange={e => setManualTitle(e.target.value)} required autoFocus />
+                    </div>
+                    <div>
+                      <label className="form-label">Autor <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+                      <input type="text" className="form-control" value={manualAuthor} onChange={e => setManualAuthor(e.target.value)} placeholder="Redacción" />
+                    </div>
+                    <div>
+                      <label className="form-label">Categoría</label>
+                      <select className="form-control" value={manualCategory} onChange={e => setManualCategory(e.target.value)}>
+                        {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">URL de imagen <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+                      <input type="url" className="form-control" value={manualImageUrl} onChange={e => setManualImageUrl(e.target.value)} placeholder="https://..." />
+                    </div>
+                    <div>
+                      <label className="form-label">Contenido <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(párrafos separados por línea vacía)</span></label>
+                      <textarea className="form-control" value={manualContent} onChange={e => setManualContent(e.target.value)} rows={6} required />
+                    </div>
+                    {manualError && <p className="modal-error">{manualError}</p>}
+                    <button type="submit" className="btn btn-primary" disabled={isSavingManual} style={{ width: '100%', justifyContent: 'center' }}>
+                      {isSavingManual ? <><i className="fa-solid fa-circle-notch fa-spin" /> Guardando...</> : <><i className="fa-solid fa-floppy-disk" /> Guardar artículo</>}
+                    </button>
+                  </form>
+                )}
+              </>
             )}
           </div>
         </div>
