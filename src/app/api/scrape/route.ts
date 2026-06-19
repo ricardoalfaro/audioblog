@@ -39,20 +39,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'La URL no es válida. Asegúrate de incluir http:// o https://' }, { status: 400 });
     }
 
-    // Fetch the URL
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-      },
-    });
+    // Fetch the URL — 10s timeout to avoid hanging indefinitely (R1)
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 10_000);
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        },
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(fetchTimeout);
+      if (fetchErr.name === 'AbortError') {
+        return NextResponse.json({ error: 'El sitio no respondió a tiempo (timeout de 10 segundos).' }, { status: 504 });
+      }
+      throw fetchErr;
+    }
+    clearTimeout(fetchTimeout);
 
     if (!response.ok) {
       return NextResponse.json({ error: `No se pudo obtener el artículo: ${response.status} ${response.statusText}` }, { status: 500 });
     }
 
+    // Reject responses that are too large to avoid OOM (R4)
+    const MAX_HTML_BYTES = 5 * 1024 * 1024; // 5 MB
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > MAX_HTML_BYTES) {
+      return NextResponse.json({ error: 'El artículo es demasiado grande para procesarlo.' }, { status: 413 });
+    }
+
     const html = await response.text();
+    if (html.length > MAX_HTML_BYTES) {
+      return NextResponse.json({ error: 'El artículo es demasiado grande para procesarlo.' }, { status: 413 });
+    }
 
     // Detect Cloudflare bot challenge (common on Medium and similar sites)
     if (html.includes('id="challenge-running"') || html.includes('cf-browser-verification') || (html.includes('Just a moment') && html.includes('cloudflare'))) {
@@ -286,11 +310,8 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in scrape endpoint:', error);
-    const detailedError = error.stack
-      ? `${error.message}\nStack: ${error.stack.split('\n').slice(0, 3).join('\n')}`
-      : error.message;
     return NextResponse.json(
-      { error: detailedError || 'Error interno al procesar el artículo.' },
+      { error: error.message || 'Error interno al procesar el artículo.' },
       { status: 500 }
     );
   }

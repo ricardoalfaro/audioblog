@@ -3,6 +3,7 @@ import HeaderActions from "@/components/HeaderActions";
 import { Suspense } from 'react';
 import Link from 'next/link';
 import "./globals.css";
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import Providers from '@/components/Providers';
 
@@ -26,13 +27,6 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* Font Awesome 6 for icons */}
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-        />
         {/* Inline script to prevent theme flashing on page load */}
         <script
           dangerouslySetInnerHTML={{

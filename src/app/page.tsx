@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
+import { STATIC_CATEGORIES } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import SplashScreen from '@/components/SplashScreen';
 import Footer from '@/components/Footer';
 
-const STATIC_CATEGORIES = ['General', 'Tecnología', 'Diseño', 'Negocios', 'Pagos', 'Seguros', 'Fintech', 'Política', 'Historia', 'Economía', 'Noticias'];
 
 const EDGE_VOICES = [
   { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
@@ -79,12 +79,7 @@ function HomeContent() {
       setIsLoading(true);
       const localData = localStorage.getItem('articles');
       if (localData) {
-        const parsed = JSON.parse(localData);
-        const pruned = pruneArticles(parsed);
-        if (parsed.length !== pruned.length) {
-          localStorage.setItem('articles', JSON.stringify(pruned));
-        }
-        setArticles(pruned);
+        setArticles(JSON.parse(localData));
       } else {
         setArticles([]);
       }
@@ -322,7 +317,7 @@ function HomeContent() {
   });
 
 
-  const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category)))];
+  const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean)))];
 
   const listeningArticles = filteredArticles
     .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
