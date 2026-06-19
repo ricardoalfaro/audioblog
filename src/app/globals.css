@@ -3,7 +3,7 @@
 :root {
   /* Light Theme */
   --bg-main: #E5E5E5;
-  --bg-header: #E5E5E5;
+  --bg-header: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-card-hover: #F8F8F8;
   --bg-input: #FFFFFF;
@@ -51,7 +51,7 @@
 
 :root[data-theme="dark"] {
   --bg-main: #000000;
-  --bg-header: #000000;
+  --bg-header: #111111;
   --bg-card: #14213D;
   --bg-card-hover: #1C2E55;
   --bg-input: #0B1222;
@@ -78,7 +78,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg-main: #000000;
-    --bg-header: #000000;
+    --bg-header: #111111;
     --bg-card: #14213D;
     --bg-card-hover: #1C2E55;
     --bg-input: #0B1222;
@@ -422,13 +422,12 @@ a {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  padding-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 64px;
   z-index: 90;
   background: var(--bg-main);
-  padding-top: 12px;
+  padding-top: 20px;
 }
 
 .categories-scroll {
