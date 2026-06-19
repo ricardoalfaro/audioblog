@@ -1,6 +1,66 @@
 import { NextResponse } from 'next/server';
 import { parseHTML } from 'linkedom';
 import { Readability } from '@mozilla/readability';
+import dns from 'node:dns/promises';
+
+function isPrivateIP(ip: string): boolean {
+  const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const a = Number(v4[1]);
+    const b = Number(v4[2]);
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && (b === 18 || b === 19)) ||
+      a >= 240
+    );
+  }
+  const v6 = ip.toLowerCase().replace(/^\[|\]$/g, '');
+  return v6 === '::1' || v6 === '::' || v6.startsWith('fc') || v6.startsWith('fd') || v6.startsWith('fe80');
+}
+
+async function assertSafeURL(rawUrl: string): Promise<void> {
+  const parsed = new URL(rawUrl);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('SSRF_BLOCKED');
+  }
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost' || host === '0.0.0.0' || host === '::1') {
+    throw new Error('SSRF_BLOCKED');
+  }
+  let records: { address: string; family: number }[];
+  try {
+    records = await dns.lookup(host, { all: true });
+  } catch {
+    throw new Error('DNS_FAIL');
+  }
+  if (records.some(r => isPrivateIP(r.address))) {
+    throw new Error('SSRF_BLOCKED');
+  }
+}
+
+const MAX_REDIRECTS = 5;
+
+async function safeFetch(url: string, options: RequestInit): Promise<Response> {
+  let current = url;
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    await assertSafeURL(current);
+    const res = await fetch(current, { ...options, redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) throw new Error('Redirect sin Location header.');
+      current = new URL(loc, current).toString();
+    } else {
+      return res;
+    }
+  }
+  throw new Error('Demasiados redirects.');
+}
 
 // Helper function to translate text using Google Translate free endpoint
 async function translateText(text: string, targetLang: string): Promise<string> {
@@ -32,20 +92,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'La URL es requerida' }, { status: 400 });
     }
 
-    // Basic URL validation
+    // URL format validation
     try {
       new URL(url);
     } catch {
       return NextResponse.json({ error: 'La URL no es válida. Asegúrate de incluir http:// o https://' }, { status: 400 });
     }
 
-    // Fetch the URL — 10s timeout to avoid hanging indefinitely (R1)
+    // Fetch — 10s timeout; safeFetch blocks private IPs and validates every redirect (SSRF, R1)
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 10_000);
 
     let response: Response;
     try {
-      response = await fetch(url, {
+      response = await safeFetch(url, {
         signal: controller.signal,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -57,6 +117,9 @@ export async function POST(request: Request) {
       clearTimeout(fetchTimeout);
       if (fetchErr.name === 'AbortError') {
         return NextResponse.json({ error: 'El sitio no respondió a tiempo (timeout de 10 segundos).' }, { status: 504 });
+      }
+      if (fetchErr.message === 'SSRF_BLOCKED' || fetchErr.message === 'DNS_FAIL') {
+        return NextResponse.json({ error: 'La URL no es válida. Asegúrate de incluir http:// o https://' }, { status: 400 });
       }
       throw fetchErr;
     }
