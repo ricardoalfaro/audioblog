@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { EdgeTTS } from 'edge-tts-universal';
+import { rateLimit, getIP } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
+  if (!rateLimit(getIP(request), 60, 60_000)) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const text = searchParams.get('text');

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { parseHTML } from 'linkedom';
 import { Readability } from '@mozilla/readability';
 import dns from 'node:dns/promises';
+import { rateLimit, getIP } from '@/lib/rate-limit';
 
 function isPrivateIP(ip: string): boolean {
   const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
@@ -85,7 +86,24 @@ async function translateText(text: string, targetLang: string): Promise<string> 
   }
 }
 
+async function translateConcurrent(items: string[], targetLang: string, concurrency: number): Promise<string[]> {
+  const results = new Array<string>(items.length);
+  const queue = items.map((item, i) => ({ item, i }));
+  async function worker() {
+    while (queue.length > 0) {
+      const { item, i } = queue.shift()!;
+      results[i] = await translateText(item, targetLang);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 export async function POST(request: Request) {
+  if (!rateLimit(getIP(request), 10, 60_000)) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 });
+  }
+
   try {
     const { url, translateTo } = await request.json();
     if (!url) {
@@ -352,10 +370,8 @@ export async function POST(request: Request) {
         title = await translateText(title, translateTo);
         excerpt = await translateText(excerpt, translateTo);
         
-        // Translate all paragraphs in parallel (concurrently) to maintain fast speed
-        paragraphs = await Promise.all(
-          paragraphs.map((p) => translateText(p, translateTo))
-        );
+        // Translate paragraphs with capped concurrency to avoid hammering the translate API
+        paragraphs = await translateConcurrent(paragraphs, translateTo, 5);
       } catch (transErr) {
         console.error('Failed to translate content:', transErr);
         // Fall back to original language on translation crash
