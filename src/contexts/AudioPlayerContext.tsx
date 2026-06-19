@@ -241,12 +241,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     const text = article.paragraphs[nextIndex];
     const voice = selectedEdgeVoiceRef.current;
-    const url = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    fetch(url, { signal: controller.signal })
+    fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice }),
+      signal: controller.signal,
+    })
       .then(res => {
         clearTimeout(timeoutId);
         if (!res.ok) return;
@@ -284,19 +288,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (index >= 0) updateArticleProgress(article, index);
 
     const text = index === -1 ? article.title : article.paragraphs[index];
-
-    // Use prefetched blob if available for this index, otherwise fall back to API URL
-    let src: string;
-    if (index >= 0 && prefetchedIndexRef.current === index && prefetchedBlobUrlRef.current) {
-      src = prefetchedBlobUrlRef.current;
-      prefetchedBlobUrlRef.current = null;
-      prefetchedIndexRef.current = -1;
-    } else {
-      src = `/api/tts?text=${encodeURIComponent(text)}&voice=${selectedEdgeVoice}`;
-    }
-
-    audioRef.current.src = src;
-    audioRef.current.playbackRate = speechRate;
+    const voice = selectedEdgeVoiceRef.current;
 
     // When playing the title, kick off prefetch for paragraph 0 immediately —
     // don't wait for onplay, since on cloud networks the title itself takes time
@@ -305,25 +297,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       prefetchNextParagraph(-1, article);
     }
 
-    audioRef.current.onplay = () => {
-      setIsPlaying(true);
-      setIsPaused(false);
-      setIsLoading(false);
-      if (src.startsWith('blob:')) URL.revokeObjectURL(src);
-      // For body paragraphs, prefetch the next one when current starts playing
-      if (index >= 0) prefetchNextParagraph(index, article);
-    };
-
-    audioRef.current.onended = () => {
-      if (!isPausedRef.current && playingArticleIdRef.current === article.id) {
-        playEdgeParagraph(index + 1, article);
-      }
-    };
-
-    audioRef.current.onerror = () => {
+    const onTTSError = () => {
       console.error(`Edge TTS error at index ${index}, attempt ${retries + 1}`);
       if (retries < 1 && playingArticleIdRef.current === article.id && !isPausedRef.current) {
-        // Retry once after a short delay, clearing any stale prefetch
         setTimeout(() => {
           if (playingArticleIdRef.current === article.id && !isPausedRef.current) {
             revokePrefetchedBlob();
@@ -337,13 +313,66 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    const setupAndPlay = (blobUrl: string) => {
+      if (!audioRef.current) { URL.revokeObjectURL(blobUrl); return; }
+
+      audioRef.current.onplay = () => {
+        setIsPlaying(true);
+        setIsPaused(false);
+        setIsLoading(false);
+        URL.revokeObjectURL(blobUrl);
+        if (index >= 0) prefetchNextParagraph(index, article);
+      };
+      audioRef.current.onended = () => {
+        if (!isPausedRef.current && playingArticleIdRef.current === article.id) {
+          playEdgeParagraph(index + 1, article);
+        }
+      };
+      audioRef.current.onerror = onTTSError;
+
+      audioRef.current.src = blobUrl;
+      audioRef.current.playbackRate = speechRate;
+      setIsLoading(true);
+      audioRef.current.play().catch(e => {
+        console.error("Audio play failed:", e);
+        setIsPlaying(false);
+        setIsPaused(false);
+        setIsLoading(false);
+      });
+    };
+
+    // Use prefetched blob if available, otherwise fetch via POST
+    if (index >= 0 && prefetchedIndexRef.current === index && prefetchedBlobUrlRef.current) {
+      const blobUrl = prefetchedBlobUrlRef.current;
+      prefetchedBlobUrlRef.current = null;
+      prefetchedIndexRef.current = -1;
+      setupAndPlay(blobUrl);
+      return;
+    }
+
     setIsLoading(true);
-    audioRef.current.play().catch(e => {
-      console.error("Audio play failed:", e);
-      setIsPlaying(false);
-      setIsPaused(false);
-      setIsLoading(false);
-    });
+    const ctrl = new AbortController();
+    const ttsTimeout = setTimeout(() => ctrl.abort(), 30_000);
+
+    fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice }),
+      signal: ctrl.signal,
+    })
+      .then(res => {
+        clearTimeout(ttsTimeout);
+        if (!res.ok) throw new Error(`TTS ${res.status}`);
+        return res.blob();
+      })
+      .then(blob => {
+        if (playingArticleIdRef.current !== article.id) return;
+        setupAndPlay(URL.createObjectURL(blob));
+      })
+      .catch(() => {
+        clearTimeout(ttsTimeout);
+        onTTSError();
+      });
   };
 
   const handleParagraphClick = (index: number) => {
