@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const text = typeof body.text === 'string' ? body.text.trim() : '';
-    const voice = typeof body.voice === 'string' ? body.voice.trim() : 'es-ES-AlvaroNeural';
+    const voice = typeof body.voice === 'string' ? body.voice.trim() : 'es-MX-DaliaNeural';
 
     if (!text) {
       return NextResponse.json({ error: 'El texto es requerido' }, { status: 400 });

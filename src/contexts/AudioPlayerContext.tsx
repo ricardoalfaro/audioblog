@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, ReactNod
 import { Article } from '@/types';
 
 export const EDGE_VOICES = [
-  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
+  { name: 'Alvaro (España, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-ES' },
   { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
   { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
   { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
@@ -56,7 +56,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState('');
-  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('es-ES-AlvaroNeural');
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('es-MX-DaliaNeural');
 
   // Keep ref in sync so async prefetch callbacks always use the current voice
   useEffect(() => { selectedEdgeVoiceRef.current = selectedEdgeVoice; }, [selectedEdgeVoice]);
@@ -87,7 +87,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Prefetch state for Edge TTS double-buffering
   const prefetchedBlobUrlRef = useRef<string | null>(null);
   const prefetchedIndexRef = useRef<number>(-1);
-  const selectedEdgeVoiceRef = useRef('es-ES-AlvaroNeural');
+  const selectedEdgeVoiceRef = useRef('es-MX-DaliaNeural');
 
   // Load local voices
   useEffect(() => {
