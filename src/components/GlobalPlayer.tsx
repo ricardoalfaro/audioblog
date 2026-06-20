@@ -17,7 +17,8 @@ export default function GlobalPlayer() {
     isLoading,
     toggleSpeed,
     audioEngine,
-    handleEngineChange
+    handleEngineChange,
+    ttsError
   } = useAudioPlayer();
 
   useEffect(() => {
@@ -62,6 +63,12 @@ export default function GlobalPlayer() {
           <div style={{ height: '100%', width: `${getProgressPercentage()}%`, backgroundColor: 'var(--color-primary)', transition: 'width 0.3s' }}></div>
         </div>
 
+        {ttsError && (
+          <div style={{ fontSize: '12px', color: '#d93025', textAlign: 'center', padding: '2px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-triangle-exclamation"></i>
+            {ttsError}
+          </div>
+        )}
         <div className="player-main-controls">
           <div style={{ width: '48px', height: '48px', flexShrink: 0, marginRight: '16px', display: 'flex', justifyContent: 'center' }}>
             {playingArticle.imageUrl ? (

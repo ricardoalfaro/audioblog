@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, ReactNod
 import { Article } from '@/types';
 
 export const EDGE_VOICES = [
-  { name: 'Alvaro (España, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-ES' },
+  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
   { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
   { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
   { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
@@ -24,7 +24,8 @@ interface AudioPlayerContextType {
   selectedVoiceName: string;
   selectedEdgeVoice: string;
   isLoading: boolean;
-  
+  ttsError: string | null;
+
   playArticle: (article: Article, forceParagraphIndex?: number) => void;
   handlePlayPause: () => void;
   handleStop: () => void;
@@ -48,6 +49,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [activeParagraphIndex, setActiveParagraphIndex] = useState(-1);
   const [currentCharIndex, setCurrentCharIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
+  const [ttsError, setTtsError] = useState<string | null>(null);
   
   // Refs to fix stale closures in audio events
   const isPausedRef = useRef(false);
@@ -310,6 +312,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
         setIsPaused(false);
         setIsLoading(false);
+        setTtsError('No se pudo generar el audio. Intenta de nuevo.');
+        setTimeout(() => setTtsError(null), 5000);
       }
     };
 
@@ -495,7 +499,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const handleEngineChange = (engine: 'device' | 'edge') => {
     setAudioEngine(engine);
     if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEngine: engine });
-    if (isPlaying) handleStop();
+    if ((isPlaying || isLoading) && playingArticle) {
+      try { window.speechSynthesis.cancel(); } catch {}
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+      revokePrefetchedBlob();
+      setIsPlaying(false);
+      setIsPaused(false);
+      isPausedRef.current = false;
+      const idx = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
+      if (engine === 'edge') {
+        playEdgeParagraph(idx, playingArticle);
+      } else {
+        speakParagraph(idx, playingArticle);
+      }
+    }
   };
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -548,6 +565,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       currentCharIndex,
       speechRate,
       isLoading,
+      ttsError,
       audioEngine,
       voices,
       selectedVoiceName,
