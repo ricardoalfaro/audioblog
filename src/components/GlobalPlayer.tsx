@@ -100,14 +100,13 @@ export default function GlobalPlayer() {
             <button className="player-btn" onClick={toggleSpeed} title="Velocidad" style={{ fontSize: '13px', fontWeight: 600, width: '32px' }}>
               {speechRate}x
             </button>
-            <label className="switch" title="Selector de tipo de voz: Natural o del Navegador" style={{ transform: 'scale(0.8)', margin: 0 }}>
-              <input
-                type="checkbox"
-                checked={audioEngine === 'edge'}
-                onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')}
-              />
-              <span className="slider"></span>
-            </label>
+            <button
+              className="player-btn"
+              onClick={() => handleEngineChange(audioEngine === 'edge' ? 'device' : 'edge')}
+              title={audioEngine === 'edge' ? 'Voz Natural activa — click para cambiar a voz del sistema' : 'Voz del sistema activa — click para cambiar a voz natural'}
+            >
+              <i className={`fa-solid ${audioEngine === 'edge' ? 'fa-user' : 'fa-robot'}`}></i>
+            </button>
             <button className="player-btn" onClick={handleStop} title="Cerrar reproductor">
               <i className="fa-solid fa-times"></i>
             </button>
