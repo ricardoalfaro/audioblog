@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { EdgeTTS } from 'edge-tts-universal';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 
+export const maxDuration = 30;
+
 const VALID_VOICE_RE = /^[a-zA-Z]{2,3}-[A-Z]{2,3}-[a-zA-Z]+Neural$/;
 const MAX_TEXT_LENGTH = 5000;
 

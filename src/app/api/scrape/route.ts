@@ -4,6 +4,8 @@ import { Readability } from '@mozilla/readability';
 import dns from 'node:dns/promises';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 
+export const maxDuration = 30;
+
 function isPrivateIP(ip: string): boolean {
   const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (v4) {
