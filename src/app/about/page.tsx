@@ -1,128 +1,69 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Qué es Audiodocs',
-  description: 'Audiodocs convierte cualquier artículo en audio con voces neurales. Sin suscripción, sin restricciones.',
+  description: 'Audiodocs nació de la frustración de acumular artículos sin tiempo para leerlos. Un proyecto personal y open source.',
 };
-
-const steps = [
-  {
-    img: '/about/step-1.png',
-    step: '1',
-    title: 'Pegas la URL',
-    desc: 'Cualquier artículo público. Substack, Medium, blogs, newsletters, medios.',
-  },
-  {
-    img: '/about/step-2.png',
-    step: '2',
-    title: 'Generamos el audio',
-    desc: 'Extraemos el texto, lo limpiamos y lo convertimos en audio con voces neurales en español e inglés.',
-  },
-  {
-    img: '/about/step-3.png',
-    step: '3',
-    title: 'Escuchas donde quieras',
-    desc: 'El reproductor funciona en segundo plano, con CarPlay y Bluetooth.',
-  },
-];
 
 export default function AboutPage() {
   return (
     <>
-      <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '48px', paddingBottom: '80px', maxWidth: '860px' }}>
+      <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '48px', paddingBottom: '80px', maxWidth: '680px' }}>
 
         {/* Hero */}
-        <section style={{ marginBottom: '64px' }}>
+        <section style={{ marginBottom: '56px' }}>
           <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-primary)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px' }}>
             Qué es Audiodocs
           </p>
           <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 800, lineHeight: 1.15, color: 'var(--text-primary)', marginBottom: '20px', fontFamily: 'var(--font-sans)' }}>
             Tus lecturas, en audio.<br />Sin suscripción.
           </h1>
-          <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: '580px' }}>
-            Audiodocs convierte cualquier artículo en un mini podcast que puedes escuchar donde quieras, con voces neurales de alta calidad.
+          <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+            Audiodocs convierte cualquier artículo en audio con voces neurales de alta calidad. Pegas la URL y puedes escucharlo donde quieras.
           </p>
         </section>
 
-        {/* Origin */}
-        <section style={{ marginBottom: '64px' }}>
+        {/* Por qué existe */}
+        <section style={{ marginBottom: '56px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
             Por qué existe
           </h2>
-          <div style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.85, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <p>
-              Todos acumulamos artículos para leer. En pestañas abiertas, en apps de lectura, en favoritos que nunca volvemos a abrir. La lista crece y el tiempo no alcanza.
+              Como muchos, acumulo artículos para leer. Newsletters, blogs, medios, threads largos. La lista siempre crece más rápido de lo que la vacío.
             </p>
             <p>
-              Plataformas como Substack o Medium ofrecen escucha en audio, pero solo para sus propios contenidos y, en muchos casos, detrás de un pago. El resto del internet —blogs, newsletters, medios— queda fuera.
+              Plataformas como Substack o Medium tienen audio, pero está restringido a sus propios contenidos y en muchos casos detrás de un pago. El resto del internet queda fuera.
             </p>
             <p>
-              Audiodocs nació de esa fricción. La idea es simple: pegas la URL de cualquier artículo y la app se encarga del resto. Sin cuentas, sin planes, sin límites por plataforma.
+              Audiodocs nació de esa frustración. La premisa es simple: si puedo leerlo, debería poder escucharlo. En el auto, paseando al perro, en el gimnasio.
+            </p>
+            <p>
+              Es un proyecto personal que construí para uso propio y que decidí compartir porque la necesidad no es solo mía.
             </p>
           </div>
         </section>
 
-        {/* How it works — 3-column image grid */}
-        <section style={{ marginBottom: '64px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '28px' }}>
-            Cómo funciona
-          </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '24px',
-          }}
-            className="about-steps-grid"
-          >
-            {steps.map(({ img, step, title, desc }) => (
-              <div key={step} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-lg)', overflow: 'hidden' }}>
-                <div style={{ aspectRatio: '4/3', background: 'var(--bg-input)', overflow: 'hidden' }}>
-                  <img
-                    src={img}
-                    alt={title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                </div>
-                <div style={{ padding: '20px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                    Paso {step}
-                  </p>
-                  <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Use cases */}
-        <section style={{ marginBottom: '64px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '24px' }}>
-            Para cuándo
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
-            {[
-              { icon: 'fa-car', label: 'En el auto' },
-              { icon: 'fa-dog', label: 'Paseando al perro' },
-              { icon: 'fa-dumbbell', label: 'En el gimnasio' },
-              { icon: 'fa-person-walking', label: 'Caminando' },
-            ].map(({ icon, label }) => (
-              <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-md)', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <i className={`fa-solid ${icon}`} style={{ color: 'var(--color-primary)', fontSize: '20px', width: '24px', textAlign: 'center' }}></i>
-                <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)' }}>{label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* CTA */}
+        {/* Open source */}
         <section>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--color-primary)', color: '#000', fontWeight: 700, fontSize: '15px', padding: '12px 24px', borderRadius: 'var(--border-radius-md)', textDecoration: 'none', transition: 'opacity 0.15s' }}>
-            <i className="fa-solid fa-headphones"></i>
-            Ir a mi biblioteca
-          </Link>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
+            Open source
+          </h2>
+          <div style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.85, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <p>
+              Audiodocs es código abierto. Puedes ver cómo funciona, reportar problemas o contribuir directamente desde el repositorio.
+            </p>
+            <a
+              href="https://github.com/ricardoalfaro/audioblog"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 600, fontSize: '15px', textDecoration: 'none', borderBottom: '2px solid var(--color-primary)', paddingBottom: '2px', width: 'fit-content' }}
+            >
+              <i className="fa-brands fa-github" style={{ fontSize: '18px' }}></i>
+              github.com/ricardoalfaro/audioblog
+            </a>
+          </div>
         </section>
 
       </main>
