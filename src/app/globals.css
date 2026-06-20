@@ -450,7 +450,7 @@ a {
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 6px 0;
+  padding: 10px 0;
   transition: all var(--transition-fast);
 }
 

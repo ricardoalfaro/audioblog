@@ -422,6 +422,9 @@ function HomeContent() {
           ))}
         </div>
         <div className="view-toggles">
+          <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
+            <i className="fa-solid fa-plus"></i> Importar nuevo
+          </button>
           <button className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => toggleViewMode('grid')} title="Vista en cuadrícula">
             <i className="fa-solid fa-grip"></i>
           </button>
@@ -448,14 +451,9 @@ function HomeContent() {
 
           {newArticles.length > 0 && (
             <section style={{ marginTop: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 className="section-title" style={{ marginBottom: 0 }}>
-                  <i className="fa-solid fa-inbox" style={{ marginRight: '8px', fontSize: '20px' }}></i> Nuevos
-                </h2>
-                <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                  <i className="fa-solid fa-plus"></i> Importar nuevo
-                </button>
-              </div>
+              <h2 className="section-title">
+                <i className="fa-solid fa-inbox" style={{ marginRight: '8px', fontSize: '20px' }}></i> Nuevos
+              </h2>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
                 {newArticles.map(article => renderArticleCard(article, 'card-square'))}
               </div>
