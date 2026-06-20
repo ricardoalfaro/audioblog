@@ -83,7 +83,6 @@ export default function AboutPage() {
                     src={img}
                     alt={title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                   />
                 </div>
                 <div style={{ padding: '20px' }}>
