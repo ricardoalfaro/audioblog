@@ -7,10 +7,31 @@ export const metadata: Metadata = {
   description: 'Audiodocs convierte cualquier artículo en audio con voces neurales. Sin suscripción, sin restricciones.',
 };
 
+const steps = [
+  {
+    img: '/about/step-1.png',
+    step: '1',
+    title: 'Pegas la URL',
+    desc: 'Cualquier artículo público. Substack, Medium, blogs, newsletters, medios.',
+  },
+  {
+    img: '/about/step-2.png',
+    step: '2',
+    title: 'Generamos el audio',
+    desc: 'Extraemos el texto, lo limpiamos y lo convertimos en audio con voces neurales en español e inglés.',
+  },
+  {
+    img: '/about/step-3.png',
+    step: '3',
+    title: 'Escuchas donde quieras',
+    desc: 'El reproductor funciona en segundo plano, con CarPlay y Bluetooth.',
+  },
+];
+
 export default function AboutPage() {
   return (
     <>
-      <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '48px', paddingBottom: '80px', maxWidth: '720px' }}>
+      <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '48px', paddingBottom: '80px', maxWidth: '860px' }}>
 
         {/* Hero */}
         <section style={{ marginBottom: '64px' }}>
@@ -21,7 +42,7 @@ export default function AboutPage() {
             Tus lecturas, en audio.<br />Sin suscripción.
           </h1>
           <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: '580px' }}>
-            Audiodocs convierte cualquier artículo en un mini podcast que podés escuchar donde quieras, con voces neurales de alta calidad.
+            Audiodocs convierte cualquier artículo en un mini podcast que puedes escuchar donde quieras, con voces neurales de alta calidad.
           </p>
         </section>
 
@@ -38,30 +59,39 @@ export default function AboutPage() {
               Plataformas como Substack o Medium ofrecen escucha en audio, pero solo para sus propios contenidos y, en muchos casos, detrás de un pago. El resto del internet —blogs, newsletters, medios— queda fuera.
             </p>
             <p>
-              Audiodocs nació de esa fricción. La idea es simple: pegás la URL de cualquier artículo y la app se encarga del resto. Sin cuentas, sin planes, sin límites por plataforma.
+              Audiodocs nació de esa fricción. La idea es simple: pegas la URL de cualquier artículo y la app se encarga del resto. Sin cuentas, sin planes, sin límites por plataforma.
             </p>
           </div>
         </section>
 
-        {/* How it works */}
+        {/* How it works — 3-column image grid */}
         <section style={{ marginBottom: '64px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '28px' }}>
             Cómo funciona
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {[
-              { icon: 'fa-link', step: '1', title: 'Pegás la URL', desc: 'Cualquier artículo público. Substack, Medium, blogs, newsletters, medios.' },
-              { icon: 'fa-waveform-lines', step: '2', title: 'Generamos el audio', desc: 'Extraemos el texto, lo limpiamos y lo convertimos en audio con voces neurales en español e inglés.' },
-              { icon: 'fa-headphones', step: '3', title: 'Escuchás donde quieras', desc: 'El reproductor funciona en segundo plano, con CarPlay y Bluetooth.' },
-            ].map(({ icon, step, title, desc }) => (
-              <div key={step} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--color-primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <i className={`fa-solid ${icon}`} style={{ color: 'var(--color-primary)', fontSize: '18px' }}></i>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '24px',
+          }}
+            className="about-steps-grid"
+          >
+            {steps.map(({ img, step, title, desc }) => (
+              <div key={step} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-lg)', overflow: 'hidden' }}>
+                <div style={{ aspectRatio: '4/3', background: 'var(--bg-input)', overflow: 'hidden' }}>
+                  <img
+                    src={img}
+                    alt={title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  />
                 </div>
-                <div>
-                  <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Paso {step}</p>
-                  <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>{title}</p>
-                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{desc}</p>
+                <div style={{ padding: '20px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                    Paso {step}
+                  </p>
+                  <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{desc}</p>
                 </div>
               </div>
             ))}
