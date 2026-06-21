@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
-import { STATIC_CATEGORIES } from '@/lib/categories';
+import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import SplashScreen from '@/components/SplashScreen';
@@ -67,10 +67,7 @@ function HomeContent() {
 
   // Manual form state
   const [manualTitle, setManualTitle] = useState('');
-  const [manualAuthor, setManualAuthor] = useState('');
-  const [manualCategory, setManualCategory] = useState('Tecnología');
   const [manualContent, setManualContent] = useState('');
-  const [manualImageUrl, setManualImageUrl] = useState('');
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState('');
 
@@ -259,14 +256,14 @@ function HomeContent() {
       const newArticle: Article = {
         id: Date.now().toString(),
         title: manualTitle,
-        author: manualAuthor || 'Redacción',
+        author: 'Manual',
         url: 'manual',
         addedAt: new Date().toISOString(),
-        category: manualCategory,
+        category: detectCategory(manualTitle + ' ' + manualContent),
         excerpt: manualContent.slice(0, 160) + '...',
         duration: durationSeconds,
         paragraphs,
-        imageUrl: manualImageUrl || undefined,
+        imageUrl: undefined,
         progress: 0,
       };
 
@@ -280,10 +277,7 @@ function HomeContent() {
         setIsModalOpen(false);
         setImportSuccess(false);
         setManualTitle('');
-        setManualAuthor('');
-        setManualCategory('Tecnología');
         setManualContent('');
-        setManualImageUrl('');
       }, 1600);
     } catch (err: any) {
       setManualError(err.message || 'Error al guardar el artículo.');
@@ -572,22 +566,8 @@ function HomeContent() {
                       <input type="text" className="form-control" value={manualTitle} onChange={e => setManualTitle(e.target.value)} required autoFocus />
                     </div>
                     <div>
-                      <label className="form-label">Autor <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
-                      <input type="text" className="form-control" value={manualAuthor} onChange={e => setManualAuthor(e.target.value)} placeholder="Redacción" />
-                    </div>
-                    <div>
-                      <label className="form-label">Categoría</label>
-                      <select className="form-control" value={manualCategory} onChange={e => setManualCategory(e.target.value)}>
-                        {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="form-label">URL de imagen <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
-                      <input type="url" className="form-control" value={manualImageUrl} onChange={e => setManualImageUrl(e.target.value)} placeholder="https://..." />
-                    </div>
-                    <div>
                       <label className="form-label">Contenido <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(párrafos separados por línea vacía)</span></label>
-                      <textarea className="form-control" value={manualContent} onChange={e => setManualContent(e.target.value)} rows={6} required />
+                      <textarea className="form-control" value={manualContent} onChange={e => setManualContent(e.target.value)} rows={8} required />
                     </div>
                     {manualError && <p className="modal-error">{manualError}</p>}
                     <button type="submit" className="btn btn-primary" disabled={isSavingManual} style={{ width: '100%', justifyContent: 'center' }}>
