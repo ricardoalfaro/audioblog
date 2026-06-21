@@ -324,8 +324,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       prefetchNextParagraph(-1, article);
     }
 
-    const onTTSError = () => {
-      console.error(`Edge TTS error at index ${index}, attempt ${retries + 1}`);
+    const onTTSError = (detail?: string) => {
+      console.error(`Edge TTS error at index ${index}, attempt ${retries + 1}`, detail ?? '');
       if (retries < 1 && playingArticleIdRef.current === article.id && !isPausedRef.current) {
         setTimeout(() => {
           if (playingArticleIdRef.current === article.id && !isPausedRef.current) {
@@ -337,8 +337,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
         setIsPaused(false);
         setIsLoading(false);
-        setTtsError('No se pudo generar el audio. Intenta de nuevo.');
-        setTimeout(() => setTtsError(null), 5000);
+        setTtsError(`Error de audio${detail ? ` [${detail}]` : ''}. Intenta de nuevo.`);
+        setTimeout(() => setTtsError(null), 8000);
       }
     };
 
@@ -357,16 +357,21 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           playEdgeParagraph(index + 1, article);
         }
       };
-      audioRef.current.onerror = onTTSError;
+      audioRef.current.onerror = (e) => {
+        const code = (audioRef.current?.error?.code ?? '?');
+        onTTSError(`media ${code}`);
+      };
 
       audioRef.current.src = blobUrl;
       audioRef.current.playbackRate = speechRate;
       setIsLoading(true);
       audioRef.current.play().catch(e => {
-        console.error("Audio play failed:", e);
+        console.error('Audio play() failed:', e?.name, e?.message);
         setIsPlaying(false);
         setIsPaused(false);
         setIsLoading(false);
+        setTtsError(`play() bloqueado [${e?.name ?? 'error'}]. Intenta de nuevo.`);
+        setTimeout(() => setTtsError(null), 8000);
       });
     };
 
@@ -391,16 +396,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     })
       .then(res => {
         clearTimeout(ttsTimeout);
-        if (!res.ok) throw new Error(`TTS ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.blob();
       })
       .then(blob => {
         if (playingArticleIdRef.current !== article.id) return;
+        if (!blob || blob.size === 0) throw new Error('blob vacío');
         setupAndPlay(URL.createObjectURL(blob));
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         clearTimeout(ttsTimeout);
-        onTTSError();
+        const msg = err instanceof Error ? err.message : 'fetch error';
+        onTTSError(msg);
       });
   };
 
