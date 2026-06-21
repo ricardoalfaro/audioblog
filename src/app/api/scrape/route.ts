@@ -168,8 +168,17 @@ export async function POST(request: Request) {
       }, { status: 422 });
     }
 
+    // Algunos CMS (ej. df.cl) entregan el cuerpo real del artículo oculto con
+    // display:none/visibility:hidden inline y lo revelan vía JS en el cliente
+    // (paywalls suaves, contenido medido). Readability descarta esos nodos como
+    // "no visibles" y elige un contenedor equivocado, así que los des-ocultamos
+    // antes de parsear.
+    const visibleHtml = html
+      .replace(/display\s*:\s*none\s*;?/gi, '')
+      .replace(/visibility\s*:\s*hidden\s*;?/gi, '');
+
     // Parse with linkedom
-    const { document } = parseHTML(html);
+    const { document } = parseHTML(visibleHtml);
     
     // Check if Readability can parse it
     const reader = new Readability(document);
