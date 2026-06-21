@@ -409,7 +409,7 @@ function HomeContent() {
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-      <section className="tabs-container">
+      {(articles.length > 0 || isLoading) && <section className="tabs-container">
         <div className="categories-scroll">
           {categories.map((category) => (
             <button
@@ -432,7 +432,7 @@ function HomeContent() {
             <i className="fa-solid fa-list"></i>
           </button>
         </div>
-      </section>
+      </section>}
 
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', flex: 1 }}>
@@ -461,21 +461,23 @@ function HomeContent() {
           )}
 
           {filteredArticles.length === 0 && (
-            <div className="empty-state">
-              {articles.length === 0 ? (
-                <>
-                  <h3>Tu biblioteca está vacía</h3>
-                  <p>Importa tu primer artículo para empezar a escuchar.</p>
-                  <button className="btn btn-primary" style={{ marginTop: '24px', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
-                    <i className="fa-solid fa-plus"></i> Importar mi primer artículo
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h3>No hay artículos en esta categoría</h3>
-                  <p>Prueba seleccionando otra categoría.</p>
-                </>
-              )}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="empty-state">
+                {articles.length === 0 ? (
+                  <>
+                    <h3>Tu biblioteca está vacía</h3>
+                    <p>Importa tu primer artículo para empezar a escuchar.</p>
+                    <button className="btn btn-primary" style={{ marginTop: '24px', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
+                      <i className="fa-solid fa-file-import"></i> Importar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h3>No hay artículos en esta categoría</h3>
+                    <p>Prueba seleccionando otra categoría.</p>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </>
