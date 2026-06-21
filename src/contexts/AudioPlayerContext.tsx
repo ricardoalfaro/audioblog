@@ -250,9 +250,23 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Convert audio ArrayBuffer to base64 data URL — more reliable than blob URLs
+  // on iOS WebKit (standalone PWA mode rejects blob: URLs for media with MEDIA_ERR_SRC_NOT_SUPPORTED)
+  const audioToDataUrl = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunk = 8192;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+    }
+    return `data:audio/mpeg;base64,${btoa(binary)}`;
+  };
+
   const revokePrefetchedBlob = () => {
     if (prefetchedBlobUrlRef.current) {
-      URL.revokeObjectURL(prefetchedBlobUrlRef.current);
+      if (prefetchedBlobUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(prefetchedBlobUrlRef.current);
+      }
       prefetchedBlobUrlRef.current = null;
       prefetchedIndexRef.current = -1;
     }
@@ -286,11 +300,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           playingArticleIdRef.current !== article.id ||
           selectedEdgeVoiceRef.current !== voice
         ) return;
-        return res.blob();
+        return res.arrayBuffer();
       })
-      .then(blob => {
-        if (!blob) return;
-        prefetchedBlobUrlRef.current = URL.createObjectURL(blob);
+      .then(buffer => {
+        if (!buffer) return;
+        prefetchedBlobUrlRef.current = audioToDataUrl(buffer);
         prefetchedIndexRef.current = nextIndex;
       })
       .catch(() => { clearTimeout(timeoutId); });
@@ -342,14 +356,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const setupAndPlay = (blobUrl: string) => {
-      if (!audioRef.current) { URL.revokeObjectURL(blobUrl); return; }
+    const setupAndPlay = (audioSrc: string) => {
+      if (!audioRef.current) return;
 
       audioRef.current.onplay = () => {
         setIsPlaying(true);
         setIsPaused(false);
         setIsLoading(false);
-        URL.revokeObjectURL(blobUrl);
         if (index >= 0) prefetchNextParagraph(index, article);
       };
       audioRef.current.onended = () => {
@@ -362,7 +375,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         onTTSError(`media ${code}`);
       };
 
-      audioRef.current.src = blobUrl;
+      audioRef.current.src = audioSrc;
       audioRef.current.playbackRate = speechRate;
       setIsLoading(true);
       audioRef.current.play().catch(e => {
@@ -397,12 +410,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       .then(res => {
         clearTimeout(ttsTimeout);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.blob();
+        return res.arrayBuffer();
       })
-      .then(blob => {
+      .then(buffer => {
         if (playingArticleIdRef.current !== article.id) return;
-        if (!blob || blob.size === 0) throw new Error('blob vacío');
-        setupAndPlay(URL.createObjectURL(blob));
+        if (!buffer || buffer.byteLength === 0) throw new Error('buffer vacío');
+        setupAndPlay(audioToDataUrl(buffer));
       })
       .catch((err: unknown) => {
         clearTimeout(ttsTimeout);
