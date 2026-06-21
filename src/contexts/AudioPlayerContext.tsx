@@ -119,12 +119,37 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const audio = new Audio();
       audioRef.current = audio;
-      
+
       return () => {
         audio.pause();
         audio.src = '';
       };
     }
+  }, []);
+
+  // iOS Safari requires audio.play() to be called synchronously within a user gesture.
+  // Playing a silent clip on first interaction unlocks the audio element so that
+  // subsequent async play() calls (after POST fetch) are allowed.
+  useEffect(() => {
+    const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    const unlock = () => {
+      const el = audioRef.current;
+      if (!el) return;
+      el.src = SILENT_WAV;
+      el.play().then(() => {
+        el.pause();
+        el.src = '';
+        el.load();
+      }).catch(() => {
+        el.src = '';
+      });
+    };
+    document.addEventListener('touchend', unlock, { once: true });
+    document.addEventListener('click', unlock, { once: true });
+    return () => {
+      document.removeEventListener('touchend', unlock);
+      document.removeEventListener('click', unlock);
+    };
   }, []);
 
   const updateArticleProgress = (article: Article, paragraphIndex: number, updateLastPlayed = false) => {
