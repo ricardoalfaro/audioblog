@@ -311,7 +311,8 @@ function HomeContent() {
   });
 
 
-  const categories = ['Todos', ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean)))];
+  const activeArticles = articles.filter(a => !a.paragraphs?.length || (a.progress ?? 0) < a.paragraphs.length);
+  const categories = ['Todos', ...Array.from(new Set(activeArticles.map((a) => a.category).filter(Boolean)))];
 
   const listeningArticles = filteredArticles
     .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
