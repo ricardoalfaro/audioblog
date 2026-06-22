@@ -438,7 +438,7 @@ function HomeContent() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '8px', fontSize: '20px'}}></i> Estás escuchando</h2>
                 <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                  <i className="fa-solid fa-file-import"></i> Importar
+                  <i className="fa-solid fa-file-import"></i> Importar documento
                 </button>
               </div>
               <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
@@ -455,7 +455,7 @@ function HomeContent() {
                 </h2>
                 {listeningArticles.length === 0 && (
                   <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                    <i className="fa-solid fa-file-import"></i> Importar
+                    <i className="fa-solid fa-file-import"></i> Importar documento
                   </button>
                 )}
               </div>
@@ -473,7 +473,7 @@ function HomeContent() {
                     <h3>Tu biblioteca está vacía</h3>
                     <p>Importa tu primer artículo para empezar a escuchar.</p>
                     <button className="btn btn-primary" style={{ marginTop: '24px', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
-                      <i className="fa-solid fa-file-import"></i> Importar
+                      <i className="fa-solid fa-file-import"></i> Importar documento
                     </button>
                   </>
                 ) : (
