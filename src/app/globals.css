@@ -787,22 +787,6 @@ a {
   pointer-events: none;
 }
 
-@media (max-width: 600px) {
-  .bottom-player-container {
-    bottom: 0;
-  }
-
-  .bottom-player {
-    width: 100%;
-    max-width: 100%;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  }
-}
-
 .bottom-player {
   background: var(--bg-player);
   backdrop-filter: blur(20px);
@@ -817,6 +801,22 @@ a {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .bottom-player-container {
+    bottom: 0;
+  }
+
+  .bottom-player {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
 }
 
 .player-main-controls {
