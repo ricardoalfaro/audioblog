@@ -310,8 +310,8 @@ function HomeContent() {
     return selectedCategory === 'Todos' || article.category === selectedCategory;
   });
 
-
   const activeArticles = articles.filter(a => !a.paragraphs?.length || (a.progress ?? 0) < a.paragraphs.length);
+  const filteredActiveArticles = activeArticles.filter(a => selectedCategory === 'Todos' || a.category === selectedCategory);
   const categories = ['Todos', ...Array.from(new Set(activeArticles.map((a) => a.category).filter(Boolean)))];
 
   const listeningArticles = filteredArticles
@@ -404,7 +404,7 @@ function HomeContent() {
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-      {(articles.length > 0 || isLoading) && <section className="tabs-container">
+      {(activeArticles.length > 0 || isLoading) && <section className="tabs-container">
         <div className="categories-scroll">
           {categories.map((category) => (
             <button
@@ -455,10 +455,10 @@ function HomeContent() {
             </section>
           )}
 
-          {filteredArticles.length === 0 && (
+          {filteredActiveArticles.length === 0 && (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div className="empty-state">
-                {articles.length === 0 ? (
+                {activeArticles.length === 0 ? (
                   <>
                     <h3>Tu biblioteca está vacía</h3>
                     <p>Importa tu primer artículo para empezar a escuchar.</p>
