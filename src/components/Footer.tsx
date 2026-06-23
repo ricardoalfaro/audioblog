@@ -17,7 +17,7 @@ export default function Footer() {
         </div>
         <ul className="footer-links">
           <li><Link href="/about" className="footer-link">Qué es Audiodocs</Link></li>
-          <li><Link href="/archive" className="footer-link">Archivo</Link></li>
+          <li><Link href="/app/archive" className="footer-link">Archivo</Link></li>
           <li><span className="footer-link footer-link-soon" title="Próximamente">FAQ</span></li>
           <li><a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" className="footer-link">Github</a></li>
         </ul>

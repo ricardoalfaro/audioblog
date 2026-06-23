@@ -498,6 +498,12 @@ a {
   color: var(--text-primary);
 }
 
+@media (max-width: 600px) {
+  .section-title {
+    font-size: 18px;
+  }
+}
+
 /* Horizontal Carousel (Estás Escuchando) */
 .listening-carousel {
   display: flex;
@@ -1517,15 +1523,6 @@ input:checked + .slider:before {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-subtitle {
-  font-size: 18px;
-  opacity: 0.9;
-  margin-bottom: 32px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .hero-bg-circle-1 {
   position: absolute;
   top: -50%;
@@ -1548,10 +1545,17 @@ input:checked + .slider:before {
   filter: blur(40px);
 }
 
-@media (max-width: 600px) {
-  .hero-subtitle {
-    font-size: 16px;
-  }
+/* Landing hero — same animated background treatment as the splash */
+.landing-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(20, 33, 61, 0.92), rgba(0, 0, 0, 0.96)), url('/bg_01.jpg');
+  background-size: cover;
+  animation: gradientMove 30s ease-in-out infinite;
 }
 
 /* Import inline button (next to section title) */
@@ -1604,6 +1608,10 @@ input:checked + .slider:before {
   animation: splashFadeOut 0.2s ease-in forwards;
 }
 
+:root[data-skip-splash="true"] .splash-overlay {
+  display: none;
+}
+
 @keyframes splashFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1628,48 +1636,7 @@ input:checked + .slider:before {
 .splash-logo {
   height: 52px;
   width: auto;
-  margin-bottom: 32px;
   opacity: 0.95;
-}
-
-.splash-title {
-  color: var(--color-primary);
-  font-size: 52px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 20px;
-  line-height: 1.15;
-}
-
-@media (max-width: 600px) {
-  .splash-title {
-    font-size: 34px;
-  }
-}
-
-.splash-start-btn {
-  margin-top: 40px;
-  background: transparent;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  color: rgba(255, 255, 255, 0.85);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 600;
-  padding: 12px 32px;
-  border-radius: 32px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.2s ease;
-  letter-spacing: 0.3px;
-}
-
-.splash-start-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.65);
-  color: white;
-  transform: translateX(4px);
 }
 
 /* Footer */

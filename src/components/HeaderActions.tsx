@@ -71,7 +71,7 @@ export default function HeaderActions() {
             >
               <i className="fa-solid fa-file-import"></i> Importar artículo
             </button>
-            <Link href="/archive" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+            <Link href="/app/archive" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
               <i className="fa-solid fa-clock-rotate-left"></i> Archivo
             </Link>
             <button className="dropdown-item" onClick={handleShare}>
