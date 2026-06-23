@@ -1,14 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import HeaderActions from "@/components/HeaderActions";
-import { Suspense } from 'react';
-import Link from 'next/link';
 import "./globals.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import Providers from '@/components/Providers';
-
 export const metadata: Metadata = {
-  title: "Audiodocs | Convierte tus lecturas en mini podcasts",
+  title: "Audiodocs",
   description: "Una plataforma premium para escuchar tus artículos.",
 };
 
@@ -44,24 +39,24 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Inline script to decide before paint whether the splash should be skipped (desktop + already onboarded) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const isMobile = window.matchMedia('(max-width: 900px)').matches;
+                const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                const onboarded = localStorage.getItem('audiodocs_onboarded');
+                if (!isMobile && !isPWA && onboarded) {
+                  document.documentElement.setAttribute('data-skip-splash', 'true');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
       </head>
       <body>
-        <Providers>
-          <header className="main-header">
-            <div className="container header-content">
-              <Link href="/" className="logo">
-                <img src="/main_logo_audiodocs_light.png" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-light" style={{ height: '32px', width: 'auto' }} />
-                <img src="/main_logo_audiodocs_dark.png" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-dark" style={{ height: '32px', width: 'auto' }} />
-              </Link>
-              
-              <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn">?</button></div></div>}>
-                <HeaderActions />
-              </Suspense>
-            </div>
-          </header>
-
-          {children}
-        </Providers>
+        {children}
       </body>
     </html>
   );

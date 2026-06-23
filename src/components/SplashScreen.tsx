@@ -2,21 +2,40 @@
 
 import { useState, useEffect } from 'react';
 
+const AUTO_DISMISS_MS = 1800;
+const EXIT_ANIMATION_MS = 400;
+
 export default function SplashScreen() {
-  const [show, setShow] = useState(false);
+  // Shown by default on first paint (server + client match) so it covers the
+  // page immediately; the head script sets data-skip-splash before paint for
+  // desktop visitors who've already been onboarded, hiding it via CSS.
+  const [show, setShow] = useState(true);
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem('audiodocs_onboarded')) {
-      setShow(true);
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    const isPWA =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+    const alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
+
+    if (!isMobile && !isPWA && alreadyOnboarded) {
+      setShow(false);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      setExiting(true);
+      localStorage.setItem('audiodocs_onboarded', 'true');
+    }, AUTO_DISMISS_MS);
+    return () => clearTimeout(timer);
   }, []);
 
-  const dismiss = () => {
-    setExiting(true);
-    localStorage.setItem('audiodocs_onboarded', 'true');
-    setTimeout(() => setShow(false), 400);
-  };
+  useEffect(() => {
+    if (!exiting) return;
+    const timer = setTimeout(() => setShow(false), EXIT_ANIMATION_MS);
+    return () => clearTimeout(timer);
+  }, [exiting]);
 
   if (!show) return null;
 
@@ -30,13 +49,6 @@ export default function SplashScreen() {
           alt="Audiodocs"
           className="splash-logo"
         />
-        <h1 className="splash-title">Escucha cualquier texto como si fuera un podcast</h1>
-        <p className="hero-subtitle">
-          Importa un artículo, columna o noticia y escúchalos cuando quieras en su idioma original o traducido con voces ultra realistas.
-        </p>
-        <button className="splash-start-btn" onClick={dismiss}>
-          Empezar <i className="fa-solid fa-arrow-right" />
-        </button>
       </div>
     </div>
   );

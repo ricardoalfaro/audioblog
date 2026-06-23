@@ -61,7 +61,7 @@ export default function ArchivePage() {
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '40px' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px', gap: '16px' }}>
-        <Link href="/" style={{ color: 'var(--text-secondary)', fontSize: '20px', textDecoration: 'none' }}>
+        <Link href="/app" style={{ color: 'var(--text-secondary)', fontSize: '20px', textDecoration: 'none' }}>
           <i className="fa-solid fa-arrow-left"></i>
         </Link>
         <h1 style={{ fontSize: '32px', margin: 0 }}>Archivo</h1>
@@ -78,7 +78,7 @@ export default function ArchivePage() {
       ) : archivedArticles.length > 0 ? (
         <div className="grid-new">
           {archivedArticles.map(article => (
-            <div key={article.id} className="article-card card-square" onClick={() => router.push(`/articles/${article.id}`)}>
+            <div key={article.id} className="article-card card-square" onClick={() => router.push(`/app/articles/${article.id}`)}>
               <button
                 className="trash-btn"
                 onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); }}
@@ -117,7 +117,7 @@ export default function ArchivePage() {
           </div>
           <h3>Tu archivo está vacío</h3>
           <p>Los artículos que termines de escuchar aparecerán aquí automáticamente.</p>
-          <Link href="/" className="btn btn-primary" style={{ marginTop: '24px', display: 'inline-block', textDecoration: 'none' }}>
+          <Link href="/app" className="btn btn-primary" style={{ marginTop: '24px', display: 'inline-block', textDecoration: 'none' }}>
             Volver al inicio
           </Link>
         </div>

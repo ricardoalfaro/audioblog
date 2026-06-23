@@ -136,7 +136,7 @@ export default function ArticleReader() {
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
         <h2 style={{ marginBottom: '16px' }}>Error al cargar el artículo</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{error || 'El artículo no existe.'}</p>
-        <button className="btn btn-primary" onClick={() => router.push('/')}>
+        <button className="btn btn-primary" onClick={() => router.push('/app')}>
           Volver al Inicio
         </button>
       </main>
@@ -174,7 +174,7 @@ export default function ArticleReader() {
       {/* Fixed back-link bar — sits right below the sticky header at measured height */}
       <div className="reader-topbar" style={{ top: headerHeight }}>
         <div className="reader-topbar-inner">
-          <Link href="/" className="back-link">
+          <Link href="/app" className="back-link">
             <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
           </Link>
         </div>
