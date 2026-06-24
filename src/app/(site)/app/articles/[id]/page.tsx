@@ -62,7 +62,7 @@ export default function ArticleReader() {
 
   // Accordion state
   const [isMetaExpanded, setIsMetaExpanded] = useState(true);
-  const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
+  const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Reader accessibility state
