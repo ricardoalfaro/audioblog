@@ -36,6 +36,8 @@ function HomeContent() {
   const [scrapeError, setScrapeError] = useState('');
   const [scrapeStep, setScrapeStep] = useState<0|1|2|3>(0);
   const [importSuccess, setImportSuccess] = useState(false);
+  // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
+  const pendingAutoImportRef = useRef<string | null>(null);
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
@@ -49,9 +51,24 @@ function HomeContent() {
       setIsModalOpen(true);
       window.history.replaceState(null, '', '/app');
     }
+    const urlParam = params.get('url');
+    if (urlParam && /^https?:\/\/.+/.test(urlParam)) {
+      pendingAutoImportRef.current = urlParam;
+      window.history.replaceState(null, '', '/app');
+    }
 
     return () => window.removeEventListener('audiodocs:open-import', handler);
   }, []);
+
+  // Dispara el auto-import una vez que los artículos han cargado
+  useEffect(() => {
+    if (!isLoading && pendingAutoImportRef.current) {
+      const url = pendingAutoImportRef.current;
+      pendingAutoImportRef.current = null;
+      setScrapeUrl(url);
+      runScrape(url, true);
+    }
+  }, [isLoading]);
 
   // Paste de URL desde cualquier lugar de la página abre el modal con el link ya pegado
   useEffect(() => {
@@ -177,10 +194,14 @@ function HomeContent() {
 
 
   // --- Scraper / Import form submissions ---
-  const handleScrapeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!scrapeUrl) return;
+  const resetScrapeForm = () => {
+    setScrapeUrl('');
+    setScrapeCategory('auto');
+    setTranslateTo('none');
+  };
 
+  const runScrape = async (url: string, redirectOnSuccess = false) => {
+    setIsModalOpen(true);
     setIsScraping(true);
     setScrapeError('');
     setScrapeStep(1);
@@ -191,7 +212,7 @@ function HomeContent() {
       const scrapeRes = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapeUrl, translateTo }),
+        body: JSON.stringify({ url, translateTo }),
       });
 
       clearTimeout(stepTimer);
@@ -210,9 +231,7 @@ function HomeContent() {
       setScrapeStep(3);
       const scrapeData = await scrapeRes.json();
 
-      if (scrapeCategory !== 'auto') {
-        scrapeData.category = scrapeCategory;
-      }
+      if (scrapeCategory !== 'auto') scrapeData.category = scrapeCategory;
 
       const wordCount = scrapeData.paragraphs?.join(' ').split(/\s+/).filter(Boolean).length || 0;
       const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60));
@@ -233,19 +252,12 @@ function HomeContent() {
 
       const existingArticle = articles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
       if (existingArticle) {
-        const isArchived = existingArticle.progress !== undefined && existingArticle.paragraphs?.length && existingArticle.progress >= existingArticle.paragraphs.length;
-        if (isArchived) {
-          setIsScraping(false);
-          setScrapeStep(0);
-          setIsModalOpen(false);
-          setScrapeUrl('');
-          setScrapeCategory('auto');
-          setTranslateTo('none');
-          sessionStorage.setItem('archive_toast', 'Este artículo ya lo tienes en el archivo.');
-          router.push('/app/archive');
-          return;
-        }
-        throw new Error('Este artículo ya ha sido importado.');
+        setIsScraping(false);
+        setScrapeStep(0);
+        setIsModalOpen(false);
+        resetScrapeForm();
+        router.push(`/app/articles/${existingArticle.id}`);
+        return;
       }
 
       const updatedArticles = pruneArticles([newArticle, ...articles]);
@@ -254,20 +266,31 @@ function HomeContent() {
 
       setIsScraping(false);
       setScrapeStep(0);
-      setImportSuccess(true);
-      setTimeout(() => {
+
+      if (redirectOnSuccess) {
         setIsModalOpen(false);
-        setImportSuccess(false);
-        setScrapeUrl('');
-        setScrapeCategory('auto');
-        setTranslateTo('none');
-      }, 1600);
+        resetScrapeForm();
+        router.push(`/app/articles/${newArticle.id}`);
+      } else {
+        setImportSuccess(true);
+        setTimeout(() => {
+          setIsModalOpen(false);
+          setImportSuccess(false);
+          resetScrapeForm();
+        }, 1600);
+      }
     } catch (err: any) {
       clearTimeout(stepTimer);
       setScrapeStep(0);
       setScrapeError(err.message || 'Error al importar el artículo.');
       setIsScraping(false);
     }
+  };
+
+  const handleScrapeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scrapeUrl) return;
+    await runScrape(scrapeUrl, false);
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
