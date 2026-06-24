@@ -1841,7 +1841,7 @@ input:checked + .slider:before {
 .splash-logo {
   height: 150px;
   width: auto;
-  animation: logoGrow 0.65s ease-out both;
+  animation: logoGrow 1s ease-out both;
 }
 
 .landing-logo {
@@ -1849,7 +1849,7 @@ input:checked + .slider:before {
   width: auto;
   position: relative;
   z-index: 2;
-  animation: logoGrow 0.65s ease-out both;
+  animation: logoGrow 1s ease-out both;
 }
 
 /* Footer */
