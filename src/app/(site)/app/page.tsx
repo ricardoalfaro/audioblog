@@ -53,6 +53,22 @@ function HomeContent() {
     return () => window.removeEventListener('audiodocs:open-import', handler);
   }, []);
 
+  // Paste de URL desde cualquier lugar de la página abre el modal con el link ya pegado
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const text = e.clipboardData?.getData('text/plain')?.trim() ?? '';
+      if (/^https?:\/\/.+/.test(text)) {
+        setScrapeUrl(text);
+        setModalTab('url');
+        setIsModalOpen(true);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, []);
+
   // Close modal on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
