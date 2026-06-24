@@ -54,7 +54,7 @@ function HomeContent() {
     const urlParam = params.get('url');
     if (urlParam && /^https?:\/\/.+/.test(urlParam)) {
       pendingAutoImportRef.current = urlParam;
-      window.history.replaceState(null, '', '/app');
+      window.history.replaceState(window.history.state, '', '/app');
     }
 
     return () => window.removeEventListener('audiodocs:open-import', handler);
@@ -256,7 +256,11 @@ function HomeContent() {
         setScrapeStep(0);
         setIsModalOpen(false);
         resetScrapeForm();
-        router.push(`/app/articles/${existingArticle.id}`);
+        if (redirectOnSuccess) {
+          router.replace(`/app/articles/${existingArticle.id}`);
+        } else {
+          router.push(`/app/articles/${existingArticle.id}`);
+        }
         return;
       }
 
@@ -270,7 +274,7 @@ function HomeContent() {
       if (redirectOnSuccess) {
         setIsModalOpen(false);
         resetScrapeForm();
-        router.push(`/app/articles/${newArticle.id}`);
+        router.replace(`/app/articles/${newArticle.id}`);
       } else {
         setImportSuccess(true);
         setTimeout(() => {
