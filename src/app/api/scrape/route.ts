@@ -401,7 +401,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error in scrape endpoint:', error);
     return NextResponse.json(
-      { error: error.message || 'Error interno al procesar el artículo.' },
+      { error: 'Error interno al procesar el artículo.' },
       { status: 500 }
     );
   }

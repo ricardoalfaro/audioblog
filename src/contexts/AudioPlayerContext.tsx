@@ -54,6 +54,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Refs to fix stale closures in audio events
   const isPausedRef = useRef(false);
   const playingArticleIdRef = useRef<string | null>(null);
+  // Increments on every new play session (new article, engine change, stop)
+  // so in-flight TTS fetches from a previous session are discarded.
+  const playSessionRef = useRef(0);
   const [speechRate, setSpeechRate] = useState(1);
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -275,13 +278,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const prefetchNextParagraph = (index: number, article: Article) => {
     const nextIndex = index + 1;
     if (nextIndex >= article.paragraphs.length) return;
-    // Already prefetched this index
     if (prefetchedIndexRef.current === nextIndex) return;
 
     revokePrefetchedBlob();
 
     const text = article.paragraphs[nextIndex];
     const voice = selectedEdgeVoiceRef.current;
+    const sessionId = playSessionRef.current;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -295,8 +298,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       .then(res => {
         clearTimeout(timeoutId);
         if (!res.ok) return;
-        // Abort if the article or voice changed while fetching
         if (
+          playSessionRef.current !== sessionId ||
           playingArticleIdRef.current !== article.id ||
           selectedEdgeVoiceRef.current !== voice
         ) return;
@@ -400,6 +403,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     const ctrl = new AbortController();
     const ttsTimeout = setTimeout(() => ctrl.abort(), 30_000);
+    const sessionId = playSessionRef.current;
 
     fetch('/api/tts', {
       method: 'POST',
@@ -413,7 +417,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         return res.arrayBuffer();
       })
       .then(buffer => {
-        if (playingArticleIdRef.current !== article.id) return;
+        if (playSessionRef.current !== sessionId || playingArticleIdRef.current !== article.id) return;
         if (!buffer || buffer.byteLength === 0) throw new Error('buffer vacío');
         setupAndPlay(audioToDataUrl(buffer));
       })
@@ -434,6 +438,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const playArticle = (article: Article, forceParagraphIndex?: number) => {
+    playSessionRef.current += 1;
     setPlayingArticle(article);
     playingArticleIdRef.current = article.id;
     isPausedRef.current = false;
@@ -499,6 +504,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const handleStop = () => {
+    playSessionRef.current += 1;
     if (typeof window !== 'undefined') {
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
@@ -542,6 +548,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const handleEngineChange = (engine: 'device' | 'edge') => {
+    playSessionRef.current += 1;
     setAudioEngine(engine);
     if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEngine: engine });
     if ((isPlaying || isLoading) && playingArticle) {
@@ -569,6 +576,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const handleEdgeVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    selectedEdgeVoiceRef.current = e.target.value;
     setSelectedEdgeVoice(e.target.value);
     if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEdgeVoice: e.target.value });
     revokePrefetchedBlob();
