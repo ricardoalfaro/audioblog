@@ -60,6 +60,7 @@ function HomeContent() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       const text = e.clipboardData?.getData('text/plain')?.trim() ?? '';
       if (/^https?:\/\/.+/.test(text)) {
+        e.preventDefault();
         setScrapeUrl(text);
         setModalTab('url');
         setIsModalOpen(true);
