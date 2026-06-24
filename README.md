@@ -1,10 +1,14 @@
-# Audioblog
+<p align="center">
+  <img src="public/main_logo_audiodocs_white.svg" alt="Audiodocs" width="200" />
+</p>
 
-Audioblog es una plataforma premium y minimalista diseñada para transformar tus artículos favoritos en una experiencia de "podcast" de alta calidad. Permite extraer texto de URLs web, organizarlo en una biblioteca personal y escucharlo utilizando voces locales (Web Speech API) o voces neuronales de alta definición (Edge TTS) con soporte nativo para reproducción en segundo plano y Apple CarPlay.
+# Audiodocs
+
+Es una plataforma diseñada para transformar tus artículos favoritos en una experiencia estilo "podcast". Permite extraer el texto de URLs web, organizarlo en una biblioteca personal y escucharlo utilizando voces neuronales realistas de alta definición (con Edge TTS) o de sistema (con Web Speech API) con soporte nativo para reproducción en segundo plano y compatible con Apple CarPlay.
 
 ## 🚀 Características Principales
 
-- **Diseño Premium**: Interfaz minimalista con efectos glassmorphism, paleta de colores cuidadosamente seleccionada e iconos responsivos.
+- **Diseño Premium**: Interfaz minimalista y responsiva, paleta de colores e iconos cuidadosamente seleccionados.
 - **Doble Motor de Audio**:
   - *Voz Local (Browser)*: Basado en `window.speechSynthesis`, resalta palabra por palabra a medida que el lector avanza.
   - *Voz Neuronal (Natural)*: Basado en un proxy de Microsoft Edge TTS (`/api/tts`) para generar audio hiper-realista. Compatible con mandos de hardware, bloqueo de pantalla y CarPlay.
@@ -68,6 +72,7 @@ npm run build
 npm start
 ```
 El proyecto está optimizado para funcionar y desplegarse sin fricción alguna en plataformas como **Vercel** o **Netlify**.
+También disponible en https://audiodocs.cl/app
 
 ---
-*Desarrollado con obsesión por los detalles.*
+*Desarrollado con IA y diseñado con amor y obsesión por los detalles.*
