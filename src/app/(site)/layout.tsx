@@ -15,8 +15,8 @@ export default function SiteLayout({
       <header className="main-header">
         <div className="header-content">
           <Link href="/app" className="logo">
-            <img src="/main_logo_audiodocs_light.png" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-light" style={{ height: '32px', width: 'auto' }} />
-            <img src="/main_logo_audiodocs_dark.png" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-dark" style={{ height: '32px', width: 'auto' }} />
+            <img src="/main_logo_audiodocs_light.svg" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-light" style={{ height: '32px', width: 'auto' }} />
+            <img src="/main_logo_audiodocs_dark.svg" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-dark" style={{ height: '32px', width: 'auto' }} />
           </Link>
 
           <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn">?</button></div></div>}>
