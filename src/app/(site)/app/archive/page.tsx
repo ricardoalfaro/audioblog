@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
@@ -10,7 +10,9 @@ export default function ArchivePage() {
   const router = useRouter();
   const [archivedArticles, setArchivedArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { handleStop, playingArticle } = useAudioPlayer();
 
   useEffect(() => {
@@ -18,16 +20,40 @@ export default function ArchivePage() {
       const localData = localStorage.getItem('articles');
       if (localData) {
         const parsed: Article[] = JSON.parse(localData);
-        // Mostrar artículos donde el progreso llegó al total de párrafos
-        const archived = parsed.filter(a => a.progress !== undefined && a.paragraphs && a.progress >= a.paragraphs.length);
-        setArchivedArticles(archived);
+        setArchivedArticles(parsed.filter(a => a.progress !== undefined && a.paragraphs && a.progress >= a.paragraphs.length));
       }
     } catch (err) {
       console.error('Error loading articles from localStorage:', err);
     } finally {
       setIsLoading(false);
     }
+
+    const pending = sessionStorage.getItem('archive_toast');
+    if (pending) {
+      sessionStorage.removeItem('archive_toast');
+      setToast(pending);
+      toastTimer.current = setTimeout(() => setToast(null), 4000);
+    }
+
+    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
   }, []);
+
+  const handleUnarchive = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const localData = localStorage.getItem('articles');
+      if (!localData) return;
+      const parsed: Article[] = JSON.parse(localData);
+      const updated = parsed.map(a =>
+        a.id === id ? { ...a, progress: 0, lastPlayedAt: undefined } : a
+      );
+      localStorage.setItem('articles', JSON.stringify(updated));
+      setArchivedArticles(updated.filter(a => a.progress !== undefined && a.paragraphs && a.progress >= a.paragraphs.length));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleDeleteArticle = (e: React.MouseEvent, id: string, title: string) => {
     e.preventDefault();
@@ -60,12 +86,20 @@ export default function ArchivePage() {
 
   return (
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '40px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px', gap: '16px' }}>
-        <Link href="/app" style={{ color: 'var(--text-secondary)', fontSize: '20px', textDecoration: 'none' }}>
-          <i className="fa-solid fa-arrow-left"></i>
-        </Link>
-        <h1 style={{ fontSize: '32px', margin: 0 }}>Archivo</h1>
-      </div>
+      {toast && (
+        <div className="toast-notification">
+          <i className="fa-solid fa-box-archive"></i>
+          {toast}
+        </div>
+      )}
+
+      <Link href="/app" className="back-link" style={{ marginBottom: '20px' }}>
+        <i className="fa-solid fa-arrow-left"></i> Volver
+      </Link>
+
+      <h2 className="section-title">
+        <i className="fa-solid fa-box-archive" style={{ marginRight: '6px', fontSize: '20px' }}></i>Archivo
+      </h2>
 
       <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '16px' }}>
         Artículos que ya terminaste de escuchar. Se eliminarán automáticamente después de 30 días de su importación.
@@ -78,10 +112,10 @@ export default function ArchivePage() {
       ) : archivedArticles.length > 0 ? (
         <div className="grid-new">
           {archivedArticles.map(article => (
-            <div key={article.id} className="article-card card-square" onClick={() => router.push(`/app/articles/${article.id}`)}>
+            <div key={article.id} className="article-card card-vertical" onClick={() => router.push(`/app/articles/${article.id}`)}>
               <button
                 className="trash-btn"
-                onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); }}
+                onClick={(e) => handleDeleteArticle(e, article.id, article.title)}
                 title="Eliminar artículo"
               >
                 <i className="fa-solid fa-trash-can"></i>
@@ -93,18 +127,22 @@ export default function ArchivePage() {
                   <div className={`card-image ${getGradientClass(article.id)}`}></div>
                 )}
                 <div className="card-gradient-overlay"></div>
-              </div>
-              <div className="card-content">
                 <div className="card-title-wrapper">
                   <h3 className="card-title" title={article.title}>{article.title}</h3>
                 </div>
+              </div>
+              <div className="card-content">
                 <div className="card-footer">
                   <div className="card-meta">
                     <span>{article.author}</span>
                   </div>
-                  <div style={{ color: 'var(--color-primary)', fontSize: '14px', fontWeight: 'bold' }}>
-                    <i className="fa-solid fa-check"></i> Terminado
-                  </div>
+                  <button
+                    className="card-play-btn"
+                    onClick={(e) => handleUnarchive(e, article.id)}
+                    title="Mover de vuelta a biblioteca"
+                  >
+                    <i className="fa-solid fa-rotate-left"></i>
+                  </button>
                 </div>
               </div>
             </div>

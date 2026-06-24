@@ -206,8 +206,20 @@ function HomeContent() {
         progress: 0,
       };
 
-      const urlExists = articles.some(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
-      if (urlExists) {
+      const existingArticle = articles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
+      if (existingArticle) {
+        const isArchived = existingArticle.progress !== undefined && existingArticle.paragraphs?.length && existingArticle.progress >= existingArticle.paragraphs.length;
+        if (isArchived) {
+          setIsScraping(false);
+          setScrapeStep(0);
+          setIsModalOpen(false);
+          setScrapeUrl('');
+          setScrapeCategory('auto');
+          setTranslateTo('none');
+          sessionStorage.setItem('archive_toast', 'Este artículo ya lo tienes en el archivo.');
+          router.push('/app/archive');
+          return;
+        }
         throw new Error('Este artículo ya ha sido importado.');
       }
 
@@ -371,11 +383,19 @@ function HomeContent() {
             <div className={`card-image ${getGradientClass(article.id)}`}></div>
           )}
           <div className="card-gradient-overlay"></div>
-        </div>
-        <div className="card-content">
           <div className="card-title-wrapper">
             <h3 className="card-title" title={article.title}>{article.title}</h3>
           </div>
+        </div>
+        {article.lastPlayedAt && article.paragraphs.length > 0 && (
+          <div className="card-progress-bar">
+            <div
+              className="card-progress-fill"
+              style={{ width: `${Math.min(100, ((article.progress || 0) / article.paragraphs.length) * 100)}%` }}
+            />
+          </div>
+        )}
+        <div className="card-content">
           <div className="card-footer">
             <div className="card-meta">
               <span>{article.author}</span>
@@ -388,20 +408,13 @@ function HomeContent() {
               {isCurrentPlaying ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
             </button>
           </div>
-          {article.lastPlayedAt && article.paragraphs.length > 0 && (
-            <div className="card-progress-bar">
-              <div
-                className="card-progress-fill"
-                style={{ width: `${Math.min(100, ((article.progress || 0) / article.paragraphs.length) * 100)}%` }}
-              />
-            </div>
-          )}
         </div>
       </div>
     );
   };
 
   return (
+    <>
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {(activeArticles.length > 0 || isLoading) && <section className="tabs-container">
@@ -447,7 +460,7 @@ function HomeContent() {
             </section>
           )}
 
-          {newArticles.length > 0 && (
+          {filteredActiveArticles.length > 0 && (
             <section style={{ marginTop: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 className="section-title" style={{ marginBottom: 0 }}>
@@ -460,7 +473,7 @@ function HomeContent() {
                 )}
               </div>
               <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
-                {newArticles.map(article => renderArticleCard(article, 'card-square'))}
+                {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
               </div>
             </section>
           )}
@@ -592,9 +605,10 @@ function HomeContent() {
         </div>
       )}
     
-      <Footer />
       <SplashScreen />
     </main>
+    <Footer />
+    </>
 
   );
 }
