@@ -460,8 +460,11 @@ a {
   z-index: 90;
   background: var(--bg-main);
   padding-top: 12px;
-  padding-left: 24px;
-  padding-right: 24px;
+  /* full-bleed: rompe el container para ir de borde a borde del viewport */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding-left: max(24px, calc((100vw - 1200px) / 2 + 24px));
+  padding-right: max(24px, calc((100vw - 1200px) / 2 + 24px));
 }
 
 .categories-scroll {

@@ -415,6 +415,8 @@ function HomeContent() {
 
   return (
     <>
+    <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
       {(activeArticles.length > 0 || isLoading) && <section className="tabs-container">
         <div className="categories-scroll">
           {categories.map((category) => (
@@ -437,7 +439,6 @@ function HomeContent() {
           </button>
         </div>
       </section>}
-    <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', flex: 1 }}>
