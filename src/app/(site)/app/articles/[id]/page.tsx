@@ -174,13 +174,7 @@ export default function ArticleReader() {
         style={{ top: headerHeight }}
       >
         <div className="sidebar-topbar">
-          <span>
-            <i className="fa-solid fa-sliders" style={{ color: 'var(--color-primary)', marginRight: '8px' }}></i>
-            Opciones
-          </span>
-          <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)}>
-            <i className="fa-solid fa-xmark"></i>
-          </button>
+          <span>Opciones</span>
         </div>
         <div className="sidebar-panel glass">
 
@@ -300,9 +294,8 @@ export default function ArticleReader() {
             <Link href="/app" className="back-link">
               <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
             </Link>
-            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)}>
+            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title="Opciones">
               <i className="fa-solid fa-sliders"></i>
-              <span>Opciones</span>
             </button>
           </div>
         </div>
