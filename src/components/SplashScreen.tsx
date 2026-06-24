@@ -18,8 +18,9 @@ export default function SplashScreen() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
     const alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
+    const shownThisSession = !!sessionStorage.getItem('audiodocs_splash_shown');
 
-    if (!isMobile && !isPWA && alreadyOnboarded) {
+    if (shownThisSession || (!isMobile && !isPWA && alreadyOnboarded)) {
       setShow(false);
       return;
     }
@@ -27,6 +28,7 @@ export default function SplashScreen() {
     const timer = setTimeout(() => {
       setExiting(true);
       localStorage.setItem('audiodocs_onboarded', 'true');
+      sessionStorage.setItem('audiodocs_splash_shown', 'true');
     }, AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
   }, []);

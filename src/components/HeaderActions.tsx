@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export default function HeaderActions() {
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -65,15 +67,12 @@ export default function HeaderActions() {
             <button
               className="dropdown-item"
               onClick={() => {
-                window.dispatchEvent(new CustomEvent('audiodocs:open-import'));
                 setIsDropdownOpen(false);
+                router.push('/app?open=import');
               }}
             >
               <i className="fa-solid fa-file-import"></i> Importar artículo
             </button>
-            <Link href="/app/archive" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-              <i className="fa-solid fa-clock-rotate-left"></i> Archivo
-            </Link>
             <button className="dropdown-item" onClick={handleShare}>
               <i className="fa-solid fa-arrow-up-from-bracket"></i> Compartir app
             </button>

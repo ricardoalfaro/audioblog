@@ -7,7 +7,6 @@ import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import SplashScreen from '@/components/SplashScreen';
-import Footer from '@/components/Footer';
 
 
 const EDGE_VOICES = [
@@ -40,11 +39,14 @@ function HomeContent() {
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
-  // Listen for import trigger from header dropdown
+  // Open import modal when navigated here with ?open=import
   useEffect(() => {
-    const handler = () => setIsModalOpen(true);
-    window.addEventListener('audiodocs:open-import', handler);
-    return () => window.removeEventListener('audiodocs:open-import', handler);
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('open') === 'import') {
+      setIsModalOpen(true);
+      window.history.replaceState(null, '', '/app');
+    }
   }, []);
 
   // Close modal on Escape
@@ -330,6 +332,7 @@ function HomeContent() {
     .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
     .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1);
   const newArticles = filteredArticles.filter(a => !a.lastPlayedAt);
+  const archivedArticles = filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length);
 
   const getGradientClass = (id: string) => {
     const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -417,7 +420,7 @@ function HomeContent() {
     <>
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-      {(activeArticles.length > 0 || isLoading) && <section className="tabs-container">
+      {(articles.length > 0 || isLoading) && <section className="tabs-container">
         <div className="categories-scroll">
           {categories.map((category) => (
             <button
@@ -446,42 +449,59 @@ function HomeContent() {
         </div>
       ) : (
         <>
-          {listeningArticles.length > 0 && (
-            <section>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '20px'}}></i> Estás escuchando</h2>
-                <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                  <i className="fa-solid fa-file-import"></i> Importar documento
-                </button>
-              </div>
-              <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
-                {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
-              </div>
-            </section>
+          {(listeningArticles.length > 0 || filteredActiveArticles.length > 0 || archivedArticles.length > 0) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '24px' }}>
+              {listeningArticles.length > 0 && (
+                <section>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '20px'}}></i> Estás escuchando</h2>
+                    <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
+                      <i className="fa-solid fa-file-import"></i> Importar documento
+                    </button>
+                  </div>
+                  <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
+                    {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
+                  </div>
+                </section>
+              )}
+
+              {filteredActiveArticles.length > 0 && (
+                <section>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h2 className="section-title" style={{ marginBottom: 0 }}>
+                      <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '20px' }}></i> Listos para escuchar
+                    </h2>
+                    {listeningArticles.length === 0 && (
+                      <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
+                        <i className="fa-solid fa-file-import"></i> Importar documento
+                      </button>
+                    )}
+                  </div>
+                  <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
+                    {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
+                  </div>
+                </section>
+              )}
+
+              {archivedArticles.length > 0 && (
+                <section>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h2 className="section-title" style={{ marginBottom: 0 }}>
+                      <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '18px' }}></i> Volver a escuchar
+                    </h2>
+                  </div>
+                  <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
+                    {archivedArticles.map(article => renderArticleCard(article, 'card-vertical'))}
+                  </div>
+                </section>
+              )}
+            </div>
           )}
 
-          {filteredActiveArticles.length > 0 && (
-            <section style={{ marginTop: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 className="section-title" style={{ marginBottom: 0 }}>
-                  <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '20px' }}></i> Nuevos importados
-                </h2>
-                {listeningArticles.length === 0 && (
-                  <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                    <i className="fa-solid fa-file-import"></i> Importar documento
-                  </button>
-                )}
-              </div>
-              <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
-                {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
-              </div>
-            </section>
-          )}
-
-          {filteredActiveArticles.length === 0 && (
+          {filteredActiveArticles.length === 0 && archivedArticles.length === 0 && (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div className="empty-state">
-                {activeArticles.length === 0 ? (
+                {articles.length === 0 ? (
                   <>
                     <h3>Tu biblioteca está vacía</h3>
                     <p>Importa tu primer artículo para empezar a escuchar.</p>
@@ -607,7 +627,6 @@ function HomeContent() {
     
       <SplashScreen />
     </main>
-    <Footer />
     </>
 
   );

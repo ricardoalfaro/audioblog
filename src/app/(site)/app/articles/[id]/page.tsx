@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article } from '@/types';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
-import Footer from '@/components/Footer';
 import { STATIC_CATEGORIES } from '@/lib/categories';
 
 interface Token {
@@ -413,7 +412,6 @@ export default function ArticleReader() {
           </article>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

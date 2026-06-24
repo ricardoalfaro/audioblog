@@ -1,4 +1,5 @@
 import HeaderActions from "@/components/HeaderActions";
+import Footer from "@/components/Footer";
 import { Suspense } from 'react';
 import Link from 'next/link';
 
@@ -24,7 +25,10 @@ export default function SiteLayout({
         </div>
       </header>
 
-      {children}
+      <div className="site-body">
+        {children}
+        <Footer />
+      </div>
     </Providers>
   );
 }
