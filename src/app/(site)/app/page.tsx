@@ -39,14 +39,18 @@ function HomeContent() {
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
-  // Open import modal when navigated here with ?open=import
+  // Open import modal via custom event (desde la misma página) o URL param (navegando desde otra)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const handler = () => setIsModalOpen(true);
+    window.addEventListener('audiodocs:open-import', handler);
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('open') === 'import') {
       setIsModalOpen(true);
       window.history.replaceState(null, '', '/app');
     }
+
+    return () => window.removeEventListener('audiodocs:open-import', handler);
   }, []);
 
   // Close modal on Escape
@@ -465,7 +469,7 @@ function HomeContent() {
                 </section>
               )}
 
-              {filteredActiveArticles.length > 0 && (
+              {newArticles.length > 0 && (
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>

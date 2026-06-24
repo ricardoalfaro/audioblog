@@ -78,7 +78,7 @@ export default function GlobalPlayer() {
             )}
           </div>
           
-          <div className="player-info" style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '2px', minWidth: 0, flex: 1, marginRight: '16px' }}>
+          <div className="player-info player-info-text" style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '2px', minWidth: 0, flex: 1, marginRight: '16px' }}>
             <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', fontSize: '15px', fontWeight: 600 }}>
               {playingArticle.title}
             </div>

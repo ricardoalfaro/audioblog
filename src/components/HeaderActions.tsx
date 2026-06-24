@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export default function HeaderActions() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +69,11 @@ export default function HeaderActions() {
               className="dropdown-item"
               onClick={() => {
                 setIsDropdownOpen(false);
-                router.push('/app?open=import');
+                if (pathname === '/app') {
+                  window.dispatchEvent(new CustomEvent('audiodocs:open-import'));
+                } else {
+                  router.push('/app?open=import');
+                }
               }}
             >
               <i className="fa-solid fa-file-import"></i> Importar artículo
