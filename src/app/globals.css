@@ -1170,14 +1170,14 @@ a {
 
 .reader-sidebar {
   position: fixed;
-  left: 0;
+  right: 0;
   bottom: 0;
   width: 280px;
   background: var(--bg-card);
-  border-right: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
   z-index: 95;
   overflow-y: auto;
-  transform: translateX(-100%);
+  transform: translateX(100%);
   transition: transform 0.25s ease;
   box-shadow: var(--shadow-md);
   display: flex;
@@ -1256,6 +1256,22 @@ a {
   gap: 12px;
   padding: 0 16px 16px 16px;
   animation: fadeIn 0.15s ease-out;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.meta-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .sidebar-divider {
