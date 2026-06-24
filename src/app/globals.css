@@ -1833,10 +1833,23 @@ input:checked + .slider:before {
   animation: fadeInDown 0.2s ease-out 0s both;
 }
 
+@keyframes logoGrow {
+  from { transform: scale(0.35); opacity: 0.5; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
 .splash-logo {
-  height: 52px;
+  height: 150px;
   width: auto;
-  opacity: 0.95;
+  animation: logoGrow 0.65s ease-out both;
+}
+
+.landing-logo {
+  height: 150px;
+  width: auto;
+  position: relative;
+  z-index: 2;
+  animation: logoGrow 0.65s ease-out both;
 }
 
 /* Footer */

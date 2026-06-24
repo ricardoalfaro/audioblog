@@ -47,7 +47,7 @@ export default function SplashScreen() {
       <div className="hero-bg-circle-2" />
       <div className="splash-inner">
         <img
-          src="/main_logo_audiodocs_dark.png"
+          src="/main_logo_audiodocs_white.svg"
           alt="Audiodocs"
           className="splash-logo"
         />
