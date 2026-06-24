@@ -98,7 +98,9 @@ function HomeContent() {
       setIsLoading(true);
       const localData = localStorage.getItem('articles');
       if (localData) {
-        setArticles(JSON.parse(localData));
+        const pruned = pruneArticles(JSON.parse(localData));
+        localStorage.setItem('articles', JSON.stringify(pruned));
+        setArticles(pruned);
       } else {
         setArticles([]);
       }
