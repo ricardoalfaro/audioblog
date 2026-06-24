@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function Footer() {
   return (
     <footer className="main-footer">
-      <div className="footer-inner container">
+      <div className="footer-inner">
         <div className="footer-brand">
           <svg className="footer-logo-svg" width="182" height="211" viewBox="0 0 182 211" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M132 143H117.384L107.102 119.599L107.269 119.596L100.01 103.178H99.9771L82.44 63.4769L82 59.7068L81.56 63.4769L64.1153 103.178H64.0974L60.9924 110.283L60.901 110.494L57.0798 119.242H57.0546L46.7251 143H32L78.1536 41H85.6259L132 143Z" fill="#14213D"/>
