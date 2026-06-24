@@ -39,11 +39,14 @@ function HomeContent() {
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
 
-  // Listen for import trigger from header dropdown
+  // Open import modal when navigated here with ?open=import
   useEffect(() => {
-    const handler = () => setIsModalOpen(true);
-    window.addEventListener('audiodocs:open-import', handler);
-    return () => window.removeEventListener('audiodocs:open-import', handler);
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('open') === 'import') {
+      setIsModalOpen(true);
+      window.history.replaceState(null, '', '/app');
+    }
   }, []);
 
   // Close modal on Escape
