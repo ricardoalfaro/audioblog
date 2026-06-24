@@ -4,7 +4,22 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 export const metadata: Metadata = {
   title: "Audiodocs",
-  description: "Una plataforma premium para escuchar tus artículos.",
+  description: "Escucha tus artículos favoritos como podcasts",
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Audiodocs",
+    statusBarStyle: "black-translucent",
+  },
+  themeColor: "#000000",
 };
 
 export const viewport: Viewport = {
