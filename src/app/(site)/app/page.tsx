@@ -450,6 +450,9 @@ function HomeContent() {
             <section>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '20px'}}></i> Estás escuchando</h2>
+                <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
+                  <i className="fa-solid fa-file-import"></i> Importar documento
+                </button>
               </div>
               <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                 {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
@@ -463,16 +466,13 @@ function HomeContent() {
                 <h2 className="section-title" style={{ marginBottom: 0 }}>
                   <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '20px' }}></i> Nuevos importados
                 </h2>
-              </div>
-              <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
-                {viewMode === 'grid' && (
-                  <button className="import-card-cta" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                    <div className="import-card-inner">
-                      <i className="fa-solid fa-file-import"></i>
-                      <span>Importar documento</span>
-                    </div>
+                {listeningArticles.length === 0 && (
+                  <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
+                    <i className="fa-solid fa-file-import"></i> Importar documento
                   </button>
                 )}
+              </div>
+              <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
                 {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
               </div>
             </section>
