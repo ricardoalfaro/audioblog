@@ -346,7 +346,7 @@ export default function ArticleReader() {
                 <button
                   onClick={handleShare}
                   title={shareCopied ? '¡Enlace copiado!' : 'Compartir artículo'}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '20px', fontWeight: 400, display: 'flex', alignItems: 'center' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
                 >
                   <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} />
                 </button>
