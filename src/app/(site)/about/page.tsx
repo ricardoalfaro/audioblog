@@ -10,7 +10,7 @@ export default function AboutPage() {
   return (
     <>
       <div className="reader-topbar" style={{ top: 64 }}>
-        <div className="reader-topbar-inner">
+        <div className="reader-topbar-inner" style={{ paddingTop: '14px', paddingBottom: '14px' }}>
           <Link href="/app" className="back-link">
             <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
           </Link>

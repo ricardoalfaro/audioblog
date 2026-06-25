@@ -52,6 +52,7 @@
 
 :root[data-theme="dark"] {
   --bg-main: #0B1222;
+  --bg-site: #111829;
   --bg-body: #000000;
   --bg-header: #111111;
   --bg-card: #14213D;
@@ -80,6 +81,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg-main: #0B1222;
+    --bg-site: #111829;
     --bg-body: #000000;
     --bg-header: #111111;
     --bg-card: #14213D;
@@ -119,20 +121,22 @@
 }
 
 /* Dark mode: remove header/footer separator lines */
-:root[data-theme="dark"] .tabs-container { background: var(--bg-main); border-bottom: none; }
-:root[data-theme="dark"] .main-footer { border-top: none; }
+:root[data-theme="dark"] .site-body { background: var(--bg-site); }
+:root[data-theme="dark"] .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
+:root[data-theme="dark"] .main-footer { border-top: 1px solid var(--border-color); }
 :root[data-theme="dark"] .footer-svg-wordmark { fill: white; }
 :root[data-theme="dark"] .back-link { color: var(--color-primary); }
 :root[data-theme="dark"] .sidebar-toggle-btn i { color: var(--color-primary); }
-:root[data-theme="dark"] .reader-topbar { background: var(--bg-main); border-bottom-color: var(--border-color); }
+:root[data-theme="dark"] .reader-topbar { background: #121d37; border-bottom-color: var(--border-color); }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .tabs-container { background: var(--bg-main); border-bottom: none; }
-  :root:not([data-theme="light"]) .main-footer { border-top: none; }
+  :root:not([data-theme="light"]) .site-body { background: var(--bg-site); }
+  :root:not([data-theme="light"]) .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
+  :root:not([data-theme="light"]) .main-footer { border-top: 1px solid var(--border-color); }
   :root:not([data-theme="light"]) .footer-svg-wordmark { fill: white; }
   :root:not([data-theme="light"]) .back-link { color: var(--color-primary); }
   :root:not([data-theme="light"]) .sidebar-toggle-btn i { color: var(--color-primary); }
-  :root:not([data-theme="light"]) .reader-topbar { background: var(--bg-main); border-bottom-color: var(--border-color); }
+  :root:not([data-theme="light"]) .reader-topbar { background: #121d37; border-bottom-color: var(--border-color); }
 }
 
 /* Light mode: remove tabs separator (keep only footer) */
@@ -734,6 +738,11 @@ a {
   .grid-new {
     grid-template-columns: 1fr;
   }
+}
+
+/* Grayscale para cards archivadas */
+.archived-cards .card-image {
+  filter: grayscale(100%);
 }
 
 /* Images & Gradients */

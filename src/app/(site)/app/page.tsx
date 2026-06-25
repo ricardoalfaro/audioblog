@@ -527,7 +527,7 @@ function HomeContent() {
                       </button>
                     )}
                   </div>
-                  <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
+                  <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                     {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
                 </section>
@@ -540,7 +540,7 @@ function HomeContent() {
                       <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '18px' }}></i> Volver a escuchar
                     </h2>
                   </div>
-                  <div className={viewMode === 'grid' ? 'grid-new' : 'articles-list'}>
+                  <div className={viewMode === 'grid' ? 'listening-carousel archived-cards' : 'articles-list archived-cards'}>
                     {archivedArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
                 </section>

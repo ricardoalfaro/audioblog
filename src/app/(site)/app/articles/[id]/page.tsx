@@ -65,8 +65,23 @@ export default function ArticleReader() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Reader accessibility state
-  const [fontSize, setFontSize] = useState(20);
+  const [fontSize, setFontSize] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 768 ? 16 : 20));
   const [fontFamily, setFontFamily] = useState<'serif' | 'sans'>('serif');
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (!article || article.url === 'manual') return;
+    const deepLink = `${window.location.origin}/app?url=${encodeURIComponent(article.url)}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: article.title, url: deepLink });
+        return;
+      } catch {}
+    }
+    await navigator.clipboard.writeText(deepLink);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
 
   // Load article
   useEffect(() => {
@@ -338,21 +353,32 @@ export default function ArticleReader() {
                 >Aa</button>
               </div>
             </div>
-            <button
-              className="btn btn-primary reader-play-cta"
-              onClick={() => {
-                if (playingArticle?.id === article.id) {
-                  handlePlayPause();
-                } else {
-                  playArticle(article, 0);
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {article.url !== 'manual' && (
+                <button
+                  onClick={handleShare}
+                  title={shareCopied ? '¡Enlace copiado!' : 'Compartir artículo'}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '20px', fontWeight: 400, display: 'flex', alignItems: 'center' }}
+                >
+                  <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} />
+                </button>
+              )}
+              <button
+                className="btn btn-primary reader-play-cta"
+                onClick={() => {
+                  if (playingArticle?.id === article.id) {
+                    handlePlayPause();
+                  } else {
+                    playArticle(article, 0);
+                  }
+                }}
+              >
+                {playingArticle?.id === article.id && isPlaying && !isPaused
+                  ? <><i className="fa-solid fa-pause"></i> Pausar</>
+                  : <><i className="fa-solid fa-play"></i> Escuchar</>
                 }
-              }}
-            >
-              {playingArticle?.id === article.id && isPlaying && !isPaused
-                ? <><i className="fa-solid fa-pause"></i> Pausar</>
-                : <><i className="fa-solid fa-play"></i> Escuchar</>
-              }
-            </button>
+              </button>
+            </div>
           </div>
 
           {/* Texto del artículo */}
