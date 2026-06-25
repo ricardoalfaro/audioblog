@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Qué es Audiodocs',
@@ -8,7 +9,15 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '48px', paddingBottom: '80px', maxWidth: '680px' }}>
+      <div className="reader-topbar" style={{ top: 64 }}>
+        <div className="reader-topbar-inner">
+          <Link href="/" className="back-link">
+            <i className="fa-solid fa-arrow-left"></i> Volver al inicio
+          </Link>
+        </div>
+      </div>
+
+      <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: '100px', paddingBottom: '80px', maxWidth: '680px' }}>
 
         {/* Hero */}
         <section style={{ marginBottom: '56px' }}>
