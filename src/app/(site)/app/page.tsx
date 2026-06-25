@@ -390,6 +390,7 @@ function HomeContent() {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
     const progressIdx = article.id === playingArticle?.id && activeParagraphIndex >= 0
       ? activeParagraphIndex : (article.progress || 0);
+    const queuePos = queue.findIndex(a => a.id === article.id);
     
     if (viewMode === 'list') {
       return (
@@ -400,7 +401,10 @@ function HomeContent() {
           </div>
           <div className="list-item-content">
             <h3 className="list-item-title">{article.title}</h3>
-            <div className="list-item-meta">{article.author} • {formatTime(article.duration)}</div>
+            <div className="list-item-meta">
+              {article.author} • {formatTime(article.duration)}
+              {queuePos >= 0 && <span className="queue-pill">#{queuePos + 1} en cola</span>}
+            </div>
           </div>
           <button
             className={`card-play-btn ${playingArticle?.id === article.id ? 'is-playing' : ''}`}
@@ -481,6 +485,11 @@ function HomeContent() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {article.imageUrl ? <img src={article.imageUrl} alt={article.title} className="card-image" /> : <div className={`card-image ${getGradientClass(article.id)}`}></div>}
           <div className="card-gradient-overlay"></div>
+          {queuePos >= 0 && (
+            <div className="queue-badge">
+              <i className="fa-solid fa-list-ol"></i> #{queuePos + 1}
+            </div>
+          )}
           <div className="card-title-wrapper">
             <h3 className="card-title" title={article.title}>{article.title}</h3>
           </div>
