@@ -16,7 +16,7 @@
   
   --text-primary: #000000;
   --text-secondary: #14213D;
-  --text-muted: #666666;
+  --text-muted: #595959;
   
   --color-primary: #FCA311;
   --color-primary-glow: rgba(252, 163, 17, 0.15);
@@ -1038,6 +1038,12 @@ a {
 
 .player-btn:hover {
   color: var(--color-primary);
+}
+
+.player-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .player-btn-play {

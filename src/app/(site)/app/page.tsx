@@ -31,6 +31,7 @@ function HomeContent() {
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue } = useAudioPlayer();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -83,7 +84,7 @@ function HomeContent() {
   // Close card menu when clicking outside
   useEffect(() => {
     if (!openMenuId) return;
-    const close = () => setOpenMenuId(null);
+    const close = () => { setOpenMenuId(null); setConfirmDeleteId(null); };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [openMenuId]);
@@ -347,12 +348,9 @@ function HomeContent() {
     }
   };
 
-  const handleDeleteArticle = (e: React.MouseEvent, id: string, title: string) => {
+  const handleDeleteArticle = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-
-    const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar "${title}" de tu historial?`);
-    if (!confirmDelete) return;
 
     if (playingArticle?.id === id) {
       handleStop();
@@ -429,12 +427,21 @@ function HomeContent() {
                   <i className="fa-solid fa-circle-plus"></i>
                   {queue.find(a => a.id === article.id) ? 'En cola ✓' : 'Poner a la cola'}
                 </button>
-                <button
-                  className="card-menu-item card-menu-item--danger"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); setOpenMenuId(null); }}
-                >
-                  <i className="fa-solid fa-trash-can"></i> Eliminar
-                </button>
+                {confirmDeleteId === article.id ? (
+                  <button
+                    className="card-menu-item card-menu-item--danger"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setOpenMenuId(null); setConfirmDeleteId(null); }}
+                  >
+                    <i className="fa-solid fa-circle-check"></i> ¿Confirmar?
+                  </button>
+                ) : (
+                  <button
+                    className="card-menu-item card-menu-item--danger"
+                    onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); }}
+                  >
+                    <i className="fa-solid fa-trash-can"></i> Eliminar
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -463,7 +470,7 @@ function HomeContent() {
               </button>
               <button
                 className="card-menu-item card-menu-item--danger"
-                onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); setOpenMenuId(null); }}
+                onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setOpenMenuId(null); }}
               >
                 <i className="fa-solid fa-trash-can"></i> Eliminar
               </button>
@@ -608,8 +615,14 @@ function HomeContent() {
 
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => { if (!isScraping && !isSavingManual) setIsModalOpen(false); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" role="presentation" onClick={() => { if (!isScraping && !isSavingManual) setIsModalOpen(false); }}>
+          <div
+            className="modal-content"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Importar artículo"
+            onClick={e => e.stopPropagation()}
+          >
             <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual} aria-label="Cerrar">
               <i className="fa-solid fa-xmark" />
             </button>
