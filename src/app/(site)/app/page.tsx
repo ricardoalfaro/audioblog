@@ -24,7 +24,7 @@ function HomeContent() {
   const [translateTo, setTranslateTo] = useState('none');
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
-  const [scrapeStep, setScrapeStep] = useState<0|1|2|3>(0);
+  const [scrapeStep, setScrapeStep] = useState<0|1|2|3|4>(0);
   const [importSuccess, setImportSuccess] = useState(false);
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<string | null>(null);
@@ -217,7 +217,7 @@ function HomeContent() {
         throw new Error(errorMsg);
       }
 
-      setScrapeStep(3);
+      setScrapeStep(translateTo && translateTo !== 'none' ? 4 : 3);
       const scrapeData = await scrapeRes.json();
 
       if (scrapeCategory !== 'auto') scrapeData.category = scrapeCategory;
@@ -664,12 +664,20 @@ function HomeContent() {
                           </span>
                           Extrayendo texto
                         </div>
-                        <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''}`}>
+                        <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''} ${scrapeStep > 3 ? 'done' : ''}`}>
                           <span className="step-icon">
-                            {scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                            {scrapeStep > 3 ? <i className="fa-solid fa-check" /> : scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                           </span>
                           Guardando
                         </div>
+                        {translateTo && translateTo !== 'none' && (
+                          <div className={`import-step ${scrapeStep >= 4 ? 'active' : ''}`}>
+                            <span className="step-icon">
+                              {scrapeStep === 4 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                            </span>
+                            Traduciendo texto
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
