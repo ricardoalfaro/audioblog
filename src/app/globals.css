@@ -768,7 +768,11 @@ a {
 
 @keyframes cardPan {
   0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.15) translate(-2%, -2%); }
+  100% { transform: scale(1.08) translate(-1%, -1%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-image { animation: none; }
 }
 
 /* Gradient overrides when there is no image. We use dynamic classes assigned in TSX */
