@@ -18,7 +18,8 @@ export default function GlobalPlayer() {
     toggleSpeed,
     audioEngine,
     handleEngineChange,
-    ttsError
+    ttsError,
+    queue,
   } = useAudioPlayer();
 
   useEffect(() => {
@@ -84,6 +85,11 @@ export default function GlobalPlayer() {
             </div>
             <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', fontSize: '13px', color: 'var(--text-secondary)' }}>
               {playingArticle.author}
+              {queue.length > 0 && (
+                <span style={{ marginLeft: '6px', color: 'var(--color-primary)', fontWeight: 500 }}>
+                  · {queue.length} en cola
+                </span>
+              )}
             </div>
           </div>
 

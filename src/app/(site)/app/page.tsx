@@ -39,7 +39,9 @@ function HomeContent() {
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<string | null>(null);
 
-  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex } = useAudioPlayer();
+  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue } = useAudioPlayer();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
 
   // Open import modal via custom event (desde la misma página) o URL param (navegando desde otra)
   useEffect(() => {
@@ -95,6 +97,19 @@ function HomeContent() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen, isScraping]);
+
+  // Close card menu when clicking outside
+  useEffect(() => {
+    if (!openMenuId) return;
+    const close = () => setOpenMenuId(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [openMenuId]);
+
+  // When a new article is imported (prepended to front), scroll the carousel back to start
+  useEffect(() => {
+    newArticlesCarouselRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+  }, [articles.find(a => !a.lastPlayedAt)?.id]);
 
   const handlePlayDirectly = (e: React.MouseEvent, targetArticle: Article) => {
     e.preventDefault();
@@ -360,6 +375,7 @@ function HomeContent() {
       handleStop();
     }
 
+    removeFromQueue(id);
     const updatedArticles = articles.filter((a) => a.id !== id);
     setArticles(updatedArticles);
     localStorage.setItem('articles', JSON.stringify(updatedArticles));
@@ -409,26 +425,65 @@ function HomeContent() {
           >
             {isCurrentPlaying ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
           </button>
-          <button
-            className="trash-btn"
-            style={{ position: 'relative', top: '0', right: '0', opacity: 1, marginLeft: '8px' }}
-            onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); }}
-          >
-            <i className="fa-solid fa-trash-can"></i>
-          </button>
+          <div className="list-kebab-wrapper" onClick={e => e.stopPropagation()}>
+            <button
+              className="kebab-btn"
+              style={{ opacity: 1, position: 'relative', top: 'auto', right: 'auto', marginLeft: '8px' }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === article.id ? null : article.id); }}
+              title="Más opciones"
+            >
+              <i className="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            {openMenuId === article.id && (
+              <div className="card-menu card-menu--left">
+                <button
+                  className="card-menu-item"
+                  onClick={(e) => { e.stopPropagation(); addToQueue(article); setOpenMenuId(null); }}
+                >
+                  <i className="fa-solid fa-circle-plus"></i>
+                  {queue.find(a => a.id === article.id) ? 'En cola ✓' : 'Poner a la cola'}
+                </button>
+                <button
+                  className="card-menu-item card-menu-item--danger"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); setOpenMenuId(null); }}
+                >
+                  <i className="fa-solid fa-trash-can"></i> Eliminar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       );
     }
 
     return (
       <div key={article.id} className={`article-card ${shapeClass}`} onClick={() => router.push(`/app/articles/${article.id}`)}>
-        <button
-          className="trash-btn"
-          onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); }}
-          title="Eliminar artículo"
-        >
-          <i className="fa-solid fa-trash-can"></i>
-        </button>
+        <div className="card-menu-wrapper" onClick={e => e.stopPropagation()}>
+          <button
+            className="kebab-btn"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === article.id ? null : article.id); }}
+            title="Más opciones"
+          >
+            <i className="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          {openMenuId === article.id && (
+            <div className="card-menu">
+              <button
+                className="card-menu-item"
+                onClick={(e) => { e.stopPropagation(); addToQueue(article); setOpenMenuId(null); }}
+              >
+                <i className="fa-solid fa-circle-plus"></i>
+                {queue.find(a => a.id === article.id) ? 'En cola ✓' : 'Poner a la cola'}
+              </button>
+              <button
+                className="card-menu-item card-menu-item--danger"
+                onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id, article.title); setOpenMenuId(null); }}
+              >
+                <i className="fa-solid fa-trash-can"></i> Eliminar
+              </button>
+            </div>
+          )}
+        </div>
         <div className="card-image-wrapper">
           {article.imageUrl ? (
             <img src={article.imageUrl} alt={article.title} className="card-image" />
@@ -527,7 +582,7 @@ function HomeContent() {
                       </button>
                     )}
                   </div>
-                  <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
+                  <div ref={newArticlesCarouselRef} className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                     {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
                 </section>

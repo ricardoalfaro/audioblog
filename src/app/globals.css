@@ -583,6 +583,12 @@ a {
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }
 
+.listening-carousel::after {
+  content: '';
+  min-width: 32px;
+  flex-shrink: 0;
+}
+
 /* Apple Music Card Styling */
 .article-card {
   position: relative;
@@ -775,13 +781,13 @@ a {
 .card-gradient-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 55%);
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 60%);
   z-index: 1;
 }
 
 .card-title-wrapper {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   padding: 14px 16px;
@@ -873,31 +879,77 @@ a {
   color: #FFFFFF;
 }
 
-.trash-btn {
+.card-menu-wrapper {
   position: absolute;
   top: 12px;
   right: 12px;
+  z-index: 10;
+}
+
+.kebab-btn {
   width: 28px;
   height: 28px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
   color: #000000;
   border: none;
-  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast);
+  font-size: 13px;
 }
 
-.article-card:hover .trash-btn, .article-list-item:hover .trash-btn {
-  opacity: 1;
+.kebab-btn:hover {
+  background: rgba(255, 255, 255, 1);
 }
 
-.trash-btn:hover {
-  color: #ff3333;
+.card-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  min-width: 168px;
+  overflow: hidden;
+  z-index: 200;
+}
+
+.card-menu--left {
+  right: 0;
+  left: auto;
+}
+
+.card-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.card-menu-item:hover {
+  background: var(--bg-hover, rgba(0,0,0,0.05));
+}
+
+.card-menu-item--danger {
+  color: #e53935;
+}
+
+.list-kebab-wrapper {
+  position: relative;
+  flex-shrink: 0;
 }
 
 /* Empty State */
