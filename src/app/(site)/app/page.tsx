@@ -426,10 +426,11 @@ function HomeContent() {
               <div className="card-menu card-menu--left">
                 <button
                   className="card-menu-item"
-                  onClick={(e) => { e.stopPropagation(); addToQueue(article); setOpenMenuId(null); }}
+                  onClick={(e) => { e.stopPropagation(); if (queue.find(a => a.id === article.id)) { removeFromQueue(article.id); } else { addToQueue(article); } setOpenMenuId(null); }}
                 >
-                  <i className="fa-solid fa-circle-plus"></i>
-                  {queue.find(a => a.id === article.id) ? 'En cola ✓' : 'Poner a la cola'}
+                  {queue.find(a => a.id === article.id)
+                    ? <><i className="fa-solid fa-circle-minus"></i> Quitar de la cola</>
+                    : <><i className="fa-solid fa-circle-plus"></i> Poner a la cola</>}
                 </button>
                 {confirmDeleteId === article.id ? (
                   <button
