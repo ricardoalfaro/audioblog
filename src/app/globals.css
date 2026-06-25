@@ -1036,7 +1036,12 @@ a {
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
-  .player-info-text {
+  /* Regla movida al final del bloque para que gane sobre .player-info { display: flex } */
+  .player-main-controls .player-info-text {
+    display: none;
+  }
+
+  .card-meta {
     display: none;
   }
 }
