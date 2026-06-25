@@ -1036,13 +1036,24 @@ a {
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
-  /* Regla movida al final del bloque para que gane sobre .player-info { display: flex } */
+  /* Gana sobre .player-info { display: flex } por especificidad */
   .player-main-controls .player-info-text {
     display: none;
   }
 
-  .card-meta {
+  /* Centra los controles de reproducción en el player */
+  .player-core {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* CTA del reader: oculta el texto, queda solo el icono */
+  .cta-label {
     display: none;
+  }
+
+  .reader-play-cta {
+    padding: 10px 14px;
   }
 }
 

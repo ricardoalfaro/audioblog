@@ -362,8 +362,8 @@ export default function ArticleReader() {
                 }}
               >
                 {playingArticle?.id === article.id && isPlaying && !isPaused
-                  ? <><i className="fa-solid fa-pause"></i> Pausar</>
-                  : <><i className="fa-solid fa-play"></i> Escuchar</>
+                  ? <><i className="fa-solid fa-pause"></i><span className="cta-label"> Pausar</span></>
+                  : <><i className="fa-solid fa-play"></i><span className="cta-label"> Escuchar</span></>
                 }
               </button>
             </div>
