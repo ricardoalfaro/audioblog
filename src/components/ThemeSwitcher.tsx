@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
 export default function ThemeSwitcher() {
+  // 'system' es el valor seguro para SSR; el efecto sincroniza con localStorage
+  // después de la hidratación (no hay mismatch porque ambos parten desde 'system').
+  const [theme, setTheme] = useState<Theme>('system');
+
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
     if (newTheme === 'dark') {
@@ -16,13 +20,13 @@ export default function ThemeSwitcher() {
     }
   };
 
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'system';
+  useEffect(() => {
     const saved = localStorage.getItem('theme') as Theme | null;
     const initial = saved ?? 'system';
     applyTheme(initial);
-    return initial;
-  });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(initial);
+  }, []);
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);

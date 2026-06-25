@@ -6,26 +6,32 @@ const AUTO_DISMISS_MS = 1800;
 const EXIT_ANIMATION_MS = 400;
 
 export default function SplashScreen() {
-  const [show, setShow] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    const shownThisSession = !!sessionStorage.getItem('audiodocs_splash_shown');
-    const alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
-    const isMobile = window.matchMedia('(max-width: 900px)').matches;
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    return !(shownThisSession || (!isMobile && !isPWA && alreadyOnboarded));
-  });
+  // true es el valor seguro para SSR; el efecto lo oculta en cliente si no procede.
+  // Arrancar en true garantiza que servidor y cliente coinciden en el primer render.
+  const [show, setShow] = useState(true);
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    if (!show) return;
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    const isPWA =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
+    const shownThisSession = !!sessionStorage.getItem('audiodocs_splash_shown');
+
+    if (shownThisSession || (!isMobile && !isPWA && alreadyOnboarded)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShow(false);
+      return;
+    }
+
     const timer = setTimeout(() => {
       setExiting(true);
       localStorage.setItem('audiodocs_onboarded', 'true');
       sessionStorage.setItem('audiodocs_splash_shown', 'true');
     }, AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [show]);
+  }, []);
 
   useEffect(() => {
     if (!exiting) return;
