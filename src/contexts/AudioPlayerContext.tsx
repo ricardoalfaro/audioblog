@@ -10,6 +10,10 @@ export const EDGE_VOICES = [
   { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
   { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US' },
   { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US' },
+  { name: 'Francisca (Brasil, Neural)', value: 'pt-BR-FranciscaNeural', lang: 'pt-BR' },
+  { name: 'Antonio (Brasil, Neural)', value: 'pt-BR-AntonioNeural', lang: 'pt-BR' },
+  { name: 'Denise (Francia, Neural)', value: 'fr-FR-DeniseNeural', lang: 'fr-FR' },
+  { name: 'Henri (Francia, Neural)', value: 'fr-FR-HenriNeural', lang: 'fr-FR' },
 ];
 
 interface AudioPlayerContextType {
@@ -73,7 +77,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Keep ref in sync so async prefetch callbacks always use the current voice
   useEffect(() => { selectedEdgeVoiceRef.current = selectedEdgeVoice; }, [selectedEdgeVoice]);
 
-  // Load persisted preferences on mount (client-only)
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // Load persisted preferences on mount (client-only).
   useEffect(() => {
     try {
       const engine = localStorage.getItem('pref_audioEngine') as 'device' | 'edge' | null;
@@ -92,6 +97,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Persist audio preferences to localStorage
   useEffect(() => { try { localStorage.setItem('pref_audioEngine', audioEngine); } catch {} }, [audioEngine]);
@@ -337,7 +343,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const playEdgeParagraph = (index: number, article: Article, retries = 0) => {
     if (!audioRef.current || !article) return;
 
-    try { window.speechSynthesis.cancel(); } catch (e) {}
+    try { window.speechSynthesis.cancel(); } catch {}
 
     // index -1 = title; index >= length = finished
     if (index < -1 || index >= article.paragraphs.length) {
@@ -402,7 +408,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           playEdgeParagraph(index + 1, article);
         }
       };
-      audioRef.current.onerror = (e) => {
+      audioRef.current.onerror = () => {
         const code = (audioRef.current?.error?.code ?? '?');
         onTTSError(`media ${code}`);
       };
@@ -490,6 +496,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (article.preferredEngine) setAudioEngine(article.preferredEngine);
     if (article.preferredEdgeVoice) {
       setSelectedEdgeVoice(article.preferredEdgeVoice);
+      // eslint-disable-next-line react-hooks/immutability
       selectedEdgeVoiceRef.current = article.preferredEdgeVoice;
     }
     if (article.preferredVoiceName) setSelectedVoiceName(article.preferredVoiceName);
@@ -542,7 +549,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const handleStop = () => {
     playSessionRef.current += 1;
     if (typeof window !== 'undefined') {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { window.speechSynthesis.cancel(); } catch {}
     }
     if (audioRef.current) {
       audioRef.current.pause();
@@ -637,6 +644,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const handleEdgeVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // eslint-disable-next-line react-hooks/immutability
     selectedEdgeVoiceRef.current = e.target.value;
     setSelectedEdgeVoice(e.target.value);
     if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEdgeVoice: e.target.value });

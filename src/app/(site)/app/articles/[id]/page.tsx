@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article } from '@/types';
-import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { STATIC_CATEGORIES } from '@/lib/categories';
 
 interface Token {
@@ -31,19 +31,6 @@ function parseTokens(text: string): Token[] {
   }
   return tokens;
 }
-
-const EDGE_VOICES = [
-  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
-  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
-  { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
-  { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
-  { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US' },
-  { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US' },
-  { name: 'Francisca (Brasil, Neural)', value: 'pt-BR-FranciscaNeural', lang: 'pt-BR' },
-  { name: 'Antonio (Brasil, Neural)', value: 'pt-BR-AntonioNeural', lang: 'pt-BR' },
-  { name: 'Denise (Francia, Neural)', value: 'fr-FR-DeniseNeural', lang: 'fr-FR' },
-  { name: 'Henri (Francia, Neural)', value: 'fr-FR-HenriNeural', lang: 'fr-FR' },
-];
 
 export default function ArticleReader() {
   const params = useParams();
@@ -99,8 +86,8 @@ export default function ArticleReader() {
           throw new Error('No se pudo encontrar el artículo.');
         }
         setArticle(data);
-      } catch (err: any) {
-        setError(err.message || 'Error al cargar el artículo.');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error al cargar el artículo.');
       } finally {
         setIsLoading(false);
       }
@@ -286,9 +273,9 @@ export default function ArticleReader() {
                   if (localData) {
                     try {
                       const articlesList = JSON.parse(localData);
-                      const index = articlesList.findIndex((a: any) => a.id === article.id);
+                      const index = articlesList.findIndex((a: { id: string }) => a.id === article.id);
                       if (index !== -1) { articlesList[index] = updated; localStorage.setItem('articles', JSON.stringify(articlesList)); }
-                    } catch (e) {}
+                    } catch {}
                   }
                 }}
               >
@@ -318,6 +305,7 @@ export default function ArticleReader() {
           {/* Hero: imagen con overlay oscuro y título solapado abajo */}
           <div className="article-hero">
             {article.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={article.imageUrl} alt={article.title} className="article-hero-img" />
             ) : (
               <div className={`article-hero-img ${getGradientClass(article.id)}`} />
