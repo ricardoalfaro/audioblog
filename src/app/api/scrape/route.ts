@@ -80,7 +80,7 @@ async function translateText(text: string, targetLang: string): Promise<string> 
     
     const json = await res.json();
     // Google Translate returns: [[[translatedSegment, originalSegment, ...], ...], ...]
-    const translatedParts = json[0]?.map((part: any) => part[0]).join('') || text;
+    const translatedParts = (json[0] as [string, ...unknown[]][])?.map((part) => part[0]).join('') || text;
     return translatedParts;
   } catch (error) {
     console.error('Error translating paragraph:', error);
@@ -133,12 +133,12 @@ export async function POST(request: Request) {
           'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         },
       });
-    } catch (fetchErr: any) {
+    } catch (fetchErr: unknown) {
       clearTimeout(fetchTimeout);
-      if (fetchErr.name === 'AbortError') {
+      if ((fetchErr as Error).name === 'AbortError') {
         return NextResponse.json({ error: 'El sitio no respondió a tiempo (timeout de 10 segundos).' }, { status: 504 });
       }
-      if (fetchErr.message === 'SSRF_BLOCKED' || fetchErr.message === 'DNS_FAIL') {
+      if ((fetchErr as Error).message === 'SSRF_BLOCKED' || (fetchErr as Error).message === 'DNS_FAIL') {
         return NextResponse.json({ error: 'La URL no es válida. Asegúrate de incluir http:// o https://' }, { status: 400 });
       }
       throw fetchErr;
@@ -254,6 +254,7 @@ export async function POST(request: Request) {
       /^·+$/,
     ];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function isNoise(node: any): boolean {
       if (!node.getAttribute) return false;
       // Medium metadata elements only — matched by specific testId values
@@ -277,6 +278,7 @@ export async function POST(request: Request) {
       paragraphs.push(joined);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function traverse(node: any) {
       if (!node) return;
 
@@ -398,7 +400,7 @@ export async function POST(request: Request) {
       category,
       imageUrl,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in scrape endpoint:', error);
     return NextResponse.json(
       { error: 'Error interno al procesar el artículo.' },

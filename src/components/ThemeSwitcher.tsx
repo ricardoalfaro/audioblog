@@ -1,24 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
 export default function ThemeSwitcher() {
-  const [theme, setTheme] = useState<Theme>('system');
-
-  useEffect(() => {
-    // Read from localStorage on mount
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      setTheme('system');
-      applyTheme('system');
-    }
-  }, []);
-
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
     if (newTheme === 'dark') {
@@ -26,9 +12,17 @@ export default function ThemeSwitcher() {
     } else if (newTheme === 'light') {
       root.setAttribute('data-theme', 'light');
     } else {
-      root.removeAttribute('data-theme'); // Follows system prefers-color-scheme via media queries
+      root.removeAttribute('data-theme');
     }
   };
+
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'system';
+    const saved = localStorage.getItem('theme') as Theme | null;
+    const initial = saved ?? 'system';
+    applyTheme(initial);
+    return initial;
+  });
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);

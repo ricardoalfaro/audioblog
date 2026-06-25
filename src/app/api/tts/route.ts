@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         'Cache-Control': 'private, no-store',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in TTS endpoint:', error);
     return NextResponse.json(
       { error: 'Error interno al generar el habla.' },

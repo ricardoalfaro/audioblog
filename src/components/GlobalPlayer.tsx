@@ -72,11 +72,8 @@ export default function GlobalPlayer() {
         )}
         <div className="player-main-controls">
           <div style={{ width: '48px', height: '48px', flexShrink: 0, marginRight: '16px', display: 'flex', justifyContent: 'center' }}>
-            {playingArticle.imageUrl ? (
-              <img src={playingArticle.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
-            ) : (
-              <div className={`${getGradientClass(playingArticle.id)}`} style={{ width: '100%', height: '100%', borderRadius: '8px' }}></div>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {playingArticle.imageUrl ? <img src={playingArticle.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} /> : <div className={`${getGradientClass(playingArticle.id)}`} style={{ width: '100%', height: '100%', borderRadius: '8px' }}></div>}
           </div>
           
           <div className="player-info player-info-text" style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '2px', minWidth: 0, flex: 1, marginRight: '16px' }}>

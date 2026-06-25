@@ -15,7 +15,9 @@ export default function SiteLayout({
       <header className="main-header">
         <div className="header-content">
           <Link href="/app" className="logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/main_logo_audiodocs_light.svg" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-light" style={{ height: '55px', width: 'auto' }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/main_logo_audiodocs_dark.svg" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-dark" style={{ height: '55px', width: 'auto' }} />
           </Link>
 

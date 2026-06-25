@@ -5,6 +5,7 @@ export default function Footer() {
     <footer className="main-footer">
       <div className="footer-inner">
         <div className="footer-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/audiodocs_logo_vertical.svg" alt="Audiodocs" className="footer-logo-svg" />
           <p className="footer-copy">© 2026 Audiodocs</p>
         </div>

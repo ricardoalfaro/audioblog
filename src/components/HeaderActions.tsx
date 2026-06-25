@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export default function HeaderActions() {
