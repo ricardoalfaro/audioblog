@@ -11,8 +11,8 @@ export default function AboutPage() {
     <>
       <div className="reader-topbar" style={{ top: 64 }}>
         <div className="reader-topbar-inner">
-          <Link href="/" className="back-link">
-            <i className="fa-solid fa-arrow-left"></i> Volver al inicio
+          <Link href="/app" className="back-link">
+            <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
           </Link>
         </div>
       </div>
