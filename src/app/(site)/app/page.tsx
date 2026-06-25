@@ -468,17 +468,27 @@ function HomeContent() {
             <div className="card-menu">
               <button
                 className="card-menu-item"
-                onClick={(e) => { e.stopPropagation(); addToQueue(article); setOpenMenuId(null); }}
+                onClick={(e) => { e.stopPropagation(); if (queue.find(a => a.id === article.id)) { removeFromQueue(article.id); } else { addToQueue(article); } setOpenMenuId(null); }}
               >
-                <i className="fa-solid fa-circle-plus"></i>
-                {queue.find(a => a.id === article.id) ? 'En cola ✓' : 'Poner a la cola'}
+                {queue.find(a => a.id === article.id)
+                  ? <><i className="fa-solid fa-circle-minus"></i> Quitar de la cola</>
+                  : <><i className="fa-solid fa-circle-plus"></i> Poner a la cola</>}
               </button>
-              <button
-                className="card-menu-item card-menu-item--danger"
-                onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setOpenMenuId(null); }}
-              >
-                <i className="fa-solid fa-trash-can"></i> Eliminar
-              </button>
+              {confirmDeleteId === article.id ? (
+                <button
+                  className="card-menu-item card-menu-item--danger"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setOpenMenuId(null); setConfirmDeleteId(null); }}
+                >
+                  <i className="fa-solid fa-circle-check"></i> ¿Confirmar?
+                </button>
+              ) : (
+                <button
+                  className="card-menu-item card-menu-item--danger"
+                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); }}
+                >
+                  <i className="fa-solid fa-trash-can"></i> Eliminar
+                </button>
+              )}
             </div>
           )}
         </div>
