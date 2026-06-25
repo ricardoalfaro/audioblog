@@ -8,16 +8,6 @@ import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import SplashScreen from '@/components/SplashScreen';
 
-
-const EDGE_VOICES = [
-  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
-  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
-  { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
-  { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
-  { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US' },
-  { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US' },
-];
-
 function HomeContent() {
   const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
@@ -43,6 +33,7 @@ function HomeContent() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   // Open import modal via custom event (desde la misma página) o URL param (navegando desde otra)
   useEffect(() => {
     const handler = () => setIsModalOpen(true);
@@ -62,15 +53,6 @@ function HomeContent() {
     return () => window.removeEventListener('audiodocs:open-import', handler);
   }, []);
 
-  // Dispara el auto-import una vez que los artículos han cargado
-  useEffect(() => {
-    if (!isLoading && pendingAutoImportRef.current) {
-      const url = pendingAutoImportRef.current;
-      pendingAutoImportRef.current = null;
-      setScrapeUrl(url);
-      runScrape(url, true);
-    }
-  }, [isLoading]);
 
   // Paste de URL desde cualquier lugar de la página abre el modal con el link ya pegado
   useEffect(() => {
@@ -107,9 +89,10 @@ function HomeContent() {
   }, [openMenuId]);
 
   // When a new article is imported (prepended to front), scroll the carousel back to start
+  const firstNewArticleId = articles.find(a => !a.lastPlayedAt)?.id;
   useEffect(() => {
     newArticlesCarouselRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
-  }, [articles.find(a => !a.lastPlayedAt)?.id]);
+  }, [firstNewArticleId]);
 
   const handlePlayDirectly = (e: React.MouseEvent, targetArticle: Article) => {
     e.preventDefault();
@@ -152,19 +135,9 @@ function HomeContent() {
     }
   }, []);
 
-  // Re-read articles when the player advances paragraphs or stops,
-  // so Escuchando / Archivo sections reflect real-time progress
-  useEffect(() => {
-    if (playingArticle) fetchArticles();
-  }, [activeParagraphIndex, isPlaying]);
-
-  useEffect(() => {
-    // When playingArticle changes (a new article starts playing), refresh the local storage list
-    // so it immediately appears in "Estas escuchando".
-    if (playingArticle?.id) {
-      fetchArticles();
-    }
-  }, [playingArticle?.id]);
+  // Refresh sections when the playing article changes (start, stop, next-in-queue)
+  useEffect(() => { fetchArticles(); }, [playingArticle?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     let startY = 0;
@@ -298,13 +271,23 @@ function HomeContent() {
           resetScrapeForm();
         }, 1600);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(stepTimer);
       setScrapeStep(0);
-      setScrapeError(err.message || 'Error al importar el artículo.');
+      setScrapeError(err instanceof Error ? err.message : 'Error al importar el artículo.');
       setIsScraping(false);
     }
   };
+
+  // Dispara el auto-import una vez que los artículos han cargado.
+  useEffect(() => {
+    if (!isLoading && pendingAutoImportRef.current) {
+      const url = pendingAutoImportRef.current;
+      pendingAutoImportRef.current = null;
+      setScrapeUrl(url);
+      runScrape(url, true);
+    }
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScrapeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -358,8 +341,8 @@ function HomeContent() {
         setManualTitle('');
         setManualContent('');
       }, 1600);
-    } catch (err: any) {
-      setManualError(err.message || 'Error al guardar el artículo.');
+    } catch (err: unknown) {
+      setManualError(err instanceof Error ? err.message : 'Error al guardar el artículo.');
       setIsSavingManual(false);
     }
   };
@@ -407,11 +390,14 @@ function HomeContent() {
 
   const renderArticleCard = (article: Article, shapeClass: string) => {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
+    const progressIdx = article.id === playingArticle?.id && activeParagraphIndex >= 0
+      ? activeParagraphIndex : (article.progress || 0);
     
     if (viewMode === 'list') {
       return (
         <div key={article.id} className="article-list-item" onClick={() => router.push(`/app/articles/${article.id}`)}>
           <div className={`list-img-wrapper ${!article.imageUrl ? getGradientClass(article.id) : ''}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             {article.imageUrl && <img src={article.imageUrl} alt={article.title} />}
           </div>
           <div className="list-item-content">
@@ -485,11 +471,8 @@ function HomeContent() {
           )}
         </div>
         <div className="card-image-wrapper">
-          {article.imageUrl ? (
-            <img src={article.imageUrl} alt={article.title} className="card-image" />
-          ) : (
-            <div className={`card-image ${getGradientClass(article.id)}`}></div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {article.imageUrl ? <img src={article.imageUrl} alt={article.title} className="card-image" /> : <div className={`card-image ${getGradientClass(article.id)}`}></div>}
           <div className="card-gradient-overlay"></div>
           <div className="card-title-wrapper">
             <h3 className="card-title" title={article.title}>{article.title}</h3>
@@ -497,10 +480,7 @@ function HomeContent() {
         </div>
         {article.lastPlayedAt && article.paragraphs.length > 0 && (
           <div className="card-progress-bar">
-            <div
-              className="card-progress-fill"
-              style={{ width: `${Math.min(100, ((article.progress || 0) / article.paragraphs.length) * 100)}%` }}
-            />
+            <div className="card-progress-fill" style={{ width: `${Math.min(100, progressIdx / article.paragraphs.length * 100)}%` }} />
           </div>
         )}
         <div className="card-content">
