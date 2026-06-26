@@ -111,6 +111,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Prefetch state for Edge TTS double-buffering
   const prefetchedBlobUrlRef = useRef<string | null>(null);
   const prefetchedIndexRef = useRef<number>(-1);
+  const prefetchedVoiceRef = useRef<string>('');
   const selectedEdgeVoiceRef = useRef('es-MX-DaliaNeural');
 
   // Load local voices
@@ -299,6 +300,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
       prefetchedBlobUrlRef.current = null;
       prefetchedIndexRef.current = -1;
+      prefetchedVoiceRef.current = '';
     }
   };
 
@@ -336,6 +338,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         if (!buffer) return;
         prefetchedBlobUrlRef.current = audioToDataUrl(buffer);
         prefetchedIndexRef.current = nextIndex;
+        prefetchedVoiceRef.current = voice;
       })
       .catch(() => { clearTimeout(timeoutId); });
   };
@@ -426,13 +429,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    // Use prefetched blob if available, otherwise fetch via POST
+    // Use prefetched blob if available and voice hasn't changed; otherwise fetch fresh
     if (index >= 0 && prefetchedIndexRef.current === index && prefetchedBlobUrlRef.current) {
-      const blobUrl = prefetchedBlobUrlRef.current;
-      prefetchedBlobUrlRef.current = null;
-      prefetchedIndexRef.current = -1;
-      setupAndPlay(blobUrl);
-      return;
+      if (prefetchedVoiceRef.current === voice) {
+        const blobUrl = prefetchedBlobUrlRef.current;
+        prefetchedBlobUrlRef.current = null;
+        prefetchedIndexRef.current = -1;
+        prefetchedVoiceRef.current = '';
+        setupAndPlay(blobUrl);
+        return;
+      }
+      revokePrefetchedBlob();
     }
 
     setIsLoading(true);
@@ -474,6 +481,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const playArticle = (article: Article, forceParagraphIndex?: number) => {
     playSessionRef.current += 1;
+    // Hard-stop any ongoing audio from previous article to prevent cross-engine interference
+    try { window.speechSynthesis.cancel(); } catch {}
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current.src = '';
+    }
+    revokePrefetchedBlob();
     // If this article was queued, remove it so it doesn't play twice
     if (queueRef.current.find(a => a.id === article.id)) {
       const updated = queueRef.current.filter(a => a.id !== article.id);
