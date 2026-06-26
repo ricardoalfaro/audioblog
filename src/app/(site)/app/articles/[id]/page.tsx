@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article } from '@/types';
@@ -45,6 +45,14 @@ export default function ArticleReader() {
     playingArticle, activeParagraphIndex, currentCharIndex, audioEngine, selectedEdgeVoice, selectedVoiceName, voices, handleEngineChange, handleEdgeVoiceChange, handleVoiceChange, playArticle, handleParagraphClick,
     isPlaying, isPaused, handlePlayPause
   } = useAudioPlayer();
+
+  // Tokens del párrafo activo — memoizado para no re-tokenizar en cada render
+  const activeTokens = useMemo(() => {
+    if (!article || activeParagraphIndex < 0) return [];
+    const text = article.paragraphs[activeParagraphIndex];
+    if (!text) return [];
+    return parseTokens(text.replace(/^#+\s+/, ''));
+  }, [article, activeParagraphIndex]);
 
   // Accordion state
   const [isMetaExpanded, setIsMetaExpanded] = useState(true);
@@ -385,8 +393,6 @@ export default function ArticleReader() {
               const cleanParagraph = paragraph.replace(/^#+\s+/, '');
 
               if (isActive) {
-                const tokens = parseTokens(cleanParagraph);
-
                 return (
                   <p
                     key={pIdx}
@@ -395,7 +401,7 @@ export default function ArticleReader() {
                     onClick={() => handleParagraphClick(pIdx)}
                     style={{ cursor: 'pointer' }}
                   >
-                    {tokens.map((token, tIdx) => {
+                    {activeTokens.map((token, tIdx) => {
                       const isWordActive =
                         token.isWord &&
                         currentCharIndex >= token.startIndex &&
