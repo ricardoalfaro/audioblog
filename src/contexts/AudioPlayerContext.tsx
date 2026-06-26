@@ -382,6 +382,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const onTTSError = (detail?: string) => {
       console.error(`Edge TTS error at index ${index}, attempt ${retries + 1}`, detail ?? '');
       if (retries < 1 && playingArticleIdRef.current === article.id && !isPausedRef.current) {
+        // Ocultar spinner durante la espera del retry para que el usuario no vea un colgón
+        setIsLoading(false);
         setTimeout(() => {
           if (playingArticleIdRef.current === article.id && !isPausedRef.current) {
             revokePrefetchedBlob();
@@ -444,7 +446,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     const ctrl = new AbortController();
-    const ttsTimeout = setTimeout(() => ctrl.abort(), 30_000);
+    const ttsTimeout = setTimeout(() => ctrl.abort(), 12_000);
     const sessionId = playSessionRef.current;
 
     fetch('/api/tts', {
