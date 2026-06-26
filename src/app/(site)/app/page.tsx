@@ -115,7 +115,9 @@ function HomeContent() {
       setIsLoading(true);
       const localData = localStorage.getItem('articles');
       if (localData) {
-        const pruned = pruneArticles(JSON.parse(localData));
+        const raw: unknown[] = JSON.parse(localData);
+        const valid = raw.filter(validateArticle);
+        const pruned = pruneArticles(valid);
         localStorage.setItem('articles', JSON.stringify(pruned));
         setArticles(pruned);
       } else {
@@ -758,6 +760,18 @@ function HomeContent() {
   );
 }
 
+
+export function validateArticle(a: unknown): a is Article {
+  if (!a || typeof a !== 'object') return false;
+  const o = a as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' && o.id.length > 0 &&
+    typeof o.title === 'string' &&
+    typeof o.url === 'string' &&
+    typeof o.addedAt === 'string' &&
+    Array.isArray(o.paragraphs)
+  );
+}
 
 export const pruneArticles = (loadedArticles: Article[]): Article[] => {
   const defaultIds = new Set(defaultArticles.map((a: Article) => a.id));

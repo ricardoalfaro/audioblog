@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Article } from '@/types';
+import { validateArticle } from '@/app/(site)/app/page';
 
 export const EDGE_VOICES = [
   { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
@@ -611,7 +612,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const getArticlesList = (): Article[] => {
     try {
       const data = localStorage.getItem('articles');
-      return data ? JSON.parse(data) : [];
+      if (!data) return [];
+      const raw: unknown[] = JSON.parse(data);
+      return raw.filter(validateArticle);
     } catch { return []; }
   };
 
