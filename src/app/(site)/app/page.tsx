@@ -403,8 +403,10 @@ function HomeContent() {
         <div key={article.id} className="article-list-item" onClick={() => router.push(`/app/articles/${article.id}`)}>
           {confirmDeleteId === article.id && (
             <div className="card-delete-overlay card-delete-overlay--inline" onClick={e => e.stopPropagation()}>
-              <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
-              <p>¿Eliminar este artículo?</p>
+              <div className="card-delete-overlay-info">
+                <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
+                <p>¿Eliminar este artículo?</p>
+              </div>
               <div className="card-delete-overlay-actions">
                 <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>Eliminar</button>
                 <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>Cancelar</button>
@@ -465,8 +467,10 @@ function HomeContent() {
       <div key={article.id} className={`article-card ${shapeClass}`} onClick={() => router.push(`/app/articles/${article.id}`)}>
         {confirmDeleteId === article.id && (
           <div className="card-delete-overlay" onClick={e => e.stopPropagation()}>
-            <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
-            <p>¿Eliminar este artículo?</p>
+            <div className="card-delete-overlay-info">
+              <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
+              <p>¿Eliminar este artículo?</p>
+            </div>
             <div className="card-delete-overlay-actions">
               <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>Eliminar</button>
               <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>Cancelar</button>
