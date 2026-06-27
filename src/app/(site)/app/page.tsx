@@ -84,7 +84,11 @@ function HomeContent() {
   // Close card menu when clicking outside
   useEffect(() => {
     if (!openMenuId) return;
-    const close = () => { setOpenMenuId(null); setConfirmDeleteId(null); };
+    const close = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest?.('.card-menu-wrapper, .list-kebab-wrapper')) return;
+      setOpenMenuId(null);
+      setConfirmDeleteId(null);
+    };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [openMenuId]);
@@ -397,6 +401,18 @@ function HomeContent() {
     if (viewMode === 'list') {
       return (
         <div key={article.id} className="article-list-item" onClick={() => router.push(`/app/articles/${article.id}`)}>
+          {confirmDeleteId === article.id && (
+            <div className="card-delete-overlay card-delete-overlay--inline" onClick={e => e.stopPropagation()}>
+              <div className="card-delete-overlay-info">
+                <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
+                <p>¿Eliminar este artículo?</p>
+              </div>
+              <div className="card-delete-overlay-actions">
+                <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>Eliminar</button>
+                <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>Cancelar</button>
+              </div>
+            </div>
+          )}
           <div className={`list-img-wrapper ${!article.imageUrl ? getGradientClass(article.id) : ''}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {article.imageUrl && <img src={article.imageUrl} alt={article.title} />}
@@ -434,21 +450,12 @@ function HomeContent() {
                     ? <><i className="fa-solid fa-circle-minus"></i> Quitar de la cola</>
                     : <><i className="fa-solid fa-circle-plus"></i> Poner a la cola</>}
                 </button>
-                {confirmDeleteId === article.id ? (
-                  <button
-                    className="card-menu-item card-menu-item--danger"
-                    onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setOpenMenuId(null); setConfirmDeleteId(null); }}
-                  >
-                    <i className="fa-solid fa-circle-check"></i> ¿Confirmar?
-                  </button>
-                ) : (
-                  <button
-                    className="card-menu-item card-menu-item--danger"
-                    onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); }}
-                  >
-                    <i className="fa-solid fa-trash-can"></i> Eliminar
-                  </button>
-                )}
+                <button
+                  className="card-menu-item card-menu-item--danger"
+                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); setOpenMenuId(null); }}
+                >
+                  <i className="fa-solid fa-trash-can"></i> Eliminar
+                </button>
               </div>
             )}
           </div>
@@ -458,6 +465,18 @@ function HomeContent() {
 
     return (
       <div key={article.id} className={`article-card ${shapeClass}`} onClick={() => router.push(`/app/articles/${article.id}`)}>
+        {confirmDeleteId === article.id && (
+          <div className="card-delete-overlay" onClick={e => e.stopPropagation()}>
+            <div className="card-delete-overlay-info">
+              <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
+              <p>¿Eliminar este artículo?</p>
+            </div>
+            <div className="card-delete-overlay-actions">
+              <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>Eliminar</button>
+              <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>Cancelar</button>
+            </div>
+          </div>
+        )}
         <div className="card-menu-wrapper" onClick={e => e.stopPropagation()}>
           <button
             className="kebab-btn"
@@ -476,21 +495,12 @@ function HomeContent() {
                   ? <><i className="fa-solid fa-circle-minus"></i> Quitar de la cola</>
                   : <><i className="fa-solid fa-circle-plus"></i> Poner a la cola</>}
               </button>
-              {confirmDeleteId === article.id ? (
-                <button
-                  className="card-menu-item card-menu-item--danger"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setOpenMenuId(null); setConfirmDeleteId(null); }}
-                >
-                  <i className="fa-solid fa-circle-check"></i> ¿Confirmar?
-                </button>
-              ) : (
-                <button
-                  className="card-menu-item card-menu-item--danger"
-                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); }}
-                >
-                  <i className="fa-solid fa-trash-can"></i> Eliminar
-                </button>
-              )}
+              <button
+                className="card-menu-item card-menu-item--danger"
+                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); setOpenMenuId(null); }}
+              >
+                <i className="fa-solid fa-trash-can"></i> Eliminar
+              </button>
             </div>
           )}
         </div>

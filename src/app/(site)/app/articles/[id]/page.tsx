@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article } from '@/types';
@@ -115,9 +115,28 @@ export default function ArticleReader() {
     return () => ro.disconnect();
   }, []);
 
-  // Sync scroll on active paragraph change
+  const userScrollingRef = useRef(false);
+  const userScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Detectar scroll manual y pausar auto-scroll por 3 segundos
   useEffect(() => {
-    if (activeParagraphIndex >= 0) {
+    const handleScroll = () => {
+      userScrollingRef.current = true;
+      if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current);
+      userScrollTimerRef.current = setTimeout(() => {
+        userScrollingRef.current = false;
+      }, 3000);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current);
+    };
+  }, []);
+
+  // Auto-scroll al párrafo activo, salvo que el usuario esté scrolleando manualmente
+  useEffect(() => {
+    if (activeParagraphIndex >= 0 && !userScrollingRef.current) {
       const activeEl = document.getElementById(`p-${activeParagraphIndex}`);
       if (activeEl) {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });

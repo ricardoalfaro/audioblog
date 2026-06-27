@@ -6,9 +6,7 @@
 
 ## 🔴 Alta prioridad
 
-| # | Título | Problema | Esfuerzo |
-|---|--------|----------|----------|
-| U3 | Auto-scroll vs scroll manual en reader | El scroll automático al párrafo activo pelea con el scroll del usuario | S |
+_Sin ítems pendientes._
 
 ---
 
@@ -27,6 +25,9 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| B5 | Delete no elimina artículos | `d8138db` |
+| U7 | Confirmación de delete: overlay sobre la card (dark/light) | `ff13e57` |
+| U3 | Auto-scroll vs scroll manual en reader | `fix/u3-autoscroll` |
 | P2 | Memoizar parseTokens en reader | `89e18e2` |
 | B1 | Voice stale en double-buffer | `94d21c9` |
 | B2 | Race condition engine al cambiar artículo | `94d21c9` |
