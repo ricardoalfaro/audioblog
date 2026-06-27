@@ -17,7 +17,6 @@ _Sin ítems pendientes._
 | U1 | Progreso por tiempo real | Barra de progreso cuenta párrafos, no tiempo — miente en artículos con párrafos desiguales | M |
 | C3 | Refactor AudioPlayerContext | 700+ líneas mezclando TTS browser + Edge + persistencia + UI state | L |
 | F5 | Compartir artículo | Deep link con metadata OpenGraph | M |
-| F6 | Reemplazar Google Translate | Migrar a DeepL free (500K chars/mes) con MyMemory como fallback | M |
 
 ---
 
@@ -25,6 +24,7 @@ _Sin ítems pendientes._
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| F6 | Fallback MyMemory cuando Google Translate falla | `main` |
 | B5 | Delete no elimina artículos | `d8138db` |
 | U7 | Confirmación de delete: overlay sobre la card (dark/light) | `ff13e57` |
 | U3 | Auto-scroll vs scroll manual en reader | `fix/u3-autoscroll` |
