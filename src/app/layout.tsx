@@ -5,6 +5,21 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 export const metadata: Metadata = {
   title: "Audiodocs",
   description: "Escucha tus artículos favoritos como podcasts",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  openGraph: {
+    title: "Audiodocs",
+    description: "Escucha tus artículos favoritos como podcasts",
+    type: "website",
+    locale: "es_ES",
+    siteName: "Audiodocs",
+    images: [{ url: "/apple-touch-icon.png", width: 180, height: 180 }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Audiodocs",
+    description: "Escucha tus artículos favoritos como podcasts",
+    images: ["/apple-touch-icon.png"],
+  },
   manifest: "/site.webmanifest",
   icons: {
     icon: [

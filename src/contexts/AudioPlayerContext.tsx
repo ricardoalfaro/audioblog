@@ -687,16 +687,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const getProgressPercentage = () => {
     if (!playingArticle) return 0;
-    if (activeParagraphIndex < 0) return (playingArticle.progress || 0) / playingArticle.paragraphs.length * 100;
-    return (activeParagraphIndex / playingArticle.paragraphs.length) * 100;
+    const paragraphs = playingArticle.paragraphs;
+    if (!paragraphs?.length) return 0;
+    const idx = activeParagraphIndex >= 0 ? activeParagraphIndex : (playingArticle.progress || 0);
+    const wordCounts = paragraphs.map(p => p.split(/\s+/).filter(Boolean).length || 1);
+    const totalWords = wordCounts.reduce((a, b) => a + b, 0);
+    if (totalWords === 0) return 0;
+    return (wordCounts.slice(0, idx).reduce((a, b) => a + b, 0) / totalWords) * 100;
   };
 
   const getRemainingTime = () => {
     if (!playingArticle) return 0;
-    const totalPar = playingArticle.paragraphs.length;
-    const current = activeParagraphIndex >= 0 ? activeParagraphIndex : (playingArticle.progress || 0);
-    const progressFactor = current / totalPar;
-    return playingArticle.duration * (1 - progressFactor);
+    const paragraphs = playingArticle.paragraphs;
+    if (!paragraphs?.length) return 0;
+    const idx = activeParagraphIndex >= 0 ? activeParagraphIndex : (playingArticle.progress || 0);
+    const wordCounts = paragraphs.map(p => p.split(/\s+/).filter(Boolean).length || 1);
+    const totalWords = wordCounts.reduce((a, b) => a + b, 0);
+    if (totalWords === 0) return 0;
+    const wordsRemaining = wordCounts.slice(idx).reduce((a, b) => a + b, 0);
+    return playingArticle.duration * (wordsRemaining / totalWords);
   };
 
   return (

@@ -14,9 +14,7 @@ _Sin ítems pendientes._
 
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
-| U1 | Progreso por tiempo real | Barra de progreso cuenta párrafos, no tiempo — miente en artículos con párrafos desiguales | M |
 | C3 | Refactor AudioPlayerContext | 700+ líneas mezclando TTS browser + Edge + persistencia + UI state | L |
-| F5 | Compartir artículo | Deep link con metadata OpenGraph | M |
 
 ---
 
@@ -24,6 +22,8 @@ _Sin ítems pendientes._
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| U1 | Progreso por tiempo real ponderado por palabras | `main` |
+| F5 | OpenGraph + metadataBase en root layout | `main` |
 | F6 | Fallback MyMemory cuando Google Translate falla | `main` |
 | B5 | Delete no elimina artículos | `d8138db` |
 | U7 | Confirmación de delete: overlay sobre la card (dark/light) | `ff13e57` |
