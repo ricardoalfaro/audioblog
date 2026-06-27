@@ -592,6 +592,11 @@ a {
   -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(to right, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  scrollbar-width: none;
+}
+
+.listening-carousel::-webkit-scrollbar {
+  display: none;
 }
 
 .listening-carousel::after {
