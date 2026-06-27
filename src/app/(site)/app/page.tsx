@@ -402,7 +402,7 @@ function HomeContent() {
       return (
         <div key={article.id} className="article-list-item" onClick={() => router.push(`/app/articles/${article.id}`)}>
           {confirmDeleteId === article.id && (
-            <div className="card-delete-overlay" onClick={e => e.stopPropagation()}>
+            <div className="card-delete-overlay card-delete-overlay--inline" onClick={e => e.stopPropagation()}>
               <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
               <p>¿Eliminar este artículo?</p>
               <div className="card-delete-overlay-actions">
