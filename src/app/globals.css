@@ -657,7 +657,6 @@ a {
   border-radius: var(--border-radius-md);
   transition: background var(--transition-fast);
   cursor: pointer;
-  overflow: hidden;
 }
 
 .article-list-item:hover {
