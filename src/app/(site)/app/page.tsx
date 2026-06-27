@@ -84,7 +84,11 @@ function HomeContent() {
   // Close card menu when clicking outside
   useEffect(() => {
     if (!openMenuId) return;
-    const close = () => { setOpenMenuId(null); setConfirmDeleteId(null); };
+    const close = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest?.('.card-menu-wrapper, .list-kebab-wrapper')) return;
+      setOpenMenuId(null);
+      setConfirmDeleteId(null);
+    };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [openMenuId]);

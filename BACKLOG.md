@@ -27,6 +27,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| B5 | Delete no elimina artículos | `fix/u3-autoscroll` |
 | P2 | Memoizar parseTokens en reader | `89e18e2` |
 | B1 | Voice stale en double-buffer | `94d21c9` |
 | B2 | Race condition engine al cambiar artículo | `94d21c9` |
