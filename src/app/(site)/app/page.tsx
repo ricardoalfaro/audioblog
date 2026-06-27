@@ -201,7 +201,9 @@ function HomeContent() {
     setScrapeError('');
     setScrapeStep(1);
 
-    const stepTimer = setTimeout(() => setScrapeStep(2), 2500);
+    const isTranslating = translateTo && translateTo !== 'none';
+    const stepTimer1 = setTimeout(() => setScrapeStep(2), 2500);
+    const stepTimer2 = isTranslating ? setTimeout(() => setScrapeStep(3), 5000) : null;
 
     try {
       const scrapeRes = await fetch('/api/scrape', {
@@ -210,7 +212,8 @@ function HomeContent() {
         body: JSON.stringify({ url, translateTo }),
       });
 
-      clearTimeout(stepTimer);
+      clearTimeout(stepTimer1);
+      if (stepTimer2) clearTimeout(stepTimer2);
 
       if (!scrapeRes.ok) {
         let errorMsg = 'Ocurrió un error al extraer el artículo.';
@@ -223,7 +226,7 @@ function HomeContent() {
         throw new Error(errorMsg);
       }
 
-      setScrapeStep(translateTo && translateTo !== 'none' ? 4 : 3);
+      setScrapeStep(isTranslating ? 4 : 3);
       const scrapeData = await scrapeRes.json();
 
       if (scrapeCategory !== 'auto') scrapeData.category = scrapeCategory;
@@ -279,7 +282,8 @@ function HomeContent() {
         }, 1600);
       }
     } catch (err: unknown) {
-      clearTimeout(stepTimer);
+      clearTimeout(stepTimer1);
+      if (stepTimer2) clearTimeout(stepTimer2);
       setScrapeStep(0);
       setScrapeError(err instanceof Error ? err.message : 'Error al importar el artículo.');
       setIsScraping(false);
@@ -696,18 +700,27 @@ function HomeContent() {
                           </span>
                           Extrayendo texto
                         </div>
-                        <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''} ${scrapeStep > 3 ? 'done' : ''}`}>
-                          <span className="step-icon">
-                            {scrapeStep > 3 ? <i className="fa-solid fa-check" /> : scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
-                          </span>
-                          Guardando
-                        </div>
-                        {translateTo && translateTo !== 'none' && (
-                          <div className={`import-step ${scrapeStep >= 4 ? 'active' : ''}`}>
+                        {translateTo && translateTo !== 'none' ? (
+                          <>
+                            <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''} ${scrapeStep > 3 ? 'done' : ''}`}>
+                              <span className="step-icon">
+                                {scrapeStep > 3 ? <i className="fa-solid fa-check" /> : scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                              </span>
+                              Traduciendo texto
+                            </div>
+                            <div className={`import-step ${scrapeStep >= 4 ? 'active' : ''}`}>
+                              <span className="step-icon">
+                                {scrapeStep === 4 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                              </span>
+                              Guardando
+                            </div>
+                          </>
+                        ) : (
+                          <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''}`}>
                             <span className="step-icon">
-                              {scrapeStep === 4 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                              {scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                             </span>
-                            Traduciendo texto
+                            Guardando
                           </div>
                         )}
                       </div>
