@@ -642,6 +642,7 @@ a {
 }
 
 .article-list-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -651,6 +652,7 @@ a {
   border-radius: var(--border-radius-md);
   transition: background var(--transition-fast);
   cursor: pointer;
+  overflow: hidden;
 }
 
 .article-list-item:hover {
@@ -995,6 +997,79 @@ a {
 .list-kebab-wrapper {
   position: relative;
   flex-shrink: 0;
+}
+
+/* Delete confirmation overlay */
+.card-delete-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .card-delete-overlay,
+:root:not([data-theme="light"]) .card-delete-overlay {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card-delete-overlay {
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+
+.card-delete-overlay p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-delete-overlay-icon {
+  font-size: 22px;
+  color: #e53935;
+}
+
+.card-delete-overlay-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.card-delete-overlay-actions button {
+  padding: 6px 14px;
+  border-radius: var(--border-radius-sm);
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.card-delete-overlay-actions button:hover {
+  opacity: 0.85;
+}
+
+.card-delete-overlay-actions .btn-confirm {
+  background: #e53935;
+  color: #fff;
+}
+
+.card-delete-overlay-actions .btn-cancel {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 /* Empty State */
