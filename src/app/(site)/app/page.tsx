@@ -6,6 +6,7 @@ import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { validateArticle } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 
 function HomeContent() {
@@ -784,17 +785,7 @@ function HomeContent() {
 }
 
 
-export function validateArticle(a: unknown): a is Article {
-  if (!a || typeof a !== 'object') return false;
-  const o = a as Record<string, unknown>;
-  return (
-    typeof o.id === 'string' && o.id.length > 0 &&
-    typeof o.title === 'string' &&
-    typeof o.url === 'string' &&
-    typeof o.addedAt === 'string' &&
-    Array.isArray(o.paragraphs)
-  );
-}
+export { validateArticle };
 
 export const pruneArticles = (loadedArticles: Article[]): Article[] => {
   const defaultIds = new Set(defaultArticles.map((a: Article) => a.id));

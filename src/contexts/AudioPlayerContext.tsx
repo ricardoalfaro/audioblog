@@ -2,7 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Article } from '@/types';
-import { validateArticle } from '@/app/(site)/app/page';
+import { audioToDataUrl } from '@/lib/audioUtils';
+import { getArticlesList, updateArticleProgress, saveArticleVoicePreference } from '@/lib/articleStorage';
+import { useQueue } from '@/hooks/useQueue';
 
 export const EDGE_VOICES = [
   { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
@@ -66,9 +68,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Increments on every new play session (new article, engine change, stop)
   // so in-flight TTS fetches from a previous session are discarded.
   const playSessionRef = useRef(0);
-  const [queue, setQueue] = useState<Article[]>([]);
-  const queueRef = useRef<Article[]>([]);
-  useEffect(() => { queueRef.current = queue; }, [queue]);
+  const { queue, queueRef, addToQueue, removeFromQueue, clearQueue, consumeNextInQueue } = useQueue();
   const [speechRate, setSpeechRate] = useState(1);
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -90,12 +90,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (voiceName) setSelectedVoiceName(voiceName);
       const rate = parseFloat(localStorage.getItem('pref_speechRate') || '');
       if (!isNaN(rate)) setSpeechRate(rate);
-      const savedQueue = localStorage.getItem('playbackQueue');
-      if (savedQueue) {
-        const q: Article[] = JSON.parse(savedQueue);
-        setQueue(q);
-        queueRef.current = q;
-      }
     } catch {}
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -176,36 +170,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const updateArticleProgress = (article: Article, paragraphIndex: number, updateLastPlayed = false) => {
-    try {
-      const localData = localStorage.getItem('articles');
-      if (localData) {
-        const articlesList: Article[] = JSON.parse(localData);
-        const index = articlesList.findIndex((a) => a.id === article.id);
-        if (index !== -1) {
-          articlesList[index].progress = paragraphIndex;
-          if (updateLastPlayed) articlesList[index].lastPlayedAt = new Date().toISOString();
-          localStorage.setItem('articles', JSON.stringify(articlesList));
-        }
-      }
-    } catch (err) {
-      console.error('Error updating progress:', err);
-    }
-  };
-
-  const saveArticleVoicePreference = (articleId: string, patch: Partial<Pick<Article, 'preferredEngine' | 'preferredEdgeVoice' | 'preferredVoiceName'>>) => {
-    try {
-      const localData = localStorage.getItem('articles');
-      if (!localData) return;
-      const list: Article[] = JSON.parse(localData);
-      const idx = list.findIndex(a => a.id === articleId);
-      if (idx !== -1) {
-        Object.assign(list[idx], patch);
-        localStorage.setItem('articles', JSON.stringify(list));
-      }
-    } catch {}
-  };
-
   const speakParagraph = (index: number, article: Article) => {
     if (!article || typeof window === 'undefined') return;
 
@@ -219,14 +183,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (index < -1 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
         updateArticleProgress(article, article.paragraphs.length);
-        if (queueRef.current.length > 0) {
-          const [nextArticle, ...rest] = queueRef.current;
-          setQueue(rest);
-          queueRef.current = rest;
-          try { localStorage.setItem('playbackQueue', JSON.stringify(rest)); } catch {}
-          playArticle(nextArticle, 0);
-          return;
-        }
+        const next = consumeNextInQueue();
+        if (next) { playArticle(next, 0); return; }
       }
       handleStop();
       return;
@@ -280,18 +238,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setIsPlaying(false);
       setIsPaused(false);
     }
-  };
-
-  // Convert audio ArrayBuffer to base64 data URL — more reliable than blob URLs
-  // on iOS WebKit (standalone PWA mode rejects blob: URLs for media with MEDIA_ERR_SRC_NOT_SUPPORTED)
-  const audioToDataUrl = (buffer: ArrayBuffer): string => {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    const chunk = 8192;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
-    }
-    return `data:audio/mpeg;base64,${btoa(binary)}`;
   };
 
   const revokePrefetchedBlob = () => {
@@ -353,14 +299,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (index < -1 || index >= article.paragraphs.length) {
       if (index >= article.paragraphs.length) {
         updateArticleProgress(article, article.paragraphs.length);
-        if (queueRef.current.length > 0) {
-          const [nextArticle, ...rest] = queueRef.current;
-          setQueue(rest);
-          queueRef.current = rest;
-          try { localStorage.setItem('playbackQueue', JSON.stringify(rest)); } catch {}
-          playArticle(nextArticle, 0);
-          return;
-        }
+        const next = consumeNextInQueue();
+        if (next) { playArticle(next, 0); return; }
       }
       handleStop();
       return;
@@ -495,10 +435,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     revokePrefetchedBlob();
     // If this article was queued, remove it so it doesn't play twice
     if (queueRef.current.find(a => a.id === article.id)) {
-      const updated = queueRef.current.filter(a => a.id !== article.id);
-      setQueue(updated);
-      queueRef.current = updated;
-      try { localStorage.setItem('playbackQueue', JSON.stringify(updated)); } catch {}
+      removeFromQueue(article.id);
     }
     setPlayingArticle(article);
     playingArticleIdRef.current = article.id;
@@ -582,40 +519,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentCharIndex(-1);
     setPlayingArticle(null);
     playingArticleIdRef.current = null;
-  };
-
-  const addToQueue = (article: Article) => {
-    setQueue(prev => {
-      if (prev.find(a => a.id === article.id)) return prev;
-      const next = [...prev, article];
-      queueRef.current = next;
-      try { localStorage.setItem('playbackQueue', JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
-
-  const removeFromQueue = (id: string) => {
-    setQueue(prev => {
-      const next = prev.filter(a => a.id !== id);
-      queueRef.current = next;
-      try { localStorage.setItem('playbackQueue', JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
-
-  const clearQueue = () => {
-    setQueue([]);
-    queueRef.current = [];
-    try { localStorage.removeItem('playbackQueue'); } catch {}
-  };
-
-  const getArticlesList = (): Article[] => {
-    try {
-      const data = localStorage.getItem('articles');
-      if (!data) return [];
-      const raw: unknown[] = JSON.parse(data);
-      return raw.filter(validateArticle);
-    } catch { return []; }
   };
 
   const handleSkipForward = () => {
