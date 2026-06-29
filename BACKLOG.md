@@ -15,6 +15,7 @@ _Sin ítems pendientes._
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
 | C3 | Refactor AudioPlayerContext | 700+ líneas mezclando TTS browser + Edge + persistencia + UI state | L |
+| F8 | Compartir artículo con idioma de traducción | Deep link `/app?url=...&lang=es` — receptor importa ya traducido al mismo idioma. Requiere guardar `translateTo` en `Article` y leerlo en el auto-import | M |
 
 ---
 
