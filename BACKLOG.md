@@ -15,6 +15,7 @@ _Sin ítems pendientes._
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
 | C3 | Refactor AudioPlayerContext | 700+ líneas mezclando TTS browser + Edge + persistencia + UI state | L |
+| F13 | Importar artículos Medium member-only gratuitos | Cascada: URL directa → RSS del autor → archive.org. Si todo falla, sugerir al usuario copiar el "friend link" de Medium (bypasea el muro sin pago) | M |
 | U9 | Avatar genérico sin OAuth | Reemplazar la letra inicial del avatar por un icono de usuario genérico (`fa-user`) mientras no haya autenticación real | XS |
 | U8 | Etiquetas en botones del reader (desktop) | Botón de sidebar de controles y botón de compartir muestran etiqueta de texto en desktop — solo icono en mobile | XS |
 | F12 | Voz según género del autor | Detectar género del primer nombre del autor con genderize.io (free tier) y autoseleccionar voz masculina o femenina acorde al idioma en curso. Solo si el artículo no tiene preferencia de voz guardada | S |
