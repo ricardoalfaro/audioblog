@@ -6,7 +6,9 @@
 
 ## 🔴 Alta prioridad
 
-_Sin ítems pendientes._
+| # | Título | Descripción | Esfuerzo |
+|---|--------|-------------|----------|
+| B6 | Logo animado del splash cortado en mobile | El logo de la pantalla de splash se ve recortado en dispositivos móviles | XS |
 
 ---
 
