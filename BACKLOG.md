@@ -15,6 +15,7 @@ _Sin ítems pendientes._
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
 | C3 | Refactor AudioPlayerContext | 700+ líneas mezclando TTS browser + Edge + persistencia + UI state | L |
+| F11 | Cortina musical al iniciar | Jingle breve (~1-2s) antes de que arranque el TTS, como Substack. Archivo `/public/jingle.mp3` a proveer por el usuario; `playArticle` espera `onended` del clip antes de llamar al motor TTS | S |
 | F10 | Web Share Target | Registrar la PWA como destino en el share sheet del sistema. Agregar `share_target` al manifest; manejar `?url=` y `?text=` como fallback. Requiere PWA instalada | XS |
 | F9 | Media Session API | Lock screen y Control Center muestran título, autor e imagen del artículo en vez del ícono de la app. Incluye action handlers (play/pause, anterior, siguiente) | XS |
 | F8 | Compartir artículo con idioma de traducción | Deep link `/app?url=...&lang=es` — receptor importa ya traducido al mismo idioma. Requiere guardar `translateTo` en `Article` y leerlo en el auto-import | M |
