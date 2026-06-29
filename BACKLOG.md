@@ -16,7 +16,6 @@
 
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
-| C3 | Refactor AudioPlayerContext | 700+ líneas mezclando TTS browser + Edge + persistencia + UI state | L |
 | F13 | Importar artículos Medium member-only gratuitos | Cascada: URL directa → RSS del autor → archive.org. Si todo falla, sugerir al usuario copiar el "friend link" de Medium (bypasea el muro sin pago) | M |
 | U9 | Avatar genérico sin OAuth | Reemplazar la letra inicial del avatar por un icono de usuario genérico (`fa-user`) mientras no haya autenticación real | XS |
 | U8 | Etiquetas en botones del reader (desktop) | Botón de sidebar de controles y botón de compartir muestran etiqueta de texto en desktop — solo icono en mobile | XS |
@@ -32,6 +31,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| C3 | Refactor AudioPlayerContext (audioUtils, articleStorage, useQueue) | `fd78b18` |
 | U1 | Progreso por tiempo real ponderado por palabras | `main` |
 | F5 | OpenGraph + metadataBase en root layout | `main` |
 | F6 | Fallback MyMemory cuando Google Translate falla | `main` |
