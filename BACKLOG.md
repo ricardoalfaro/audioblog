@@ -8,7 +8,6 @@
 
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
-| B6 | Logo animado del splash cortado en mobile | El logo de la pantalla de splash se ve recortado en dispositivos móviles | XS |
 
 ---
 
@@ -18,12 +17,15 @@
 |---|--------|-------------|----------|
 | F13 | Importar artículos Medium member-only gratuitos | Cascada: URL directa → RSS del autor → archive.org. Si todo falla, sugerir al usuario copiar el "friend link" de Medium (bypasea el muro sin pago) | M |
 | U9 | Avatar genérico sin OAuth | Reemplazar la letra inicial del avatar por un icono de usuario genérico (`fa-user`) mientras no haya autenticación real | XS |
+| U10 | Splash solo en mobile y primera vez | Mostrar el splash únicamente en dispositivos móviles y solo la primera vez que se abre la app. Usar `localStorage` para recordar si ya se mostró | XS |
 | U8 | Etiquetas en botones del reader (desktop) | Botón de sidebar de controles y botón de compartir muestran etiqueta de texto en desktop — solo icono en mobile | XS |
 | F12 | Voz según género del autor | Detectar género del primer nombre del autor con genderize.io (free tier) y autoseleccionar voz masculina o femenina acorde al idioma en curso. Solo si el artículo no tiene preferencia de voz guardada | S |
 | F11 | Cortina musical al iniciar | Jingle breve (~1-2s) antes de que arranque el TTS, como Substack. Archivo `/public/jingle.mp3` a proveer por el usuario; `playArticle` espera `onended` del clip antes de llamar al motor TTS | S |
 | F10 | Web Share Target | Registrar la PWA como destino en el share sheet del sistema. Agregar `share_target` al manifest; manejar `?url=` y `?text=` como fallback. Requiere PWA instalada | XS |
-| F9 | Media Session API | Lock screen y Control Center muestran título, autor e imagen del artículo en vez del ícono de la app. Incluye action handlers (play/pause, anterior, siguiente) | XS |
 | F8 | Compartir artículo con idioma de traducción | Deep link `/app?url=...&lang=es` — receptor importa ya traducido al mismo idioma. Requiere guardar `translateTo` en `Article` y leerlo en el auto-import | M |
+| F7 | i18n de la interfaz | El usuario selecciona el idioma de la UI desde el dropdown del avatar. Idiomas soportados: Español (default), Inglés, Portugués, Francés y Alemán. Preferencia guardada en `localStorage` | M |
+| F9 | Media Session API | Lock screen y Control Center muestran título, autor e imagen del artículo en vez del ícono de la app. Incluye action handlers (play/pause, anterior, siguiente) | XS |
+| F-1 | Sesión de usuario con OAuth | Login con Google (NextAuth o similar). Permite sincronizar artículos entre dispositivos y habilitar features de cuenta. Prerequisito para Gmail import | L |
 
 ---
 
@@ -31,6 +33,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| B6 | Logo animado del splash cortado en mobile | `HEAD` |
 | C3 | Refactor AudioPlayerContext (audioUtils, articleStorage, useQueue) | `fd78b18` |
 | U1 | Progreso por tiempo real ponderado por palabras | `main` |
 | F5 | OpenGraph + metadataBase en root layout | `main` |
@@ -75,8 +78,6 @@
 | F2 | Favoritos | No se hará |
 | F3 | Estadísticas | No se hará |
 | F4 | Offline / IndexedDB | Solo al final de todo cuando no quede nada más |
-| F-1 | Auth Google / Gmail import | No priorizado |
-| F7 | i18n | No priorizado |
 
 ---
 

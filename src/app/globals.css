@@ -2090,14 +2090,14 @@ input:checked + .slider:before {
 }
 
 .splash-logo {
-  height: 150px;
-  width: auto;
+  width: min(438px, 100%);
+  height: auto;
   animation: logoGrow 1s ease-out both;
 }
 
 .landing-logo {
-  height: 150px;
-  width: auto;
+  width: min(438px, 100%);
+  height: auto;
   position: relative;
   z-index: 2;
   animation: logoGrow 1s ease-out both;
