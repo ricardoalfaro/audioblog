@@ -550,16 +550,18 @@ function HomeContent() {
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {(articles.length > 0 || isLoading) && <section className="tabs-container">
-        <div className="categories-scroll">
-          {categories.map((category) => (
-            <button
-              key={category}
-              className={`tab-item ${selectedCategory === category ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="tabs-scroll-wrapper">
+          <div className="categories-scroll">
+            {categories.map((category) => (
+              <button
+                key={category}
+                className={`tab-item ${selectedCategory === category ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="view-toggles">
           <button

@@ -494,12 +494,39 @@ a {
   padding-right: max(24px, calc((100vw - 1200px) / 2 + 24px));
 }
 
+.tabs-scroll-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tabs-scroll-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, #f1f1f1);
+}
+
+:root[data-theme="dark"] .tabs-scroll-wrapper::after {
+  background: linear-gradient(to right, transparent, #121d37);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tabs-scroll-wrapper::after {
+    background: linear-gradient(to right, transparent, #121d37);
+  }
+}
+
 .categories-scroll {
   display: flex;
   gap: 16px;
   overflow-x: auto;
   white-space: nowrap;
-  flex: 1;
   scrollbar-width: none;
 }
 
