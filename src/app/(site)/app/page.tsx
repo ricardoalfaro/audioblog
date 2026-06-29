@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
@@ -819,9 +819,7 @@ export default function Home() {
   return (
     <>
       <SplashScreen />
-      <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner" style={{ width: '40px', height: '40px' }}></div></div>}>
-        <HomeContent />
-      </Suspense>
+      <HomeContent />
     </>
   );
 }
