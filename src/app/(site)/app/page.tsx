@@ -779,7 +779,6 @@ function HomeContent() {
         </div>
       )}
     
-      <SplashScreen />
     </main>
     </>
 
@@ -818,8 +817,11 @@ export const pruneArticles = (loadedArticles: Article[]): Article[] => {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner" style={{ width: '40px', height: '40px' }}></div></div>}>
-      <HomeContent />
-    </Suspense>
+    <>
+      <SplashScreen />
+      <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner" style={{ width: '40px', height: '40px' }}></div></div>}>
+        <HomeContent />
+      </Suspense>
+    </>
   );
 }

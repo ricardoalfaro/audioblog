@@ -16,8 +16,15 @@ export default function SplashScreen() {
     const isPWA =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    const alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
-    const shownThisSession = !!sessionStorage.getItem('audiodocs_splash_shown');
+
+    let alreadyOnboarded = false;
+    let shownThisSession = false;
+    try {
+      alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
+      shownThisSession = !!sessionStorage.getItem('audiodocs_splash_shown');
+    } catch {
+      // storage bloqueado (Private Browsing, iframe restrictivo, etc.) — mostrar splash normalmente
+    }
 
     if (shownThisSession || (!isMobile && !isPWA && alreadyOnboarded)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -27,8 +34,12 @@ export default function SplashScreen() {
 
     const timer = setTimeout(() => {
       setExiting(true);
-      localStorage.setItem('audiodocs_onboarded', 'true');
-      sessionStorage.setItem('audiodocs_splash_shown', 'true');
+      try {
+        localStorage.setItem('audiodocs_onboarded', 'true');
+        sessionStorage.setItem('audiodocs_splash_shown', 'true');
+      } catch {
+        // storage bloqueado — el splash se descarta igual, solo que volverá a mostrarse la próxima vez
+      }
     }, AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
   }, []);
