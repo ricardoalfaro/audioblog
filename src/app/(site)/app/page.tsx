@@ -12,7 +12,7 @@ import SplashScreen from '@/components/SplashScreen';
 function HomeContent() {
   const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');

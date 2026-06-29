@@ -111,6 +111,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Load local voices
   useEffect(() => {
+    if (!window.speechSynthesis) return;
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       if (availableVoices.length > 0) {
@@ -122,13 +123,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
     };
     loadVoices();
-    if (typeof window !== 'undefined') {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
+    window.speechSynthesis.onvoiceschanged = loadVoices;
     return () => {
-      if (typeof window !== 'undefined') {
-        window.speechSynthesis.cancel();
-      }
+      window.speechSynthesis?.cancel();
     };
   }, [selectedVoiceName]);
 
