@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 
 const AUTO_DISMISS_MS = 1800;
+const EXIT_ANIMATION_MS = 400; // > 0.2s de la animación CSS splashFadeOut
 
 export default function SplashScreen() {
   const [phase, setPhase] = useState<'hidden' | 'show' | 'exit'>('hidden');
@@ -39,6 +40,15 @@ export default function SplashScreen() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Desmontaje garantizado: no depender solo del animationend (no fiable en mobile —
+  // Safari iOS pausa animaciones en background, "Reducir movimiento", quirks de webview/PWA).
+  // onAnimationEnd queda como ruta rápida; este timer es la red de seguridad.
+  useEffect(() => {
+    if (phase !== 'exit') return;
+    const timer = setTimeout(() => setPhase('hidden'), EXIT_ANIMATION_MS);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   if (phase === 'hidden') return null;
 

@@ -33,6 +33,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| B7 | Splash bloquea el reproductor en mobile (regresión: cierre dependía solo de `onAnimationEnd`; restaurado timer de JS) | `HEAD` |
 | B6 | Logo animado del splash cortado en mobile | `HEAD` |
 | C3 | Refactor AudioPlayerContext (audioUtils, articleStorage, useQueue) | `fd78b18` |
 | U1 | Progreso por tiempo real ponderado por palabras | `main` |
