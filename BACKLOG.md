@@ -26,6 +26,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| B10 | Vista previa de link compartido mostraba marca genérica de Audiodocs en vez del artículo. `/app/page.tsx` se separó en Server Component (con `generateMetadata` dinámica leyendo `?ogTitle=&ogImage=`) + `AppClient.tsx`; `handleShare` en el reader arma el link con esos params tomados del artículo en memoria (sin re-scrapear) | sesión 2026-07-01 |
 | F12 | Voz según género del autor: `/api/scrape` detecta género con genderize.io (server-side, en paralelo con traducción/categoría) y el import autoselecciona voz Edge masculina/femenina según el idioma en curso (`EDGE_VOICES` ahora tiene campo `gender`). Solo aplica a importados por URL, no a manuales | sesión 2026-07-01 |
 | F11 | Cortina musical al iniciar: jingle.mp3 se reproduce antes del TTS solo al arrancar el artículo desde el principio (no al resumir/saltar párrafos). Timeout de seguridad de 8s por si el archivo no carga/termina, para no bloquear la escucha | sesión 2026-07-01 |
 | F14 | Pull-to-refresh: al arrastrar hacia abajo estando en el tope del scroll, ícono/spinner y recarga de la app al soltar (componente PullToRefresh, gesto táctil global) | sesión 2026-07-01 |

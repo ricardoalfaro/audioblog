@@ -66,7 +66,9 @@ export default function ArticleReader() {
 
   const handleShare = async () => {
     if (!article || article.url === 'manual') return;
-    const deepLink = `${window.location.origin}/app?url=${encodeURIComponent(article.url)}`;
+    const params = new URLSearchParams({ url: article.url, ogTitle: article.title });
+    if (article.imageUrl) params.set('ogImage', article.imageUrl);
+    const deepLink = `${window.location.origin}/app?${params.toString()}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: article.title, url: deepLink });
