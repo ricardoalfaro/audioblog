@@ -20,7 +20,6 @@
 | F11 | Cortina musical al iniciar | Jingle breve (~1-2s) antes de que arranque el TTS, como Substack. Archivo `/public/jingle.mp3` a proveer por el usuario; `playArticle` espera `onended` del clip antes de llamar al motor TTS | S |
 | F8 | Compartir artículo con idioma de traducción | Deep link `/app?url=...&lang=es` — receptor importa ya traducido al mismo idioma. Requiere guardar `translateTo` en `Article` y leerlo en el auto-import | M |
 | F7 | i18n de la interfaz | El usuario selecciona el idioma de la UI desde el dropdown del avatar. Idiomas soportados: Español (default), Inglés, Portugués, Francés y Alemán. Preferencia guardada en `localStorage` | M |
-| F9 | Media Session API | Lock screen y Control Center muestran título, autor e imagen del artículo en vez del ícono de la app. Incluye action handlers (play/pause, anterior, siguiente) | XS |
 | F-1 | Sesión de usuario con OAuth | Login con Google (NextAuth o similar). Permite sincronizar artículos entre dispositivos y habilitar features de cuenta. Prerequisito para Gmail import | L |
 
 ---
@@ -29,6 +28,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| F9 | Media Session API: metadata (título/autor/imagen) + action handlers (play/pause, anterior, siguiente) en AudioPlayerContext | sesión 2026-06-30 |
 | U10 | Splash solo en mobile y solo la primera vez (localStorage `audiodocs_onboarded`) | `HEAD` |
 | F10 | Web Share Target: `share_target` en el manifest + auto-import desde `url`/`text`/`title` compartidos | `HEAD` |
 | U8 | Etiquetas en botones del reader (Opciones/Compartir) en desktop, icono solo en mobile | `HEAD` |

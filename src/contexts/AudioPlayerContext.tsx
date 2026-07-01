@@ -575,6 +575,36 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Media Session API: expone metadata y controles a la lock screen / Control Center del SO
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
+
+    if (!playingArticle) {
+      navigator.mediaSession.metadata = null;
+      return;
+    }
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: playingArticle.title,
+      artist: playingArticle.author,
+      artwork: playingArticle.imageUrl ? [{ src: playingArticle.imageUrl }] : undefined,
+    });
+
+    navigator.mediaSession.setActionHandler('play', handlePlayPause);
+    navigator.mediaSession.setActionHandler('pause', handlePlayPause);
+    navigator.mediaSession.setActionHandler('previoustrack', handleSkipBackward);
+    navigator.mediaSession.setActionHandler('nexttrack', handleSkipForward);
+  }, [playingArticle, handlePlayPause, handleSkipBackward, handleSkipForward]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
+    if (!playingArticle) {
+      navigator.mediaSession.playbackState = 'none';
+    } else {
+      navigator.mediaSession.playbackState = isPlaying && !isPaused ? 'playing' : 'paused';
+    }
+  }, [playingArticle, isPlaying, isPaused]);
+
   const toggleSpeed = () => {
     setSpeechRate(prev => {
       const next = prev >= 2 ? 0.75 : prev + 0.25;
