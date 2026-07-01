@@ -322,8 +322,8 @@ export default function ArticleReader() {
             <Link href="/app" className="back-link">
               <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
             </Link>
-            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title="Opciones">
-              <i className="fa-solid fa-sliders"></i>
+            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title="Opciones" aria-label="Opciones">
+              <i className="fa-solid fa-sliders"></i><span className="cta-label"> Opciones</span>
             </button>
           </div>
         </div>
@@ -373,9 +373,10 @@ export default function ArticleReader() {
                 <button
                   onClick={handleShare}
                   title={shareCopied ? '¡Enlace copiado!' : 'Compartir artículo'}
+                  aria-label={shareCopied ? '¡Enlace copiado!' : 'Compartir artículo'}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
                 >
-                  <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} />
+                  <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} /><span className="cta-label">{shareCopied ? ' Copiado' : ' Compartir'}</span>
                 </button>
               )}
               <button

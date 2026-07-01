@@ -17,7 +17,6 @@
 |---|--------|-------------|----------|
 | F13 | Importar artículos Medium member-only gratuitos | Cascada: URL directa → RSS del autor → archive.org. Si todo falla, sugerir al usuario copiar el "friend link" de Medium (bypasea el muro sin pago) | M |
 | U10 | Splash solo en mobile y primera vez | Mostrar el splash únicamente en dispositivos móviles y solo la primera vez que se abre la app. Usar `localStorage` para recordar si ya se mostró | XS |
-| U8 | Etiquetas en botones del reader (desktop) | Botón de sidebar de controles y botón de compartir muestran etiqueta de texto en desktop — solo icono en mobile | XS |
 | F12 | Voz según género del autor | Detectar género del primer nombre del autor con genderize.io (free tier) y autoseleccionar voz masculina o femenina acorde al idioma en curso. Solo si el artículo no tiene preferencia de voz guardada | S |
 | F11 | Cortina musical al iniciar | Jingle breve (~1-2s) antes de que arranque el TTS, como Substack. Archivo `/public/jingle.mp3` a proveer por el usuario; `playArticle` espera `onended` del clip antes de llamar al motor TTS | S |
 | F10 | Web Share Target | Registrar la PWA como destino en el share sheet del sistema. Agregar `share_target` al manifest; manejar `?url=` y `?text=` como fallback. Requiere PWA instalada | XS |
@@ -32,6 +31,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| U8 | Etiquetas en botones del reader (Opciones/Compartir) en desktop, icono solo en mobile | `HEAD` |
 | U9 | Avatar genérico (fa-user) en vez de letra inicial, sin OAuth | `HEAD` |
 | B8 | App no interactiva en el teléfono con el dev server (botones muertos): Next 16 bloquea recursos `/_next` cross-origin desde la IP de la red local → no hidrata. Fix: `allowedDevOrigins` (solo dev) | `HEAD` |
 | B7 | Splash: cierre robusto por timer de JS (no solo `onAnimationEnd`) — mejora de robustez, no era el bug del teléfono | `HEAD` |
