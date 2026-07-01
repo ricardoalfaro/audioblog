@@ -15,6 +15,7 @@
 
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
+| U11 | Cards en mobile como fichas apiladas | En mobile, los cards de artículos de las 3 categorías (Nuevos/Escuchando/Archivo) se apilan como fichas: el más reciente arriba, ocupando el ancho de pantalla. Al scrollear hacia la derecha se van solapando y revelando el siguiente de atrás (efecto stack/carousel de tarjetas) | M |
 | F13 | Importar artículos Medium member-only gratuitos | Cascada: URL directa → RSS del autor → archive.org. Si todo falla, sugerir al usuario copiar el "friend link" de Medium (bypasea el muro sin pago) | M |
 | F8 | Compartir artículo con idioma de traducción | Deep link `/app?url=...&lang=es` — receptor importa ya traducido al mismo idioma. Requiere guardar `translateTo` en `Article` y leerlo en el auto-import | M |
 | F7 | i18n de la interfaz | El usuario selecciona el idioma de la UI desde el dropdown del avatar. Idiomas soportados: Español (default), Inglés, Portugués, Francés y Alemán. Preferencia guardada en `localStorage` | M |
