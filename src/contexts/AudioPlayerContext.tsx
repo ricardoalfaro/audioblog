@@ -7,17 +7,17 @@ import { getArticlesList, updateArticleProgress, saveArticleVoicePreference } fr
 import { useQueue } from '@/hooks/useQueue';
 
 export const EDGE_VOICES = [
-  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES' },
-  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES' },
-  { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX' },
-  { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX' },
-  { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US' },
-  { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US' },
-  { name: 'Francisca (Brasil, Neural)', value: 'pt-BR-FranciscaNeural', lang: 'pt-BR' },
-  { name: 'Antonio (Brasil, Neural)', value: 'pt-BR-AntonioNeural', lang: 'pt-BR' },
-  { name: 'Denise (Francia, Neural)', value: 'fr-FR-DeniseNeural', lang: 'fr-FR' },
-  { name: 'Henri (Francia, Neural)', value: 'fr-FR-HenriNeural', lang: 'fr-FR' },
-];
+  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES', gender: 'male' },
+  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES', gender: 'female' },
+  { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX', gender: 'female' },
+  { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX', gender: 'male' },
+  { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US', gender: 'female' },
+  { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US', gender: 'male' },
+  { name: 'Francisca (Brasil, Neural)', value: 'pt-BR-FranciscaNeural', lang: 'pt-BR', gender: 'female' },
+  { name: 'Antonio (Brasil, Neural)', value: 'pt-BR-AntonioNeural', lang: 'pt-BR', gender: 'male' },
+  { name: 'Denise (Francia, Neural)', value: 'fr-FR-DeniseNeural', lang: 'fr-FR', gender: 'female' },
+  { name: 'Henri (Francia, Neural)', value: 'fr-FR-HenriNeural', lang: 'fr-FR', gender: 'male' },
+] as const;
 
 interface AudioPlayerContextType {
   playingArticle: Article | null;

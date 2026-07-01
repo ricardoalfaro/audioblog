@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
-import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { validateArticle } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 
@@ -30,7 +30,7 @@ function HomeContent() {
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<string | null>(null);
 
-  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue } = useAudioPlayer();
+  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice } = useAudioPlayer();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
@@ -254,6 +254,14 @@ function HomeContent() {
         imageUrl: scrapeData.imageUrl || undefined,
         progress: 0,
       };
+
+      // Autoseleccionar voz según género del autor (detectado server-side con genderize.io),
+      // dentro del idioma actualmente en uso. Si no se detecta género, se deja el default.
+      if (scrapeData.authorGender === 'male' || scrapeData.authorGender === 'female') {
+        const currentLang = EDGE_VOICES.find(v => v.value === selectedEdgeVoice)?.lang;
+        const matchedVoice = EDGE_VOICES.find(v => v.lang === currentLang && v.gender === scrapeData.authorGender);
+        if (matchedVoice) newArticle.preferredEdgeVoice = matchedVoice.value;
+      }
 
       const existingArticle = articles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
       if (existingArticle) {

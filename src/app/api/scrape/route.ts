@@ -107,6 +107,25 @@ async function translateText(text: string, targetLang: string): Promise<string> 
     ?? text;
 }
 
+// Detecta el género del primer nombre del autor con genderize.io, para autoseleccionar
+// voz masculina/femenina en el cliente. Si el "autor" es en realidad un dominio (fallback
+// cuando el artículo no tiene byline, ej. "paulgraham.com"), el nombre no pasa el filtro
+// de caracteres válidos y se omite la llamada.
+async function detectAuthorGender(author: string): Promise<'male' | 'female' | null> {
+  try {
+    const firstName = author.trim().split(/\s+/)[0];
+    if (!firstName || firstName.length < 2 || !/^[a-zA-ZÀ-ÿ'-]+$/.test(firstName)) return null;
+    const res = await fetch(`https://api.genderize.io/?name=${encodeURIComponent(firstName)}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.gender === 'male' || json?.gender === 'female' ? json.gender : null;
+  } catch {
+    return null;
+  }
+}
+
 async function translateConcurrent(items: string[], targetLang: string, concurrency: number): Promise<string[]> {
   const results = new Array<string>(items.length);
   const queue = items.map((item, i) => ({ item, i }));
@@ -369,6 +388,8 @@ export async function POST(request: Request) {
     const domain = new URL(url).hostname.replace('www.', '');
     const author = article.byline || domain;
     let excerpt = article.excerpt || paragraphs[0].slice(0, 160) + '...';
+    // Se dispara ya para que corra en paralelo con la detección de categoría y la traducción
+    const authorGenderPromise = detectAuthorGender(author);
 
     // Detect category based on original text (fixed list: General, Tecnología, Diseño, Negocios, Pagos, Seguros, Fintech, Política, Historia, Economía, Noticias)
     let category = 'General';
@@ -410,9 +431,12 @@ export async function POST(request: Request) {
       }
     }
 
+    const authorGender = await authorGenderPromise;
+
     return NextResponse.json({
       title,
       author,
+      authorGender,
       url,
       excerpt,
       paragraphs,
