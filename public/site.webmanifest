@@ -8,6 +8,15 @@
   "orientation": "portrait",
   "theme_color": "#000000",
   "background_color": "#000000",
+  "share_target": {
+    "action": "/app",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

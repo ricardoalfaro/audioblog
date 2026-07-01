@@ -46,9 +46,15 @@ function HomeContent() {
       setIsModalOpen(true);
       window.history.replaceState(null, '', '/app');
     }
+    // Auto-import desde ?url=, o desde el Web Share Target del sistema (share_target
+    // en el manifest): algunas apps ponen el enlace en `text` o `title` en vez de `url`.
+    const firstUrlIn = (s: string | null) => s?.match(/https?:\/\/[^\s]+/)?.[0] ?? null;
     const urlParam = params.get('url');
-    if (urlParam && /^https?:\/\/.+/.test(urlParam)) {
-      pendingAutoImportRef.current = urlParam;
+    const sharedUrl = (urlParam && /^https?:\/\/.+/.test(urlParam))
+      ? urlParam
+      : (firstUrlIn(params.get('text')) ?? firstUrlIn(params.get('title')));
+    if (sharedUrl) {
+      pendingAutoImportRef.current = sharedUrl;
       window.history.replaceState(window.history.state, '', '/app');
     }
 

@@ -19,7 +19,6 @@
 | U10 | Splash solo en mobile y primera vez | Mostrar el splash únicamente en dispositivos móviles y solo la primera vez que se abre la app. Usar `localStorage` para recordar si ya se mostró | XS |
 | F12 | Voz según género del autor | Detectar género del primer nombre del autor con genderize.io (free tier) y autoseleccionar voz masculina o femenina acorde al idioma en curso. Solo si el artículo no tiene preferencia de voz guardada | S |
 | F11 | Cortina musical al iniciar | Jingle breve (~1-2s) antes de que arranque el TTS, como Substack. Archivo `/public/jingle.mp3` a proveer por el usuario; `playArticle` espera `onended` del clip antes de llamar al motor TTS | S |
-| F10 | Web Share Target | Registrar la PWA como destino en el share sheet del sistema. Agregar `share_target` al manifest; manejar `?url=` y `?text=` como fallback. Requiere PWA instalada | XS |
 | F8 | Compartir artículo con idioma de traducción | Deep link `/app?url=...&lang=es` — receptor importa ya traducido al mismo idioma. Requiere guardar `translateTo` en `Article` y leerlo en el auto-import | M |
 | F7 | i18n de la interfaz | El usuario selecciona el idioma de la UI desde el dropdown del avatar. Idiomas soportados: Español (default), Inglés, Portugués, Francés y Alemán. Preferencia guardada en `localStorage` | M |
 | F9 | Media Session API | Lock screen y Control Center muestran título, autor e imagen del artículo en vez del ícono de la app. Incluye action handlers (play/pause, anterior, siguiente) | XS |
@@ -31,6 +30,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| F10 | Web Share Target: `share_target` en el manifest + auto-import desde `url`/`text`/`title` compartidos | `HEAD` |
 | U8 | Etiquetas en botones del reader (Opciones/Compartir) en desktop, icono solo en mobile | `HEAD` |
 | U9 | Avatar genérico (fa-user) en vez de letra inicial, sin OAuth | `HEAD` |
 | B8 | App no interactiva en el teléfono con el dev server (botones muertos): Next 16 bloquea recursos `/_next` cross-origin desde la IP de la red local → no hidrata. Fix: `allowedDevOrigins` (solo dev) | `HEAD` |
