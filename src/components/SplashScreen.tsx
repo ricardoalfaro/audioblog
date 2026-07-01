@@ -10,23 +10,18 @@ export default function SplashScreen() {
 
   useEffect(() => {
     let isMobile = false;
-    let isPWA = false;
     let alreadyOnboarded = false;
-    let shownThisSession = false;
 
     try {
       isMobile = window.matchMedia('(max-width: 900px)').matches;
-      isPWA =
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
       alreadyOnboarded = !!localStorage.getItem('audiodocs_onboarded');
-      shownThisSession = !!sessionStorage.getItem('audiodocs_splash_shown');
     } catch {
       // storage bloqueado (Private Browsing, iframe restrictivo) — omitir splash
       return;
     }
 
-    if (shownThisSession || (!isMobile && !isPWA && alreadyOnboarded)) return;
+    // Solo en móviles y solo la primera vez que se abre la app (persistido en localStorage).
+    if (!isMobile || alreadyOnboarded) return;
 
     setPhase('show');
 
@@ -34,7 +29,6 @@ export default function SplashScreen() {
       setPhase('exit');
       try {
         localStorage.setItem('audiodocs_onboarded', 'true');
-        sessionStorage.setItem('audiodocs_splash_shown', 'true');
       } catch { /* storage no disponible */ }
     }, AUTO_DISMISS_MS);
 
