@@ -315,7 +315,7 @@ export default function ArticleReader() {
         </div>
       </aside>
 
-      <main className="container" style={{ paddingTop: 45, flex: 1 }}>
+      <main className="container" style={{ flex: 1 }}>
         {/* Fixed topbar — with toggle on the right */}
         <div className="reader-topbar" style={{ top: headerHeight }}>
           <div className="reader-topbar-inner">

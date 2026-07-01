@@ -1431,21 +1431,57 @@ select.form-control {
   color: #14213D;
 }
 
-/* Fixed topbar for back navigation in article reader */
+/* Sticky topbar for back navigation in article reader — same mecanismo que .tabs-container
+   para que se mueva junto con .main-header como una sola unidad (en vez de position:fixed,
+   que se desincroniza del header sticky durante el rebote de overscroll en mobile) */
 .reader-topbar {
-  position: fixed;
-  left: 0;
-  right: 0;
+  position: sticky;
   z-index: 96;
   background: #f1f1f1;
   border-bottom: 1px solid var(--border-color);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding-left: max(24px, calc((100vw - 1200px) / 2 + 24px));
+  padding-right: max(24px, calc((100vw - 1200px) / 2 + 24px));
 }
 
 .reader-topbar-inner {
-  padding: 10px 24px;
+  padding: 10px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* Pull-to-refresh: el indicador queda fijo detrás del contenido (que se traslada hacia
+   abajo con transform, no con height, para evitar reflow) y se va revelando a medida
+   que el contenido se desplaza. transform es una propiedad de composición (GPU), no
+   dispara layout — por eso no genera el lag/"pegado" que sí producía animar height. */
+.pull-to-refresh-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pull-to-refresh-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-main);
+  will-change: transform;
+}
+
+.pull-to-refresh-icon {
+  font-size: 18px;
+  color: var(--color-primary);
 }
 
 .sidebar-toggle-btn {

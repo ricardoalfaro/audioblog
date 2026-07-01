@@ -28,6 +28,8 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| F14 | Pull-to-refresh: al arrastrar hacia abajo estando en el tope del scroll, ícono/spinner y recarga de la app al soltar (componente PullToRefresh, gesto táctil global) | sesión 2026-07-01 |
+| B9 | Barra "Volver a la biblioteca" del reader flotaba separada del header al hacer scroll (position:fixed vs sticky del header). Cambiada a sticky, mismo mecanismo que .tabs-container | sesión 2026-07-01 |
 | F9 | Media Session API: metadata (título/autor/imagen) + action handlers (play/pause, anterior, siguiente) en AudioPlayerContext | sesión 2026-06-30 |
 | U10 | Splash solo en mobile y solo la primera vez (localStorage `audiodocs_onboarded`) | `HEAD` |
 | F10 | Web Share Target: `share_target` en el manifest + auto-import desde `url`/`text`/`title` compartidos | `HEAD` |
