@@ -33,7 +33,8 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
-| B7 | Splash bloquea el reproductor en mobile (regresión: cierre dependía solo de `onAnimationEnd`; restaurado timer de JS) | `HEAD` |
+| B8 | App no interactiva en el teléfono con el dev server (botones muertos): Next 16 bloquea recursos `/_next` cross-origin desde la IP de la red local → no hidrata. Fix: `allowedDevOrigins` (solo dev) | `HEAD` |
+| B7 | Splash: cierre robusto por timer de JS (no solo `onAnimationEnd`) — mejora de robustez, no era el bug del teléfono | `HEAD` |
 | B6 | Logo animado del splash cortado en mobile | `HEAD` |
 | C3 | Refactor AudioPlayerContext (audioUtils, articleStorage, useQueue) | `fd78b18` |
 | U1 | Progreso por tiempo real ponderado por palabras | `main` |
