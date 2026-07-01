@@ -1506,7 +1506,13 @@ select.form-control {
 }
 
 .sidebar-toggle-btn i {
-  color: #14213D;
+  color: var(--color-primary);
+}
+
+.sidebar-toggle-btn .cta-label {
+  padding-right: 10px;
+  font-size: 16px;
+  color: var(--color-primary);
 }
 
 .sidebar-backdrop {

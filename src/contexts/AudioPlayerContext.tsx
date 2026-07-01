@@ -102,6 +102,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const jingleAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Prefetch state for Edge TTS double-buffering
   const prefetchedBlobUrlRef = useRef<string | null>(null);
@@ -138,6 +139,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       return () => {
         audio.pause();
         audio.src = '';
+      };
+    }
+  }, []);
+
+  // Init cortina musical (jingle) que suena antes de arrancar el TTS de un artículo
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const jingle = new Audio('/jingle.mp3');
+      jingleAudioRef.current = jingle;
+
+      return () => {
+        jingle.pause();
+        jingle.src = '';
       };
     }
   }, []);
@@ -421,6 +435,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const playArticle = (article: Article, forceParagraphIndex?: number) => {
     playSessionRef.current += 1;
+    const sessionId = playSessionRef.current;
     // Hard-stop any ongoing audio from previous article to prevent cross-engine interference
     try { window.speechSynthesis.cancel(); } catch {}
     if (audioRef.current) {
@@ -428,6 +443,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.onended = null;
       audioRef.current.onerror = null;
       audioRef.current.src = '';
+    }
+    if (jingleAudioRef.current) {
+      jingleAudioRef.current.pause();
+      jingleAudioRef.current.onended = null;
+      jingleAudioRef.current.ontimeupdate = null;
+      jingleAudioRef.current.currentTime = 0;
+      jingleAudioRef.current.volume = 1;
     }
     revokePrefetchedBlob();
     // If this article was queued, remove it so it doesn't play twice
@@ -454,10 +476,43 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     if (article.preferredVoiceName) setSelectedVoiceName(article.preferredVoiceName);
 
-    if (engine === 'edge') {
-      playEdgeParagraph(firstIdx, article);
+    const startPlayback = () => {
+      if (engine === 'edge') {
+        playEdgeParagraph(firstIdx, article);
+      } else {
+        speakParagraph(firstIdx, article);
+      }
+    };
+
+    // Cortina musical solo al arrancar el artículo desde el principio (no al resumir/saltar párrafos).
+    // Timeout de seguridad: si el jingle no carga/termina, no debe bloquear la escucha del artículo.
+    const jingle = jingleAudioRef.current;
+    if (firstIdx === -1 && jingle) {
+      const FADE_MS = 500;
+      setIsLoading(true);
+      jingle.currentTime = 0;
+      jingle.volume = 1;
+      let advanced = false;
+      const advanceToPlayback = () => {
+        if (advanced) return;
+        advanced = true;
+        clearTimeout(safetyTimer);
+        jingle.ontimeupdate = null;
+        if (playSessionRef.current !== sessionId) return;
+        startPlayback();
+      };
+      const safetyTimer = setTimeout(advanceToPlayback, 8000);
+      jingle.ontimeupdate = () => {
+        if (!isFinite(jingle.duration)) return;
+        const remainingMs = (jingle.duration - jingle.currentTime) * 1000;
+        if (remainingMs <= FADE_MS) {
+          jingle.volume = Math.max(0, Math.min(1, remainingMs / FADE_MS));
+        }
+      };
+      jingle.onended = advanceToPlayback;
+      jingle.play().catch(advanceToPlayback);
     } else {
-      speakParagraph(firstIdx, article);
+      startPlayback();
     }
   };
 
@@ -507,6 +562,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
+    }
+    if (jingleAudioRef.current) {
+      jingleAudioRef.current.pause();
+      jingleAudioRef.current.onended = null;
+      jingleAudioRef.current.ontimeupdate = null;
+      jingleAudioRef.current.currentTime = 0;
+      jingleAudioRef.current.volume = 1;
     }
     revokePrefetchedBlob();
     setIsPlaying(false);
