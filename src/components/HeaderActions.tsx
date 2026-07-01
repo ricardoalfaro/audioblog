@@ -53,8 +53,9 @@ export default function HeaderActions() {
           className="avatar-btn" 
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           title="Opciones de usuario"
+          aria-label="Opciones de usuario"
         >
-          R
+          <i className="fa-solid fa-user"></i>
         </button>
 
         {isDropdownOpen && (

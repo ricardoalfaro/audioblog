@@ -16,7 +16,6 @@
 | # | Título | Descripción | Esfuerzo |
 |---|--------|-------------|----------|
 | F13 | Importar artículos Medium member-only gratuitos | Cascada: URL directa → RSS del autor → archive.org. Si todo falla, sugerir al usuario copiar el "friend link" de Medium (bypasea el muro sin pago) | M |
-| U9 | Avatar genérico sin OAuth | Reemplazar la letra inicial del avatar por un icono de usuario genérico (`fa-user`) mientras no haya autenticación real | XS |
 | U10 | Splash solo en mobile y primera vez | Mostrar el splash únicamente en dispositivos móviles y solo la primera vez que se abre la app. Usar `localStorage` para recordar si ya se mostró | XS |
 | U8 | Etiquetas en botones del reader (desktop) | Botón de sidebar de controles y botón de compartir muestran etiqueta de texto en desktop — solo icono en mobile | XS |
 | F12 | Voz según género del autor | Detectar género del primer nombre del autor con genderize.io (free tier) y autoseleccionar voz masculina o femenina acorde al idioma en curso. Solo si el artículo no tiene preferencia de voz guardada | S |
@@ -33,6 +32,7 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| U9 | Avatar genérico (fa-user) en vez de letra inicial, sin OAuth | `HEAD` |
 | B8 | App no interactiva en el teléfono con el dev server (botones muertos): Next 16 bloquea recursos `/_next` cross-origin desde la IP de la red local → no hidrata. Fix: `allowedDevOrigins` (solo dev) | `HEAD` |
 | B7 | Splash: cierre robusto por timer de JS (no solo `onAnimationEnd`) — mejora de robustez, no era el bug del teléfono | `HEAD` |
 | B6 | Logo animado del splash cortado en mobile | `HEAD` |
