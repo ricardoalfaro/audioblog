@@ -29,7 +29,7 @@ function HomeContent() {
   const [scrapeStep, setScrapeStep] = useState<0|1|2|3|4>(0);
   const [importSuccess, setImportSuccess] = useState(false);
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
-  const pendingAutoImportRef = useRef<string | null>(null);
+  const pendingAutoImportRef = useRef<{ url: string; lang?: string } | null>(null);
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice } = useAudioPlayer();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -57,7 +57,9 @@ function HomeContent() {
       ? urlParam
       : (firstUrlIn(params.get('text')) ?? firstUrlIn(params.get('title')));
     if (sharedUrl) {
-      pendingAutoImportRef.current = sharedUrl;
+      // F8: si quien compartió el link tradujo el artículo, ?lang= hace que se importe ya traducido igual
+      const lang = params.get('lang');
+      pendingAutoImportRef.current = { url: sharedUrl, lang: lang && ['es', 'en'].includes(lang) ? lang : undefined };
       window.history.replaceState(window.history.state, '', '/app');
     }
 
@@ -205,13 +207,16 @@ function HomeContent() {
     setTranslateTo('none');
   };
 
-  const runScrape = async (url: string, redirectOnSuccess = false) => {
+  const runScrape = async (url: string, redirectOnSuccess = false, translateToOverride?: string) => {
     setIsModalOpen(true);
     setIsScraping(true);
     setScrapeError('');
     setScrapeStep(1);
 
-    const isTranslating = translateTo && translateTo !== 'none';
+    // translateToOverride: usado por el auto-import (F8, ?lang=) para no depender del
+    // estado translateTo, que todavía no se actualizó cuando se llama a runScrape en el mismo tick
+    const effectiveTranslateTo = translateToOverride ?? translateTo;
+    const isTranslating = effectiveTranslateTo && effectiveTranslateTo !== 'none';
     const stepTimer1 = setTimeout(() => setScrapeStep(2), 2500);
     const stepTimer2 = isTranslating ? setTimeout(() => setScrapeStep(3), 5000) : null;
 
@@ -219,7 +224,7 @@ function HomeContent() {
       const scrapeRes = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, translateTo }),
+        body: JSON.stringify({ url, translateTo: effectiveTranslateTo }),
       });
 
       clearTimeout(stepTimer1);
@@ -256,6 +261,7 @@ function HomeContent() {
         paragraphs: scrapeData.paragraphs || [],
         imageUrl: scrapeData.imageUrl || undefined,
         progress: 0,
+        translateTo: isTranslating ? effectiveTranslateTo : undefined,
       };
 
       // Autoseleccionar voz según género del autor (detectado server-side con genderize.io),
@@ -311,10 +317,11 @@ function HomeContent() {
   // Dispara el auto-import una vez que los artículos han cargado.
   useEffect(() => {
     if (!isLoading && pendingAutoImportRef.current) {
-      const url = pendingAutoImportRef.current;
+      const { url, lang } = pendingAutoImportRef.current;
       pendingAutoImportRef.current = null;
       setScrapeUrl(url);
-      runScrape(url, true);
+      if (lang) setTranslateTo(lang);
+      runScrape(url, true, lang);
     }
   }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 

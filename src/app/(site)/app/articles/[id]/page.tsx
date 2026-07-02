@@ -68,6 +68,8 @@ export default function ArticleReader() {
     if (!article || article.url === 'manual') return;
     const params = new URLSearchParams({ url: article.url, ogTitle: article.title });
     if (article.imageUrl) params.set('ogImage', article.imageUrl);
+    // F8: si este artículo se importó traducido, quien reciba el link lo importa ya traducido al mismo idioma
+    if (article.translateTo) params.set('lang', article.translateTo);
     const deepLink = `${window.location.origin}/app?${params.toString()}`;
 
     // Acortamos vía TinyURL para que el link no arrastre los ~400-600 chars de url+ogTitle+ogImage.

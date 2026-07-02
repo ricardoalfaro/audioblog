@@ -14,4 +14,5 @@ export interface Article {
   preferredEngine?: 'device' | 'edge';
   preferredEdgeVoice?: string;
   preferredVoiceName?: string;
+  translateTo?: string; // idioma al que se tradujo en el import ('es' | 'en'), si aplica
 }
