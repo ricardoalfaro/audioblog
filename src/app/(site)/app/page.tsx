@@ -17,7 +17,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   if (!ogTitle) return {};
 
-  const description = 'Escuchá este artículo como podcast en Audiodocs.';
+  const description = 'Escucha este artículo como podcast en Audiodocs.';
 
   return {
     title: ogTitle,

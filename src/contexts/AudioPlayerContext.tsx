@@ -373,7 +373,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.src = audioSrc;
       audioRef.current.playbackRate = speechRate;
       setIsLoading(true);
+      const playCallSession = playSessionRef.current;
       audioRef.current.play().catch(e => {
+        // AbortError significa que esta promesa fue interrumpida por una acción más
+        // reciente (cambio de párrafo/artículo/voz que reasigna src o llama pause()) —
+        // no es un error real, la reproducción nueva ya está en curso (B12)
+        if (e?.name === 'AbortError' || playSessionRef.current !== playCallSession) return;
         console.error('Audio play() failed:', e?.name, e?.message);
         setIsPlaying(false);
         setIsPaused(false);
@@ -528,7 +533,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         if (!audioRef.current.src) {
           playEdgeParagraph(playingArticle.progress || 0, playingArticle);
         } else {
-          audioRef.current.play();
+          const resumeSession = playSessionRef.current;
+          audioRef.current.play().catch(e => {
+            if (e?.name === 'AbortError' || playSessionRef.current !== resumeSession) return;
+            console.error('Audio play() failed:', e?.name, e?.message);
+            setIsPlaying(false);
+            setIsPaused(false);
+            setTtsError(`play() bloqueado [${e?.name ?? 'error'}]. Intenta de nuevo.`);
+            setTimeout(() => setTtsError(null), 8000);
+          });
           setIsPaused(false);
           isPausedRef.current = false;
           setIsPlaying(true);
@@ -646,10 +659,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Sin fallback explícito, iOS/Safari elige su propio candidato (el favicon de 32x32)
+    // y lo estira al tile grande del lock screen, quedando pixelado (B13)
+    const artwork = playingArticle.imageUrl
+      ? [{ src: playingArticle.imageUrl }]
+      : [
+          { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+        ];
+
     navigator.mediaSession.metadata = new MediaMetadata({
       title: playingArticle.title,
       artist: playingArticle.author,
-      artwork: playingArticle.imageUrl ? [{ src: playingArticle.imageUrl }] : undefined,
+      artwork,
     });
 
     navigator.mediaSession.setActionHandler('play', handlePlayPause);
