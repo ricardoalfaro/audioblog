@@ -8,6 +8,7 @@ import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { validateArticle } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
+import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 
 function HomeContent() {
   const router = useRouter();
@@ -34,6 +35,8 @@ function HomeContent() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
+  const listeningCarouselRef = useRef<HTMLDivElement>(null);
+  const archivedCarouselRef = useRef<HTMLDivElement>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   // Open import modal via custom event (desde la misma página) o URL param (navegando desde otra)
@@ -406,6 +409,11 @@ function HomeContent() {
   const newArticles = filteredArticles.filter(a => !a.lastPlayedAt);
   const archivedArticles = filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length);
 
+  // U11: mantiene la card "activa" del stack de mobile al frente del z-index mientras se scrollea
+  useStackedCarousel(listeningCarouselRef, [listeningArticles.length, viewMode], viewMode === 'grid');
+  useStackedCarousel(newArticlesCarouselRef, [newArticles.length, viewMode], viewMode === 'grid');
+  useStackedCarousel(archivedCarouselRef, [archivedArticles.length, viewMode], viewMode === 'grid');
+
   const getGradientClass = (id: string) => {
     const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return `card-gradient-${(sum % 5) + 1}`;
@@ -604,7 +612,7 @@ function HomeContent() {
                       <i className="fa-solid fa-file-import"></i> Importar documento
                     </button>
                   </div>
-                  <div className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
+                  <div ref={listeningCarouselRef} className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                     {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
                 </section>
@@ -635,7 +643,7 @@ function HomeContent() {
                       <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '18px' }}></i> Volver a escuchar
                     </h2>
                   </div>
-                  <div className={viewMode === 'grid' ? 'listening-carousel archived-cards' : 'articles-list archived-cards'}>
+                  <div ref={archivedCarouselRef} className={viewMode === 'grid' ? 'listening-carousel archived-cards' : 'articles-list archived-cards'}>
                     {archivedArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
                 </section>

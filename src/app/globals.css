@@ -665,6 +665,45 @@ a {
   height: auto;
 }
 
+/* U11: en mobile, las cards de .listening-carousel se apilan como naipes —
+   card angosta (78vw) + solape chico (seam) para que asomen varias capas de las
+   siguientes a la derecha. El z-index dinámico (useStackedCarousel) mantiene la
+   card activa por encima de la próxima en el seam; al hacer swipe, el scroll-snap
+   nativo avanza una card a la vez, revelando la que estaba "debajo". padding vertical
+   + margin negativo compensatorio: al tener overflow-x:auto, el navegador fuerza
+   overflow-y a auto también (no hay forma de dejarlo "visible" combinado con
+   overflow-x), así que sin ese padding la sombra de la card quedaría recortada por
+   el propio contenedor de scroll */
+@media (max-width: 600px) {
+  .listening-carousel {
+    gap: 0;
+    mask-image: none;
+    -webkit-mask-image: none;
+    padding: 24px 0 40px;
+    margin: -24px 0 -40px;
+  }
+
+  .listening-carousel::after {
+    display: none;
+  }
+
+  .listening-carousel .card-vertical {
+    --stack-width: 70vw;
+    width: var(--stack-width);
+    min-width: var(--stack-width);
+    height: 380px;
+    scroll-snap-align: start;
+    /* la card tapa el 90% de la siguiente: solo asoma su borde derecho (10%) */
+    margin-right: calc(var(--stack-width) * -0.9);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+    position: relative;
+  }
+
+  .listening-carousel .card-vertical:last-child {
+    margin-right: 0;
+  }
+}
+
 /* List View Classes */
 .articles-list {
   display: flex;
