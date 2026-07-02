@@ -69,13 +69,29 @@ export default function ArticleReader() {
     const params = new URLSearchParams({ url: article.url, ogTitle: article.title });
     if (article.imageUrl) params.set('ogImage', article.imageUrl);
     const deepLink = `${window.location.origin}/app?${params.toString()}`;
+
+    // Acortamos vía TinyURL para que el link no arrastre los ~400-600 chars de url+ogTitle+ogImage.
+    // Si falla (timeout, rate-limit, servicio caído), compartimos el link largo igual — nunca bloquea el share (F16)
+    let shareLink = deepLink;
+    try {
+      const res = await fetch('/api/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: deepLink }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.shortUrl) shareLink = data.shortUrl;
+      }
+    } catch {}
+
     if (navigator.share) {
       try {
-        await navigator.share({ title: article.title, url: deepLink });
+        await navigator.share({ title: article.title, url: shareLink });
         return;
       } catch {}
     }
-    await navigator.clipboard.writeText(deepLink);
+    await navigator.clipboard.writeText(shareLink);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 2000);
   };
