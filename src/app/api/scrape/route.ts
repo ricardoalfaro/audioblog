@@ -565,7 +565,7 @@ export async function POST(request: Request) {
 
       if (!scraped) {
         return NextResponse.json({
-          error: 'No se pudo importar este artículo de Medium (bloqueado por su protección anti-bots, ni el RSS del autor ni el archivo lo tienen disponible). Si es un artículo "member-only", pídele a quien te lo compartió el "friend link" de Medium y probá con esa URL, o copiá el texto manualmente.'
+          error: 'No se pudo importar este artículo de Medium (bloqueado por su protección anti-bots, ni el RSS del autor ni el archivo lo tienen disponible). Si es un artículo "member-only", pide a quien lo compartió el "friend link" de Medium e intenta con esa URL, o copia el texto manualmente.'
         }, { status: 422 });
       }
     }
