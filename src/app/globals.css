@@ -152,6 +152,7 @@
 html {
   background-color: var(--bg-main);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 body {
@@ -159,6 +160,7 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans);
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--transition-normal);
   display: flex;

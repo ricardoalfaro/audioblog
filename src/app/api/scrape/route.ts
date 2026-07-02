@@ -332,12 +332,27 @@ function extractFromHtml(html: string): ScrapedRaw | null {
 }
 
 // --- F13: cascada de fallbacks para artículos de Medium bloqueados por su protección anti-bots
-// (Cloudflare challenge en el fetch directo, medium.com/*.medium.com únicamente — no se intenta
-// derivar el usuario de dominios propios/custom). Orden: RSS del autor/publicación → archive.org.
+// o con muro de pago silencioso (200 OK pero contenido truncado — ej. dominios propios de
+// publicaciones, como uxdesign.cc, que el usuario puede ver completo estando logueado en el
+// navegador pero el scraper no). Orden: RSS del autor/publicación → archive.org.
 
 function isMediumHost(hostname: string): boolean {
   const h = hostname.toLowerCase();
   return h === 'medium.com' || h === 'www.medium.com' || h.endsWith('.medium.com');
+}
+
+// Medium inyecta estos meta tags en TODAS sus páginas, incluidos dominios propios de
+// publicaciones (uxdesign.cc, blog.something.com, etc.) donde el hostname por sí solo no lo
+// delata — así detectamos "esto es Medium" sin depender del dominio.
+function isMediumPoweredHtml(html: string): boolean {
+  return html.includes('al:ios:app_name" content="Medium"') || html.includes('al:android:app_name" content="Medium"');
+}
+
+// Medium marca en JSON-LD los artículos con muro de pago: `"isAccessibleForFree":false`. La
+// página igual devuelve 200 OK con Readability parseando "algo" (el preview truncado), así que
+// sin este chequeo el artículo se importaría cortado en silencio en vez de fallar o usar el fallback.
+function isMediumPaywalledHtml(html: string): boolean {
+  return html.includes('"isAccessibleForFree":false');
 }
 
 function getMediumFeedUrl(rawUrl: string): string | null {
@@ -352,7 +367,9 @@ function getMediumFeedUrl(rawUrl: string): string | null {
       const sub = host.replace('.medium.com', '');
       return sub && sub !== 'www' ? `https://medium.com/feed/@${sub}` : null;
     }
-    return null;
+    // Dominio propio de una publicación (uxdesign.cc, etc.) — Medium suele exponer su
+    // propio feed en <dominio>/feed sin necesidad de saber el slug de la publicación.
+    return `${u.origin}/feed`;
   } catch {
     return null;
   }
@@ -511,17 +528,28 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'El artículo es demasiado grande para procesarlo.' }, { status: 413 });
         }
 
+        // isMediumHost cubre medium.com/*.medium.com; isMediumPoweredHtml detecta además
+        // dominios propios de publicaciones (uxdesign.cc, etc.) vía los meta tags que Medium
+        // inyecta en toda página, sin depender del hostname.
+        const isMediumPage = isMediumHost(parsedUrl.hostname) || isMediumPoweredHtml(html);
+
         // Detect Cloudflare bot challenge (common on Medium and similar sites)
         const isChallenge = html.includes('id="challenge-running"') || html.includes('cf-browser-verification') || (html.includes('Just a moment') && html.includes('cloudflare'));
-        if (isChallenge && isMediumHost(parsedUrl.hostname)) {
+        if (isChallenge && isMediumPage) {
           fetchBlocked = true;
         } else if (isChallenge) {
           return NextResponse.json({
             error: 'Este sitio bloquea el acceso automático (protección anti-bots). Puedes copiar el texto del artículo y agregarlo usando la pestaña "Manual".'
           }, { status: 422 });
+        } else if (isMediumPage && isMediumPaywalledHtml(html)) {
+          // 200 OK y Readability podría "parsear algo", pero es el preview truncado del muro
+          // de pago — el usuario puede verlo completo en el navegador si está logueado en
+          // Medium, pero el scraper (sin sesión) solo recibe el recorte. No usar ese contenido
+          // parcial en silencio: directo a la cascada RSS → archive.org.
+          fetchBlocked = true;
         } else {
           scraped = extractFromHtml(html);
-          if (!scraped && isMediumHost(parsedUrl.hostname)) {
+          if (!scraped && isMediumPage) {
             fetchBlocked = true;
           } else if (!scraped) {
             return NextResponse.json({ error: 'No se pudo extraer contenido legible de este sitio web. Intenta copiarlo manualmente.' }, { status: 422 });
