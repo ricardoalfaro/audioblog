@@ -12,12 +12,12 @@ export type MessageKey = keyof typeof es;
 
 const MESSAGES: Record<Locale, Record<MessageKey, string>> = { es, en, pt, fr, de };
 
-export const LOCALES: { value: Locale; label: string }[] = [
-  { value: 'es', label: 'Español' },
-  { value: 'en', label: 'English' },
-  { value: 'pt', label: 'Português' },
-  { value: 'fr', label: 'Français' },
-  { value: 'de', label: 'Deutsch' },
+export const LOCALES: { value: Locale; label: string; flag: string }[] = [
+  { value: 'es', label: 'Español', flag: '🇪🇸' },
+  { value: 'en', label: 'English', flag: '🇺🇸' },
+  { value: 'pt', label: 'Português', flag: '🇧🇷' },
+  { value: 'fr', label: 'Français', flag: '🇫🇷' },
+  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
 ];
 
 const STORAGE_KEY = 'audiodocs_locale';

@@ -23,7 +23,12 @@ export default function SiteLayout({
               <img src="/main_logo_audiodocs_dark.svg" alt="Audiodocs: Escucha cualquier texto como si fuera un podcast" className="logo-dark main-logo-img" />
             </Link>
 
-            <Suspense fallback={<div className="header-right"><div className="avatar-dropdown"><button className="avatar-btn" aria-label="Opciones de usuario"><i className="fa-solid fa-user"></i></button></div></div>}>
+            <Suspense fallback={
+              <div className="header-right">
+                <div className="avatar-dropdown"><button className="avatar-btn" style={{ fontSize: '17px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }} aria-label="Idioma">🌐</button></div>
+                <div className="avatar-dropdown"><button className="avatar-btn" aria-label="Opciones de usuario"><i className="fa-solid fa-user"></i></button></div>
+              </div>
+            }>
               <HeaderActions />
             </Suspense>
           </div>
