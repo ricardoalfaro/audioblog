@@ -277,11 +277,19 @@ function HomeContent() {
         translateTo: isTranslating ? effectiveTranslateTo : undefined,
       };
 
-      // Autoseleccionar voz según género del autor (detectado server-side con genderize.io),
-      // dentro del idioma actualmente en uso. Si no se detecta género, se deja el default.
+      // Autoseleccionar voz según género del autor (detectado server-side con genderize.io).
+      // Si el import tradujo el artículo, la voz debe ser del idioma AL QUE se tradujo (para
+      // que la experiencia sea coherente de punta a punta) — no del idioma de la voz que
+      // estaba en uso antes de este import. Sin traducción, se mantiene el idioma actual
+      // (no sabemos con certeza el idioma original del artículo). Si no se detecta género,
+      // se deja el default.
       if (scrapeData.authorGender === 'male' || scrapeData.authorGender === 'female') {
-        const currentLang = EDGE_VOICES.find(v => v.value === selectedEdgeVoice)?.lang;
-        const matchedVoice = EDGE_VOICES.find(v => v.lang === currentLang && v.gender === scrapeData.authorGender);
+        const targetLangPrefix = isTranslating
+          ? effectiveTranslateTo
+          : EDGE_VOICES.find(v => v.value === selectedEdgeVoice)?.lang.split('-')[0];
+        const matchedVoice = targetLangPrefix
+          ? EDGE_VOICES.find(v => v.lang.startsWith(targetLangPrefix) && v.gender === scrapeData.authorGender)
+          : undefined;
         if (matchedVoice) newArticle.preferredEdgeVoice = matchedVoice.value;
       }
 

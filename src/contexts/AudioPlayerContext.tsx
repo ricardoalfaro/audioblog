@@ -17,6 +17,8 @@ export const EDGE_VOICES = [
   { name: 'Antonio (Brasil, Neural)', value: 'pt-BR-AntonioNeural', lang: 'pt-BR', gender: 'male' },
   { name: 'Denise (Francia, Neural)', value: 'fr-FR-DeniseNeural', lang: 'fr-FR', gender: 'female' },
   { name: 'Henri (Francia, Neural)', value: 'fr-FR-HenriNeural', lang: 'fr-FR', gender: 'male' },
+  { name: 'Katja (Alemania, Neural)', value: 'de-DE-KatjaNeural', lang: 'de-DE', gender: 'female' },
+  { name: 'Conrad (Alemania, Neural)', value: 'de-DE-ConradNeural', lang: 'de-DE', gender: 'male' },
 ] as const;
 
 interface AudioPlayerContextType {
