@@ -6,6 +6,11 @@ import Link from 'next/link';
 import { Article } from '@/types';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { STATIC_CATEGORIES } from '@/lib/categories';
+import { useLocale, Locale } from '@/contexts/LocaleContext';
+
+const LOCALE_TO_BCP47: Record<Locale, string> = {
+  es: 'es-ES', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE',
+};
 
 interface Token {
   text: string;
@@ -35,6 +40,7 @@ function parseTokens(text: string): Token[] {
 export default function ArticleReader() {
   const params = useParams();
   const router = useRouter();
+  const { t, locale } = useLocale();
   const id = params.id as string;
 
   const [article, setArticle] = useState<Article | null>(null);
@@ -176,10 +182,10 @@ export default function ArticleReader() {
     return (
       <main className="container" style={{ padding: '80px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-        <h2 style={{ marginBottom: '16px' }}>Error al cargar el artículo</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{error || 'El artículo no existe.'}</p>
+        <h2 style={{ marginBottom: '16px' }}>{t('reader.errorTitle')}</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{error || t('reader.errorFallback')}</p>
         <button className="btn btn-primary" onClick={() => router.push('/app')}>
-          Volver al Inicio
+          {t('reader.backHome')}
         </button>
       </main>
     );
@@ -222,32 +228,32 @@ export default function ArticleReader() {
         style={{ top: headerHeight }}
       >
         <div className="sidebar-topbar">
-          <span>Opciones</span>
+          <span>{t('reader.options')}</span>
         </div>
         <div className="sidebar-panel glass">
 
           {/* Section: Detalles */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsMetaExpanded(v => !v)}>
-              <span><i className="fa-solid fa-circle-info"></i> Detalles del Artículo</span>
+              <span><i className="fa-solid fa-circle-info"></i> {t('reader.articleDetails')}</span>
               <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'}`}></i>
             </div>
             {isMetaExpanded && (
               <div className="sidebar-section-body">
                 {article.url && article.url !== 'manual' && (
                   <div className="meta-item">
-                    <span className="meta-label">Fuente:</span>
+                    <span className="meta-label">{t('reader.source')}</span>
                     <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      Ver original <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
+                      {t('reader.viewOriginal')} <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
                     </a>
                   </div>
                 )}
                 <div className="meta-item">
-                  <span className="meta-label">Párrafos:</span>
+                  <span className="meta-label">{t('reader.paragraphs')}</span>
                   <span>{article.paragraphs.length}</span>
                 </div>
                 <div className="meta-item">
-                  <span className="meta-label">Restante:</span>
+                  <span className="meta-label">{t('reader.remaining')}</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(article.duration)}</span>
                 </div>
               </div>
@@ -259,22 +265,22 @@ export default function ArticleReader() {
           {/* Section: Ajustes */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsSettingsExpanded(v => !v)}>
-              <span><i className="fa-solid fa-sliders"></i> Ajustes de Reproducción</span>
+              <span><i className="fa-solid fa-sliders"></i> {t('reader.playbackSettings')}</span>
               <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'}`}></i>
             </div>
             {isSettingsExpanded && (
               <div className="sidebar-section-body">
                 <div className="audio-switch-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {audioEngine === 'device' ? 'Voz Browser' : 'Voz Natural'}
+                    {audioEngine === 'device' ? t('reader.browserVoice') : t('reader.naturalVoice')}
                   </span>
-                  <label className="switch" title="Cambiar motor de voz">
+                  <label className="switch" title={t('reader.changeVoiceEngine')}>
                     <input type="checkbox" checked={audioEngine === 'edge'} onChange={(e) => handleEngineChange(e.target.checked ? 'edge' : 'device')} />
                     <span className="slider"></span>
                   </label>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>Voz de Lectura</label>
+                  <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>{t('reader.readingVoice')}</label>
                   {audioEngine === 'device' ? (
                     <select className="player-select" value={selectedVoiceName} onChange={handleVoiceChange} style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                       {sortedVoices.map((voice) => (
@@ -291,11 +297,11 @@ export default function ArticleReader() {
                 </div>
                 {audioEngine === 'device' ? (
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
-                    ⚠️ El motor local se pausa al bloquear la pantalla. Usa <strong>Voz Natural</strong> para reproducción continua y CarPlay.
+                    {t('reader.localEngineWarning.pre')} <strong>{t('reader.naturalVoice')}</strong> {t('reader.localEngineWarning.post')}
                   </div>
                 ) : (
                   <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
-                    ✅ Reproducción de fondo activa. Compatible con CarPlay / Bluetooth.
+                    {t('reader.edgeEngineNote')}
                   </div>
                 )}
               </div>
@@ -307,7 +313,7 @@ export default function ArticleReader() {
           {/* Section: Categoría */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" style={{ cursor: 'default' }}>
-              <span><i className="fa-solid fa-tag"></i> Categoría</span>
+              <span><i className="fa-solid fa-tag"></i> {t('reader.category')}</span>
             </div>
             <div className="sidebar-section-body">
               <select
@@ -326,7 +332,7 @@ export default function ArticleReader() {
                   }
                 }}
               >
-                <option value="" disabled>Seleccione categoría...</option>
+                <option value="" disabled>{t('reader.selectCategory')}</option>
                 {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
@@ -340,10 +346,10 @@ export default function ArticleReader() {
         <div className="reader-topbar" style={{ top: headerHeight }}>
           <div className="reader-topbar-inner">
             <Link href="/app" className="back-link">
-              <i className="fa-solid fa-arrow-left"></i> Volver a la biblioteca
+              <i className="fa-solid fa-arrow-left"></i> {t('reader.backToLibrary')}
             </Link>
-            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title="Opciones" aria-label="Opciones">
-              <i className="fa-solid fa-sliders"></i><span className="cta-label"> Opciones</span>
+            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title={t('reader.options')} aria-label={t('reader.options')}>
+              <i className="fa-solid fa-sliders"></i><span className="cta-label"> {t('reader.options')}</span>
             </button>
           </div>
         </div>
@@ -361,9 +367,9 @@ export default function ArticleReader() {
             <div className="article-hero-text">
               <h1 className="article-hero-title">{article.title}</h1>
               <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: 500, margin: 0 }}>
-                Por <strong style={{ color: '#fff' }}>{article.author}</strong>
+                {t('reader.by')} <strong style={{ color: '#fff' }}>{article.author}</strong>
                 {' • '}
-                {new Date(article.addedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {new Date(article.addedAt).toLocaleDateString(LOCALE_TO_BCP47[locale], { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>
@@ -371,20 +377,20 @@ export default function ArticleReader() {
           {/* Barra de controles de accesibilidad */}
           <div className="reader-controls-bar">
             <div className="reader-controls-left">
-              <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.max(14, s - 2))} title="Reducir texto">A−</button>
-              <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.min(28, s + 2))} title="Aumentar texto">A+</button>
+              <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.max(14, s - 2))} title={t('reader.decreaseText')}>A−</button>
+              <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.min(28, s + 2))} title={t('reader.increaseText')}>A+</button>
               <div className="reader-font-toggle">
                 <button
                   className={`reader-font-btn${fontFamily === 'sans' ? ' active' : ''}`}
                   onClick={() => setFontFamily('sans')}
                   style={{ fontFamily: 'var(--font-sans)' }}
-                  title="Sin serifa"
+                  title={t('reader.sansSerif')}
                 >Aa</button>
                 <button
                   className={`reader-font-btn${fontFamily === 'serif' ? ' active' : ''}`}
                   onClick={() => setFontFamily('serif')}
                   style={{ fontFamily: 'var(--font-serif)' }}
-                  title="Con serifa"
+                  title={t('reader.serif')}
                 >Aa</button>
               </div>
             </div>
@@ -392,11 +398,11 @@ export default function ArticleReader() {
               {article.url !== 'manual' && (
                 <button
                   onClick={handleShare}
-                  title={shareCopied ? '¡Enlace copiado!' : 'Compartir artículo'}
-                  aria-label={shareCopied ? '¡Enlace copiado!' : 'Compartir artículo'}
+                  title={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
+                  aria-label={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
                 >
-                  <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} /><span className="cta-label">{shareCopied ? ' Copiado' : ' Compartir'}</span>
+                  <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} /><span className="cta-label">{shareCopied ? ` ${t('reader.copied')}` : ` ${t('reader.share')}`}</span>
                 </button>
               )}
               <button
@@ -410,8 +416,8 @@ export default function ArticleReader() {
                 }}
               >
                 {playingArticle?.id === article.id && isPlaying && !isPaused
-                  ? <><i className="fa-solid fa-pause"></i><span className="cta-label"> Pausar</span></>
-                  : <><i className="fa-solid fa-play"></i><span className="cta-label"> Escuchar</span></>
+                  ? <><i className="fa-solid fa-pause"></i><span className="cta-label"> {t('reader.pause')}</span></>
+                  : <><i className="fa-solid fa-play"></i><span className="cta-label"> {t('reader.listen')}</span></>
                 }
               </button>
             </div>
