@@ -41,6 +41,7 @@ function HomeContent() {
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
   const listeningCarouselRef = useRef<HTMLDivElement>(null);
   const archivedCarouselRef = useRef<HTMLDivElement>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   // Open import modal via custom event (desde la misma página) o URL param (navegando desde otra)
@@ -96,6 +97,14 @@ function HomeContent() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen, isScraping]);
+
+  // El modal tiene su propio scroll interno (overflow-y auto); sin esto, si quedó
+  // scrolleado (ej. el usuario bajó hasta el botón Importar) y luego cambia de vista
+  // dentro del mismo modal (al tab Manual, a los pasos de progreso, al éxito), esa
+  // vista nueva aparece ya desplazada en vez de arrancar arriba.
+  useEffect(() => {
+    modalContentRef.current?.scrollTo({ top: 0 });
+  }, [isModalOpen, modalTab, isScraping, importSuccess]);
 
   // Close card menu when clicking outside
   useEffect(() => {
@@ -689,6 +698,7 @@ function HomeContent() {
       {isModalOpen && (
         <div className="modal-overlay" role="presentation" onClick={() => { if (!isScraping && !isSavingManual) setIsModalOpen(false); }}>
           <div
+            ref={modalContentRef}
             className="modal-content"
             role="dialog"
             aria-modal="true"
