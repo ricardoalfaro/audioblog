@@ -3,10 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import ThemeSwitcher from './ThemeSwitcher';
+import { useLocale, LOCALES } from '@/contexts/LocaleContext';
 
 export default function HeaderActions() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t, locale, setLocale } = useLocale();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -24,7 +26,7 @@ export default function HeaderActions() {
   const handleShare = async () => {
     const shareData = {
       title: 'Audiodocs Player',
-      text: '¡Mira esta increíble plataforma para escuchar artículos y newsletters como podcasts!',
+      text: t('header.shareAppText'),
       url: window.location.origin,
     };
 
@@ -38,7 +40,7 @@ export default function HeaderActions() {
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(shareData.url);
-        alert('Enlace copiado al portapapeles');
+        alert(t('header.linkCopied'));
       } catch (err) {
         console.error('Error copying to clipboard:', err);
       }
@@ -49,11 +51,11 @@ export default function HeaderActions() {
   return (
     <div className="header-right">
       <div className="avatar-dropdown" ref={dropdownRef}>
-        <button 
-          className="avatar-btn" 
+        <button
+          className="avatar-btn"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          title="Opciones de usuario"
-          aria-label="Opciones de usuario"
+          title={t('header.userOptions')}
+          aria-label={t('header.userOptions')}
         >
           <i className="fa-solid fa-user"></i>
         </button>
@@ -62,8 +64,20 @@ export default function HeaderActions() {
           <div className="dropdown-menu">
             <div className="theme-switcher-dropdown">
               <i className="fa-solid fa-circle-half-stroke" style={{ color: 'var(--color-primary)', fontSize: '13px' }}></i>
-              <span>Tema</span>
+              <span>{t('header.theme')}</span>
               <ThemeSwitcher />
+            </div>
+            <div className="theme-switcher-dropdown">
+              <i className="fa-solid fa-language" style={{ color: 'var(--color-primary)', fontSize: '13px' }}></i>
+              <span>{t('header.language')}</span>
+              <select
+                className="form-control"
+                style={{ width: 'auto', padding: '4px 8px', fontSize: '13px' }}
+                value={locale}
+                onChange={e => setLocale(e.target.value as typeof locale)}
+              >
+                {LOCALES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+              </select>
             </div>
             <button
               className="dropdown-item"
@@ -76,10 +90,10 @@ export default function HeaderActions() {
                 }
               }}
             >
-              <i className="fa-solid fa-file-import"></i> Importar artículo
+              <i className="fa-solid fa-file-import"></i> {t('header.importArticle')}
             </button>
             <button className="dropdown-item" onClick={handleShare}>
-              <i className="fa-solid fa-arrow-up-from-bracket"></i> Compartir app
+              <i className="fa-solid fa-arrow-up-from-bracket"></i> {t('header.shareApp')}
             </button>
           </div>
         )}

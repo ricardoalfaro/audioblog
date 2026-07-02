@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/contexts/LocaleContext';
 
 type Theme = 'light' | 'dark' | 'system';
 
 export default function ThemeSwitcher() {
+  const { t } = useLocale();
   // 'system' es el valor seguro para SSR; el efecto sincroniza con localStorage
   // después de la hidratación (no hay mismatch porque ambos parten desde 'system').
   const [theme, setTheme] = useState<Theme>('system');
@@ -39,24 +41,24 @@ export default function ThemeSwitcher() {
       <button
         className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
         onClick={() => handleThemeChange('light')}
-        title="Modo Claro"
-        aria-label="Modo Claro"
+        title={t('theme.light')}
+        aria-label={t('theme.light')}
       >
         <i className="fa-solid fa-sun"></i>
       </button>
       <button
         className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
         onClick={() => handleThemeChange('dark')}
-        title="Modo Oscuro"
-        aria-label="Modo Oscuro"
+        title={t('theme.dark')}
+        aria-label={t('theme.dark')}
       >
         <i className="fa-solid fa-moon"></i>
       </button>
       <button
         className={`theme-btn ${theme === 'system' ? 'active' : ''}`}
         onClick={() => handleThemeChange('system')}
-        title="Automático (Sistema)"
-        aria-label="Automático (Sistema)"
+        title={t('theme.system')}
+        aria-label={t('theme.system')}
       >
         <i className="fa-solid fa-desktop"></i>
       </button>

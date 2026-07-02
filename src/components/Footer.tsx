@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useLocale } from '@/contexts/LocaleContext';
 
 export default function Footer() {
+  const { t } = useLocale();
   return (
     <footer className="main-footer">
       <div className="footer-inner">
@@ -10,8 +14,8 @@ export default function Footer() {
           <p className="footer-copy">© 2026 Audiodocs</p>
         </div>
         <ul className="footer-links">
-          <li><Link href="/about" className="footer-link">Qué es Audiodocs</Link></li>
-          <li><span className="footer-link footer-link-soon" title="Próximamente">FAQ</span></li>
+          <li><Link href="/about" className="footer-link">{t('footer.about')}</Link></li>
+          <li><span className="footer-link footer-link-soon" title={t('footer.faqSoon')}>{t('footer.faq')}</span></li>
           <li><a href="https://github.com/ricardoalfaro/audioblog" target="_blank" rel="noopener noreferrer" className="footer-link">Github</a></li>
         </ul>
       </div>
