@@ -25,6 +25,8 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| U13 | Botón de bandera del selector de idioma sin emoji | El botón que abre el dropdown (U12) usaba un emoji de bandera; se reemplazó por banderas SVG propias (`public/flags/{es,en,pt,fr,de}.svg`, colores oficiales) mostradas como `&lt;img&gt;` circular vía `object-fit:cover` + `border-radius:50%`. Las opciones dentro del dropdown mantienen los emojis (a pedido) | sesión 2026-07-02 |
+|---|--------|-----------------|
 | U12 | Selector de idioma como bandera junto al avatar | Antes vivía como `&lt;select&gt;` dentro del dropdown del avatar (F7); ahora es su propio botón circular con la bandera del idioma actual, ubicado a la izquierda del avatar en el header, con su propio dropdown de banderas + nombre de idioma al tocarlo. `LOCALES` (LocaleContext) ahora incluye `flag` (emoji) por idioma | sesión 2026-07-02 |
 |---|--------|-----------------|
 | B17 | Voz auto-seleccionada no coincidía con el idioma de traducción del import | La autoselección de voz por género (F12) matcheaba dentro del idioma de la voz *actualmente en uso*, no del idioma al que se tradujo el artículo en este import — si tenías una voz en español seleccionada e importabas traduciendo a inglés, quedaba una voz en español. Ahora usa el idioma de traducción (`effectiveTranslateTo`) cuando el import tradujo, y solo cae al idioma de la voz actual sin traducción. De paso se agregaron las voces neurales en alemán (`Katja`/`Conrad`) que faltaban en `EDGE_VOICES` desde que F18 sumó Alemán como opción de traducción | sesión 2026-07-02 |

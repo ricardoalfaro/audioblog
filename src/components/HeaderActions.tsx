@@ -13,7 +13,6 @@ export default function HeaderActions() {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const langDropdownRef = useRef<HTMLDivElement>(null);
-  const currentFlag = LOCALES.find(l => l.value === locale)?.flag ?? '🌐';
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -62,9 +61,10 @@ export default function HeaderActions() {
           onClick={() => setIsLangOpen(!isLangOpen)}
           title={t('header.language')}
           aria-label={t('header.language')}
-          style={{ fontSize: '17px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+          style={{ padding: 0, overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
         >
-          {currentFlag}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/flags/${locale}.svg`} alt="" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
         </button>
 
         {isLangOpen && (

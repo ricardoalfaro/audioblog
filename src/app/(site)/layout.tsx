@@ -25,7 +25,12 @@ export default function SiteLayout({
 
             <Suspense fallback={
               <div className="header-right">
-                <div className="avatar-dropdown"><button className="avatar-btn" style={{ fontSize: '17px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }} aria-label="Idioma">🌐</button></div>
+                <div className="avatar-dropdown">
+                  <button className="avatar-btn" style={{ padding: 0, overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }} aria-label="Idioma">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/flags/es.svg" alt="" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  </button>
+                </div>
                 <div className="avatar-dropdown"><button className="avatar-btn" aria-label="Opciones de usuario"><i className="fa-solid fa-user"></i></button></div>
               </div>
             }>
