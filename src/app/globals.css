@@ -1910,6 +1910,20 @@ input:checked + .slider:before {
   animation: slideUp 0.3s ease;
 }
 
+/* Mobile: pegado arriba (con respiro) en vez de centrado — centrado se "pierde" cuando el
+   teclado achica el viewport visual, sobre todo con 100vh que en iOS no siempre reacciona
+   al teclado. 100dvh sí, y como fallback queda igual de acotado por max-height del overlay. */
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 56px 16px 24px;
+  }
+
+  .modal-content {
+    max-height: calc(100dvh - 80px);
+  }
+}
+
 .modal-close {
   position: absolute;
   top: 20px;

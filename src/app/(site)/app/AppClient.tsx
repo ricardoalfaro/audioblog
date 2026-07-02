@@ -11,6 +11,8 @@ import SplashScreen from '@/components/SplashScreen';
 import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 import { useLocale } from '@/contexts/LocaleContext';
 
+const VALID_TRANSLATE_LANGS = ['es', 'en', 'pt', 'de', 'fr'];
+
 function HomeContent() {
   const router = useRouter();
   const { t, tCategory } = useLocale();
@@ -61,7 +63,7 @@ function HomeContent() {
     if (sharedUrl) {
       // F8: si quien compartió el link tradujo el artículo, ?lang= hace que se importe ya traducido igual
       const lang = params.get('lang');
-      pendingAutoImportRef.current = { url: sharedUrl, lang: lang && ['es', 'en'].includes(lang) ? lang : undefined };
+      pendingAutoImportRef.current = { url: sharedUrl, lang: lang && VALID_TRANSLATE_LANGS.includes(lang) ? lang : undefined };
       window.history.replaceState(window.history.state, '', '/app');
     }
 
@@ -778,6 +780,9 @@ function HomeContent() {
                           <option value="none">{t('modal.translateNone')}</option>
                           <option value="es">{t('modal.langEs')}</option>
                           <option value="en">{t('modal.langEn')}</option>
+                          <option value="pt">{t('modal.langPt')}</option>
+                          <option value="de">{t('modal.langDe')}</option>
+                          <option value="fr">{t('modal.langFr')}</option>
                         </select>
                       </div>
                       {scrapeError && <p className="modal-error">{scrapeError}</p>}
