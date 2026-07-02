@@ -9,9 +9,11 @@ import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { validateArticle } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 import { useStackedCarousel } from '@/hooks/useStackedCarousel';
+import { useLocale } from '@/contexts/LocaleContext';
 
 function HomeContent() {
   const router = useRouter();
+  const { t } = useLocale();
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -439,11 +441,11 @@ function HomeContent() {
             <div className="card-delete-overlay card-delete-overlay--inline" onClick={e => e.stopPropagation()}>
               <div className="card-delete-overlay-info">
                 <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
-                <p>¿Eliminar este artículo?</p>
+                <p>{t('card.confirmDelete')}</p>
               </div>
               <div className="card-delete-overlay-actions">
-                <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>Eliminar</button>
-                <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>Cancelar</button>
+                <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>{t('card.delete')}</button>
+                <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>{t('card.cancel')}</button>
               </div>
             </div>
           )}
@@ -455,7 +457,7 @@ function HomeContent() {
             <h3 className="list-item-title">{article.title}</h3>
             <div className="list-item-meta">
               {article.author} • {formatTime(article.duration)}
-              {queuePos >= 0 && <span className="queue-pill">#{queuePos + 1} en cola</span>}
+              {queuePos >= 0 && <span className="queue-pill">#{queuePos + 1} {t('card.inQueue')}</span>}
             </div>
           </div>
           <button
@@ -470,7 +472,7 @@ function HomeContent() {
               className="kebab-btn"
               style={{ opacity: 1, position: 'relative', top: 'auto', right: 'auto', marginLeft: '8px' }}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === article.id ? null : article.id); }}
-              title="Más opciones"
+              title={t('card.moreOptions')}
             >
               <i className="fa-solid fa-ellipsis-vertical"></i>
             </button>
@@ -481,14 +483,14 @@ function HomeContent() {
                   onClick={(e) => { e.stopPropagation(); if (queue.find(a => a.id === article.id)) { removeFromQueue(article.id); } else { addToQueue(article); } setOpenMenuId(null); }}
                 >
                   {queue.find(a => a.id === article.id)
-                    ? <><i className="fa-solid fa-circle-minus"></i> Quitar de la cola</>
-                    : <><i className="fa-solid fa-circle-plus"></i> Poner a la cola</>}
+                    ? <><i className="fa-solid fa-circle-minus"></i> {t('card.removeFromQueue')}</>
+                    : <><i className="fa-solid fa-circle-plus"></i> {t('card.addToQueue')}</>}
                 </button>
                 <button
                   className="card-menu-item card-menu-item--danger"
                   onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); setOpenMenuId(null); }}
                 >
-                  <i className="fa-solid fa-trash-can"></i> Eliminar
+                  <i className="fa-solid fa-trash-can"></i> {t('card.delete')}
                 </button>
               </div>
             )}
@@ -503,11 +505,11 @@ function HomeContent() {
           <div className="card-delete-overlay" onClick={e => e.stopPropagation()}>
             <div className="card-delete-overlay-info">
               <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
-              <p>¿Eliminar este artículo?</p>
+              <p>{t('card.confirmDelete')}</p>
             </div>
             <div className="card-delete-overlay-actions">
-              <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>Eliminar</button>
-              <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>Cancelar</button>
+              <button className="btn-confirm" onClick={(e) => { e.stopPropagation(); handleDeleteArticle(e, article.id); setConfirmDeleteId(null); }}>{t('card.delete')}</button>
+              <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>{t('card.cancel')}</button>
             </div>
           </div>
         )}
@@ -515,7 +517,7 @@ function HomeContent() {
           <button
             className="kebab-btn"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === article.id ? null : article.id); }}
-            title="Más opciones"
+            title={t('card.moreOptions')}
           >
             <i className="fa-solid fa-ellipsis-vertical"></i>
           </button>
@@ -526,14 +528,14 @@ function HomeContent() {
                 onClick={(e) => { e.stopPropagation(); if (queue.find(a => a.id === article.id)) { removeFromQueue(article.id); } else { addToQueue(article); } setOpenMenuId(null); }}
               >
                 {queue.find(a => a.id === article.id)
-                  ? <><i className="fa-solid fa-circle-minus"></i> Quitar de la cola</>
-                  : <><i className="fa-solid fa-circle-plus"></i> Poner a la cola</>}
+                  ? <><i className="fa-solid fa-circle-minus"></i> {t('card.removeFromQueue')}</>
+                  : <><i className="fa-solid fa-circle-plus"></i> {t('card.addToQueue')}</>}
               </button>
               <button
                 className="card-menu-item card-menu-item--danger"
                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); setOpenMenuId(null); }}
               >
-                <i className="fa-solid fa-trash-can"></i> Eliminar
+                <i className="fa-solid fa-trash-can"></i> {t('card.delete')}
               </button>
             </div>
           )}
@@ -564,7 +566,7 @@ function HomeContent() {
             <button
               className={`card-play-btn ${playingArticle?.id === article.id ? 'is-playing' : ''}`}
               onClick={(e) => { e.stopPropagation(); handlePlayDirectly(e, article); }}
-              title={isCurrentPlaying ? 'Pausar' : 'Reproducir ahora'}
+              title={isCurrentPlaying ? t('card.pause') : t('card.playNow')}
             >
               {isCurrentPlaying ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
             </button>
@@ -596,7 +598,7 @@ function HomeContent() {
           <button
             className="view-btn active"
             onClick={() => toggleViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-            title={viewMode === 'grid' ? 'Vista en cuadrícula' : 'Vista en lista'}
+            title={viewMode === 'grid' ? t('card.gridView') : t('card.listView')}
           >
             <i className={`fa-solid ${viewMode === 'grid' ? 'fa-grip' : 'fa-list'}`}></i>
           </button>
@@ -614,9 +616,9 @@ function HomeContent() {
               {listeningArticles.length > 0 && (
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '20px'}}></i> Estás escuchando</h2>
-                    <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                      <i className="fa-solid fa-file-import"></i> Importar documento
+                    <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '20px'}}></i> {t('app.listening')}</h2>
+                    <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title={t('app.importNewArticle')}>
+                      <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
                     </button>
                   </div>
                   <div ref={listeningCarouselRef} className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
@@ -629,11 +631,11 @@ function HomeContent() {
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
-                      <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '20px' }}></i> Listos para escuchar
+                      <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '20px' }}></i> {t('app.readyToListen')}
                     </h2>
                     {listeningArticles.length === 0 && (
-                      <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title="Importar un nuevo artículo">
-                        <i className="fa-solid fa-file-import"></i> Importar documento
+                      <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title={t('app.importNewArticle')}>
+                        <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
                       </button>
                     )}
                   </div>
@@ -647,7 +649,7 @@ function HomeContent() {
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
-                      <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '18px' }}></i> Volver a escuchar
+                      <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '18px' }}></i> {t('app.backToListen')}
                     </h2>
                   </div>
                   <div ref={archivedCarouselRef} className={viewMode === 'grid' ? 'listening-carousel archived-cards' : 'articles-list archived-cards'}>
@@ -663,16 +665,16 @@ function HomeContent() {
               <div className="empty-state">
                 {articles.length === 0 ? (
                   <>
-                    <h3>Tu biblioteca está vacía</h3>
-                    <p>Importa tu primer artículo para empezar a escuchar.</p>
+                    <h3>{t('app.emptyLibraryTitle')}</h3>
+                    <p>{t('app.emptyLibrarySubtitle')}</p>
                     <button className="btn btn-primary" style={{ marginTop: '24px', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
-                      <i className="fa-solid fa-file-import"></i> Importar documento
+                      <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
                     </button>
                   </>
                 ) : (
                   <>
-                    <h3>No hay artículos en esta categoría</h3>
-                    <p>Prueba seleccionando otra categoría.</p>
+                    <h3>{t('app.emptyCategoryTitle')}</h3>
+                    <p>{t('app.emptyCategorySubtitle')}</p>
                   </>
                 )}
               </div>
@@ -688,31 +690,31 @@ function HomeContent() {
             className="modal-content"
             role="dialog"
             aria-modal="true"
-            aria-label="Importar artículo"
+            aria-label={t('modal.importArticle')}
             onClick={e => e.stopPropagation()}
           >
-            <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual} aria-label="Cerrar">
+            <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual} aria-label={t('modal.close')}>
               <i className="fa-solid fa-xmark" />
             </button>
 
             {importSuccess ? (
               <div className="import-success">
                 <i className="fa-solid fa-circle-check success-icon" />
-                <p>¡Artículo guardado!</p>
-                <span>Ya está disponible en tu biblioteca</span>
+                <p>{t('modal.saved')}</p>
+                <span>{t('modal.savedSubtitle')}</span>
               </div>
             ) : (
               <>
                 <div className="modal-header">
-                  <h2>{modalTab === 'url' ? 'Importar artículo' : 'Crear artículo'}</h2>
+                  <h2>{modalTab === 'url' ? t('modal.importArticle') : t('modal.createArticle')}</h2>
                 </div>
 
                 <div className="modal-tabs">
                   <button className={`modal-tab-btn ${modalTab === 'url' ? 'active' : ''}`} onClick={() => setModalTab('url')}>
-                    Por URL
+                    {t('modal.byUrl')}
                   </button>
                   <button className={`modal-tab-btn ${modalTab === 'manual' ? 'active' : ''}`} onClick={() => setModalTab('manual')}>
-                    Manual
+                    {t('modal.manual')}
                   </button>
                 </div>
 
@@ -724,13 +726,13 @@ function HomeContent() {
                           <span className="step-icon">
                             {scrapeStep > 1 ? <i className="fa-solid fa-check" /> : scrapeStep === 1 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                           </span>
-                          Leyendo página
+                          {t('modal.stepReading')}
                         </div>
                         <div className={`import-step ${scrapeStep >= 2 ? 'active' : ''} ${scrapeStep > 2 ? 'done' : ''}`}>
                           <span className="step-icon">
                             {scrapeStep > 2 ? <i className="fa-solid fa-check" /> : scrapeStep === 2 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                           </span>
-                          Extrayendo texto
+                          {t('modal.stepExtracting')}
                         </div>
                         {translateTo && translateTo !== 'none' ? (
                           <>
@@ -738,13 +740,13 @@ function HomeContent() {
                               <span className="step-icon">
                                 {scrapeStep > 3 ? <i className="fa-solid fa-check" /> : scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                               </span>
-                              Traduciendo texto
+                              {t('modal.stepTranslating')}
                             </div>
                             <div className={`import-step ${scrapeStep >= 4 ? 'active' : ''}`}>
                               <span className="step-icon">
                                 {scrapeStep === 4 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                               </span>
-                              Guardando
+                              {t('modal.stepSaving')}
                             </div>
                           </>
                         ) : (
@@ -752,7 +754,7 @@ function HomeContent() {
                             <span className="step-icon">
                               {scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
                             </span>
-                            Guardando
+                            {t('modal.stepSaving')}
                           </div>
                         )}
                       </div>
@@ -760,27 +762,27 @@ function HomeContent() {
                   ) : (
                     <form onSubmit={handleScrapeSubmit} className="modal-form">
                       <div>
-                        <label className="form-label">URL del artículo</label>
+                        <label className="form-label">{t('modal.articleUrl')}</label>
                         <input type="url" className="form-control" value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} placeholder="https://..." required autoFocus />
                       </div>
                       <div>
-                        <label className="form-label">Categoría</label>
+                        <label className="form-label">{t('modal.category')}</label>
                         <select className="form-control" value={scrapeCategory} onChange={e => setScrapeCategory(e.target.value)}>
-                          <option value="auto">Automática (IA)</option>
+                          <option value="auto">{t('modal.categoryAuto')}</option>
                           {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="form-label">Traducir a <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+                        <label className="form-label">{t('modal.translateTo')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('modal.optional')}</span></label>
                         <select className="form-control" value={translateTo} onChange={e => setTranslateTo(e.target.value)}>
-                          <option value="none">No traducir — idioma original</option>
-                          <option value="es">Español</option>
-                          <option value="en">Inglés</option>
+                          <option value="none">{t('modal.translateNone')}</option>
+                          <option value="es">{t('modal.langEs')}</option>
+                          <option value="en">{t('modal.langEn')}</option>
                         </select>
                       </div>
                       {scrapeError && <p className="modal-error">{scrapeError}</p>}
                       <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                        <i className="fa-solid fa-file-import" /> Importar
+                        <i className="fa-solid fa-file-import" /> {t('modal.import')}
                       </button>
                     </form>
                   )
@@ -789,16 +791,16 @@ function HomeContent() {
                 {modalTab === 'manual' && (
                   <form onSubmit={handleManualSubmit} className="modal-form">
                     <div>
-                      <label className="form-label">Título</label>
+                      <label className="form-label">{t('modal.title')}</label>
                       <input type="text" className="form-control" value={manualTitle} onChange={e => setManualTitle(e.target.value)} required autoFocus />
                     </div>
                     <div>
-                      <label className="form-label">Contenido <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(párrafos separados por línea vacía)</span></label>
+                      <label className="form-label">{t('modal.content')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('modal.contentHint')}</span></label>
                       <textarea className="form-control" value={manualContent} onChange={e => setManualContent(e.target.value)} rows={8} required />
                     </div>
                     {manualError && <p className="modal-error">{manualError}</p>}
                     <button type="submit" className="btn btn-primary" disabled={isSavingManual} style={{ width: '100%', justifyContent: 'center' }}>
-                      {isSavingManual ? <><i className="fa-solid fa-circle-notch fa-spin" /> Guardando...</> : <><i className="fa-solid fa-floppy-disk" /> Guardar artículo</>}
+                      {isSavingManual ? <><i className="fa-solid fa-circle-notch fa-spin" /> {t('modal.saving')}</> : <><i className="fa-solid fa-floppy-disk" /> {t('modal.saveArticle')}</>}
                     </button>
                   </form>
                 )}
