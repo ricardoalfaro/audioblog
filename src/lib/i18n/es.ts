@@ -112,6 +112,22 @@ const es = {
   'reader.share': 'Compartir',
   'reader.pause': 'Pausar',
   'reader.listen': 'Escuchar',
+
+  // Nombres de categoría: el VALOR guardado en Article.category y usado para filtrar/comparar
+  // sigue siendo el string en español (STATIC_CATEGORIES, src/lib/categories.ts) — esto es
+  // solo la etiqueta que se muestra en pantalla, vía tCategory(). No migra datos existentes.
+  'category.Todos': 'Todos',
+  'category.General': 'General',
+  'category.Tecnología': 'Tecnología',
+  'category.Diseño': 'Diseño',
+  'category.Negocios': 'Negocios',
+  'category.Pagos': 'Pagos',
+  'category.Seguros': 'Seguros',
+  'category.Fintech': 'Fintech',
+  'category.Política': 'Política',
+  'category.Historia': 'Historia',
+  'category.Economía': 'Economía',
+  'category.Noticias': 'Noticias',
 } as const;
 
 export default es;

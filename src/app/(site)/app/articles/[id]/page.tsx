@@ -40,7 +40,7 @@ function parseTokens(text: string): Token[] {
 export default function ArticleReader() {
   const params = useParams();
   const router = useRouter();
-  const { t, locale } = useLocale();
+  const { t, locale, tCategory } = useLocale();
   const id = params.id as string;
 
   const [article, setArticle] = useState<Article | null>(null);
@@ -333,7 +333,7 @@ export default function ArticleReader() {
                 }}
               >
                 <option value="" disabled>{t('reader.selectCategory')}</option>
-                {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{tCategory(cat)}</option>)}
               </select>
             </div>
           </div>

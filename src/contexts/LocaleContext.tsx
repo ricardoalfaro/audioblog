@@ -23,10 +23,22 @@ export const LOCALES: { value: Locale; label: string }[] = [
 const STORAGE_KEY = 'audiodocs_locale';
 const DEFAULT_LOCALE: Locale = 'es';
 
+// Traduce solo la ETIQUETA de una categoría para mostrarla en pantalla — el valor real
+// guardado en Article.category (y usado para filtrar/comparar) sigue siendo el string en
+// español de STATIC_CATEGORIES. Si la categoría no tiene traducción conocida (p. ej. una
+// categoría vieja o escrita a mano), se muestra tal cual llegó.
+function makeTCategory(locale: Locale) {
+  return (category: string) => {
+    const key = `category.${category}` as MessageKey;
+    return MESSAGES[locale][key] ?? category;
+  };
+}
+
 interface LocaleContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: (key: MessageKey) => string;
+  tCategory: (category: string) => string;
 }
 
 // Exportado (no solo el hook useLocale) para que ErrorBoundary, un class component, pueda
@@ -35,6 +47,7 @@ export const LocaleContext = createContext<LocaleContextValue>({
   locale: DEFAULT_LOCALE,
   setLocale: () => {},
   t: (key: MessageKey) => MESSAGES[DEFAULT_LOCALE][key],
+  tCategory: makeTCategory(DEFAULT_LOCALE),
 });
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
@@ -58,9 +71,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: MessageKey) => MESSAGES[locale][key] ?? MESSAGES[DEFAULT_LOCALE][key], [locale]);
+  const tCategory = useCallback((category: string) => makeTCategory(locale)(category), [locale]);
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t }}>
+    <LocaleContext.Provider value={{ locale, setLocale, t, tCategory }}>
       {children}
     </LocaleContext.Provider>
   );

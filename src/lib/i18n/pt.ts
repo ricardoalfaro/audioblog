@@ -112,6 +112,19 @@ const pt = {
   'reader.share': 'Compartilhar',
   'reader.pause': 'Pausar',
   'reader.listen': 'Ouvir',
+
+  'category.Todos': 'Todos',
+  'category.General': 'Geral',
+  'category.Tecnología': 'Tecnologia',
+  'category.Diseño': 'Design',
+  'category.Negocios': 'Negócios',
+  'category.Pagos': 'Pagamentos',
+  'category.Seguros': 'Seguros',
+  'category.Fintech': 'Fintech',
+  'category.Política': 'Política',
+  'category.Historia': 'História',
+  'category.Economía': 'Economia',
+  'category.Noticias': 'Notícias',
 } satisfies Record<keyof typeof es, string>;
 
 export default pt;

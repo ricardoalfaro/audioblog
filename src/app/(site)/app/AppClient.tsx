@@ -13,7 +13,7 @@ import { useLocale } from '@/contexts/LocaleContext';
 
 function HomeContent() {
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, tCategory } = useLocale();
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -589,7 +589,7 @@ function HomeContent() {
                 className={`tab-item ${selectedCategory === category ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(category)}
               >
-                {category}
+                {tCategory(category)}
               </button>
             ))}
           </div>
@@ -769,7 +769,7 @@ function HomeContent() {
                         <label className="form-label">{t('modal.category')}</label>
                         <select className="form-control" value={scrapeCategory} onChange={e => setScrapeCategory(e.target.value)}>
                           <option value="auto">{t('modal.categoryAuto')}</option>
-                          {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{tCategory(cat)}</option>)}
                         </select>
                       </div>
                       <div>
