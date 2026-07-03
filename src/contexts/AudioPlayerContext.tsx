@@ -5,6 +5,7 @@ import { Article } from '@/types';
 import { audioToDataUrl } from '@/lib/audioUtils';
 import { getArticlesList, updateArticleProgress, saveArticleVoicePreference } from '@/lib/articleStorage';
 import { useQueue } from '@/hooks/useQueue';
+import { useLocale } from '@/contexts/LocaleContext';
 
 export const EDGE_VOICES = [
   { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES', gender: 'male' },
@@ -56,6 +57,7 @@ interface AudioPlayerContextType {
 const AudioPlayerContext = createContext<AudioPlayerContextType | null>(null);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
+  const { t } = useLocale();
   const [playingArticle, setPlayingArticle] = useState<Article | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -67,6 +69,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Refs to fix stale closures in audio events
   const isPausedRef = useRef(false);
   const playingArticleIdRef = useRef<string | null>(null);
+  // Artículo "activo" en el reproductor — a diferencia de playingArticleIdRef, sobrevive a
+  // handleStop() sin limpiarse. Sirve para (a) aplicar las preferencias de voz guardadas del
+  // artículo (preferredEdgeVoice/preferredEngine/preferredVoiceName) solo la PRIMERA vez que
+  // se reproduce en esta sesión del reproductor, no en cada play()/resume — de lo contrario
+  // cualquier cambio manual de voz quedaba pisado en el siguiente play (bug reportado: cambiar
+  // la voz nunca "pegaba"); y (b) persistir cambios de voz aunque el usuario haya detenido la
+  // reproducción antes de cambiarla (handleStop pone playingArticle en null).
+  const currentArticleIdRef = useRef<string | null>(null);
   // Increments on every new play session (new article, engine change, stop)
   // so in-flight TTS fetches from a previous session are discarded.
   const playSessionRef = useRef(0);
@@ -348,7 +358,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
         setIsPaused(false);
         setIsLoading(false);
-        setTtsError(`Error de audio${detail ? ` [${detail}]` : ''}. Intenta de nuevo.`);
+        setTtsError(t('errors.audioError', { detail: detail ? ` [${detail}]` : '' }));
         setTimeout(() => setTtsError(null), 8000);
       }
     };
@@ -385,7 +395,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
         setIsPaused(false);
         setIsLoading(false);
-        setTtsError(`play() bloqueado [${e?.name ?? 'error'}]. Intenta de nuevo.`);
+        setTtsError(t('errors.playbackBlocked', { name: e?.name ?? 'error' }));
         setTimeout(() => setTtsError(null), 8000);
       });
     };
@@ -421,7 +431,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       })
       .then(buffer => {
         if (playSessionRef.current !== sessionId || playingArticleIdRef.current !== article.id) return;
-        if (!buffer || buffer.byteLength === 0) throw new Error('buffer vacío');
+        if (!buffer || buffer.byteLength === 0) throw new Error('EMPTY_BUFFER');
         setupAndPlay(audioToDataUrl(buffer));
       })
       .catch((err: unknown) => {
@@ -473,15 +483,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const firstIdx = startIdx === 0 ? -1 : startIdx;
     updateArticleProgress(article, startIdx, true);
 
-    // Restore per-article voice preferences if saved
-    const engine = article.preferredEngine ?? audioEngine;
-    if (article.preferredEngine) setAudioEngine(article.preferredEngine);
-    if (article.preferredEdgeVoice) {
-      setSelectedEdgeVoice(article.preferredEdgeVoice);
-      // eslint-disable-next-line react-hooks/immutability
-      selectedEdgeVoiceRef.current = article.preferredEdgeVoice;
+    // Restore per-article voice preferences if saved — solo la primera vez que se reproduce
+    // este artículo en la sesión actual (ver comentario de currentArticleIdRef arriba).
+    let engine = audioEngine;
+    if (currentArticleIdRef.current !== article.id) {
+      currentArticleIdRef.current = article.id;
+      engine = article.preferredEngine ?? audioEngine;
+      if (article.preferredEngine) setAudioEngine(article.preferredEngine);
+      if (article.preferredEdgeVoice) {
+        setSelectedEdgeVoice(article.preferredEdgeVoice);
+        // eslint-disable-next-line react-hooks/immutability
+        selectedEdgeVoiceRef.current = article.preferredEdgeVoice;
+      }
+      if (article.preferredVoiceName) setSelectedVoiceName(article.preferredVoiceName);
     }
-    if (article.preferredVoiceName) setSelectedVoiceName(article.preferredVoiceName);
 
     const startPlayback = () => {
       if (engine === 'edge') {
@@ -541,7 +556,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             console.error('Audio play() failed:', e?.name, e?.message);
             setIsPlaying(false);
             setIsPaused(false);
-            setTtsError(`play() bloqueado [${e?.name ?? 'error'}]. Intenta de nuevo.`);
+            setTtsError(t('errors.playbackBlocked', { name: e?.name ?? 'error' }));
             setTimeout(() => setTtsError(null), 8000);
           });
           setIsPaused(false);
@@ -635,7 +650,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedVoiceName(e.target.value);
-    if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredVoiceName: e.target.value });
+    const targetArticleId = playingArticle?.id ?? currentArticleIdRef.current;
+    if (targetArticleId) saveArticleVoicePreference(targetArticleId, { preferredVoiceName: e.target.value });
     if (isPlaying && audioEngine === 'device') {
       handleStop();
     }
@@ -645,7 +661,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/immutability
     selectedEdgeVoiceRef.current = e.target.value;
     setSelectedEdgeVoice(e.target.value);
-    if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEdgeVoice: e.target.value });
+    const targetArticleId = playingArticle?.id ?? currentArticleIdRef.current;
+    if (targetArticleId) saveArticleVoicePreference(targetArticleId, { preferredEdgeVoice: e.target.value });
     revokePrefetchedBlob();
     if (isPlaying && audioEngine === 'edge') {
       handleStop();
