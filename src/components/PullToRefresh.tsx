@@ -66,6 +66,10 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
 
   const translateY = refreshing ? THRESHOLD : pullDistance;
   const progress = Math.min(pullDistance / THRESHOLD, 1);
+  // will-change solo mientras hay transform en juego (arrastrando o animando el snap-back).
+  // Si quedara permanente en el CSS, el ancestro crea un containing block nuevo y eso rompe
+  // position:sticky en los hijos (header, tabs, reader-topbar) durante el scroll normal.
+  const isTransforming = translateY > 0 || settling;
 
   return (
     <>
@@ -84,6 +88,7 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
         style={{
           transform: translateY ? `translateY(${translateY}px)` : undefined,
           transition: settling ? 'transform 0.2s ease' : 'none',
+          willChange: isTransforming ? 'transform' : undefined,
         }}
       >
         {children}

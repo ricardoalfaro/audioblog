@@ -160,7 +160,6 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans);
   min-height: 100vh;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--transition-normal);
   display: flex;
@@ -1517,7 +1516,11 @@ select.form-control {
   flex-direction: column;
   min-height: 100vh;
   background: var(--bg-main);
-  will-change: transform;
+  /* will-change: transform se aplica solo durante el gesto (ver PullToRefresh.tsx), no acá.
+     Permanente rompía position:sticky en .main-header/.tabs-container/.reader-topbar en
+     Safari/WebKit mobile: un ancestro con will-change:transform crea un containing block
+     nuevo aunque no haya ningún transform activo, y eso desactiva el sticky de los hijos
+     incluso en scroll normal sin pull-to-refresh en curso. */
 }
 
 .pull-to-refresh-icon {
