@@ -621,6 +621,12 @@ a {
   mask-image: linear-gradient(to right, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   scrollbar-width: none;
+  /* Al reproducir un artículo se antepone como primer hijo (reordenado por lastPlayedAt).
+     El scroll anchoring nativo del navegador "compensaba" ese cambio corriendo scrollLeft
+     hacia la derecha para mantener el contenido ya visible en el mismo lugar — dejando la
+     card recién activada invisible hasta un refresh completo. Se desactiva acá; el reset a
+     scrollLeft 0 para revelarla si el usuario había scrolleado manualmente lo hace JS. */
+  overflow-anchor: none;
 }
 
 .listening-carousel::-webkit-scrollbar {

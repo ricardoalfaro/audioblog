@@ -447,6 +447,23 @@ function HomeContent() {
   const newArticles = filteredArticles.filter(a => !a.lastPlayedAt);
   const archivedArticles = filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length);
 
+  // Mismo problema que firstNewArticleId (línea 122): al reproducir un artículo se antepone
+  // como primero en "Estás escuchando" (ordenado por lastPlayedAt desc). El overflow-anchor:
+  // none de .listening-carousel (globals.css) evita que el navegador desplace scrollLeft para
+  // "compensar" el nuevo primer hijo, pero si el usuario había scrolleado manualmente el
+  // carrusel, hace falta este reset explícito para revelar la card recién activada. Sin
+  // `behavior: 'smooth'`: una animación en curso podía quedar a mitad de camino si otro
+  // re-render (ej. el fetchArticles que dispara el cambio de playingArticle) mutaba scrollLeft
+  // mientras tanto — el salto instantáneo no tiene ese problema de carrera. Depende del id
+  // sobre `articles` sin filtrar (no `filteredArticles`) para no disparar el reset al cambiar
+  // de categoría, solo cuando cambia de verdad quién es el primero de "escuchando".
+  const firstListeningArticleId = articles
+    .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
+    .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1)[0]?.id;
+  useEffect(() => {
+    if (listeningCarouselRef.current) listeningCarouselRef.current.scrollLeft = 0;
+  }, [firstListeningArticleId]);
+
   // U11: mantiene la card "activa" del stack de mobile al frente del z-index mientras se scrollea
   useStackedCarousel(listeningCarouselRef, [listeningArticles.length, viewMode], viewMode === 'grid');
   useStackedCarousel(newArticlesCarouselRef, [newArticles.length, viewMode], viewMode === 'grid');
