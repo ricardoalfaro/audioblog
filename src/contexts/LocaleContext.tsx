@@ -34,10 +34,19 @@ function makeTCategory(locale: Locale) {
   };
 }
 
+type TParams = Record<string, string | number>;
+
+// Sustituye placeholders `{nombre}` en el string ya resuelto. Sin params, devuelve el string
+// tal cual (early-return) para no tocar las ~130 llamadas existentes a t(key) sin argumentos.
+function interpolate(raw: string, params?: TParams): string {
+  if (!params) return raw;
+  return raw.replace(/\{(\w+)\}/g, (match, name) => (name in params ? String(params[name]) : match));
+}
+
 interface LocaleContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: MessageKey) => string;
+  t: (key: MessageKey, params?: TParams) => string;
   tCategory: (category: string) => string;
 }
 
@@ -46,7 +55,7 @@ interface LocaleContextValue {
 export const LocaleContext = createContext<LocaleContextValue>({
   locale: DEFAULT_LOCALE,
   setLocale: () => {},
-  t: (key: MessageKey) => MESSAGES[DEFAULT_LOCALE][key],
+  t: (key: MessageKey, params?: TParams) => interpolate(MESSAGES[DEFAULT_LOCALE][key], params),
   tCategory: makeTCategory(DEFAULT_LOCALE),
 });
 
@@ -70,7 +79,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(STORAGE_KEY, next); } catch { /* storage no disponible */ }
   }, []);
 
-  const t = useCallback((key: MessageKey) => MESSAGES[locale][key] ?? MESSAGES[DEFAULT_LOCALE][key], [locale]);
+  const t = useCallback((key: MessageKey, params?: TParams) => {
+    const raw = MESSAGES[locale][key] ?? MESSAGES[DEFAULT_LOCALE][key];
+    return interpolate(raw, params);
+  }, [locale]);
   const tCategory = useCallback((category: string) => makeTCategory(locale)(category), [locale]);
 
   return (

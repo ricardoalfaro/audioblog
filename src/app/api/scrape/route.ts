@@ -459,13 +459,13 @@ async function tryMediumArchive(targetUrl: string): Promise<ScrapedRaw | null> {
 
 export async function POST(request: Request) {
   if (!rateLimit(getIP(request), 10, 60_000)) {
-    return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 });
+    return NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429 });
   }
 
   try {
     const { url, translateTo } = await request.json();
     if (!url) {
-      return NextResponse.json({ error: 'La URL es requerida' }, { status: 400 });
+      return NextResponse.json({ error: 'URL_REQUIRED' }, { status: 400 });
     }
 
     // URL format validation
@@ -473,7 +473,7 @@ export async function POST(request: Request) {
     try {
       parsedUrl = new URL(url);
     } catch {
-      return NextResponse.json({ error: 'La URL no es válida. Asegúrate de incluir http:// o https://' }, { status: 400 });
+      return NextResponse.json({ error: 'URL_INVALID' }, { status: 400 });
     }
 
     // Fetch — 10s timeout; safeFetch blocks private IPs and validates every redirect (SSRF, R1)
@@ -495,11 +495,11 @@ export async function POST(request: Request) {
       clearTimeout(fetchTimeout);
       if ((fetchErr as Error).name === 'AbortError') {
         if (!isMediumHost(parsedUrl.hostname)) {
-          return NextResponse.json({ error: 'El sitio no respondió a tiempo (timeout de 10 segundos).' }, { status: 504 });
+          return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
         }
         fetchBlocked = true;
       } else if ((fetchErr as Error).message === 'SSRF_BLOCKED' || (fetchErr as Error).message === 'DNS_FAIL') {
-        return NextResponse.json({ error: 'La URL no es válida. Asegúrate de incluir http:// o https://' }, { status: 400 });
+        return NextResponse.json({ error: 'URL_INVALID' }, { status: 400 });
       } else {
         throw fetchErr;
       }
@@ -513,19 +513,19 @@ export async function POST(request: Request) {
         if (isMediumHost(parsedUrl.hostname)) {
           fetchBlocked = true;
         } else {
-          return NextResponse.json({ error: `No se pudo obtener el artículo: ${response.status} ${response.statusText}` }, { status: 500 });
+          return NextResponse.json({ error: 'FETCH_FAILED', httpStatus: response.status }, { status: 500 });
         }
       } else {
         // Reject responses that are too large to avoid OOM (R4)
         const MAX_HTML_BYTES = 5 * 1024 * 1024; // 5 MB
         const contentLength = response.headers.get('content-length');
         if (contentLength && parseInt(contentLength, 10) > MAX_HTML_BYTES) {
-          return NextResponse.json({ error: 'El artículo es demasiado grande para procesarlo.' }, { status: 413 });
+          return NextResponse.json({ error: 'CONTENT_TOO_LARGE' }, { status: 413 });
         }
 
         const html = await response.text();
         if (html.length > MAX_HTML_BYTES) {
-          return NextResponse.json({ error: 'El artículo es demasiado grande para procesarlo.' }, { status: 413 });
+          return NextResponse.json({ error: 'CONTENT_TOO_LARGE' }, { status: 413 });
         }
 
         // isMediumHost cubre medium.com/*.medium.com; isMediumPoweredHtml detecta además
@@ -538,9 +538,7 @@ export async function POST(request: Request) {
         if (isChallenge && isMediumPage) {
           fetchBlocked = true;
         } else if (isChallenge) {
-          return NextResponse.json({
-            error: 'Este sitio bloquea el acceso automático (protección anti-bots). Puedes copiar el texto del artículo y agregarlo usando la pestaña "Manual".'
-          }, { status: 422 });
+          return NextResponse.json({ error: 'ANTI_BOT_BLOCKED' }, { status: 422 });
         } else if (isMediumPage && isMediumPaywalledHtml(html)) {
           // 200 OK y Readability podría "parsear algo", pero es el preview truncado del muro
           // de pago — el usuario puede verlo completo en el navegador si está logueado en
@@ -552,7 +550,7 @@ export async function POST(request: Request) {
           if (!scraped && isMediumPage) {
             fetchBlocked = true;
           } else if (!scraped) {
-            return NextResponse.json({ error: 'No se pudo extraer contenido legible de este sitio web. Intenta copiarlo manualmente.' }, { status: 422 });
+            return NextResponse.json({ error: 'EXTRACT_FAILED' }, { status: 422 });
           }
         }
       }
@@ -564,18 +562,16 @@ export async function POST(request: Request) {
       if (!scraped) scraped = await tryMediumArchive(url);
 
       if (!scraped) {
-        return NextResponse.json({
-          error: 'No se pudo importar este artículo de Medium (bloqueado por su protección anti-bots, ni el RSS del autor ni el archivo lo tienen disponible). Si es un artículo "member-only", pide a quien lo compartió el "friend link" de Medium e intenta con esa URL, o copia el texto manualmente.'
-        }, { status: 422 });
+        return NextResponse.json({ error: 'MEDIUM_BLOCKED' }, { status: 422 });
       }
     }
 
     if (!scraped) {
-      return NextResponse.json({ error: 'No se pudo extraer contenido legible de este sitio web. Intenta copiarlo manualmente.' }, { status: 422 });
+      return NextResponse.json({ error: 'EXTRACT_FAILED' }, { status: 422 });
     }
 
     if (scraped.paragraphs.length === 0) {
-      return NextResponse.json({ error: 'No se encontraron párrafos de texto legibles.' }, { status: 422 });
+      return NextResponse.json({ error: 'NO_PARAGRAPHS' }, { status: 422 });
     }
 
     // Clean up title, author and excerpt
@@ -643,7 +639,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error('Error in scrape endpoint:', error);
     return NextResponse.json(
-      { error: 'Error interno al procesar el artículo.' },
+      { error: 'SCRAPE_INTERNAL' },
       { status: 500 }
     );
   }

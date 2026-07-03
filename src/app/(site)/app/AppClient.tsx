@@ -10,6 +10,7 @@ import { validateArticle } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 import { useLocale } from '@/contexts/LocaleContext';
+import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
 
 const VALID_TRANSLATE_LANGS = ['es', 'en', 'pt', 'de', 'fr'];
 
@@ -244,14 +245,14 @@ function HomeContent() {
       if (stepTimer2) clearTimeout(stepTimer2);
 
       if (!scrapeRes.ok) {
-        let errorMsg = 'Ocurrió un error al extraer el artículo.';
+        let errorMsg: string;
         try {
           const errData = await scrapeRes.json();
-          errorMsg = errData.error || errorMsg;
+          errorMsg = translateApiError(t, errData, 'errors.scrapeGeneric', { tab: t('modal.manual') });
         } catch {
-          errorMsg = `Error del servidor (${scrapeRes.status}): ${scrapeRes.statusText || 'Respuesta no válida'}`;
+          errorMsg = t('errors.serverErrorStatus', { status: scrapeRes.status });
         }
-        throw new Error(errorMsg);
+        throw new DisplayError(errorMsg);
       }
 
       setScrapeStep(isTranslating ? 4 : 3);
@@ -330,7 +331,7 @@ function HomeContent() {
       clearTimeout(stepTimer1);
       if (stepTimer2) clearTimeout(stepTimer2);
       setScrapeStep(0);
-      setScrapeError(err instanceof Error ? err.message : 'Error al importar el artículo.');
+      setScrapeError(err instanceof DisplayError ? err.message : t('errors.importGeneric'));
       setIsScraping(false);
     }
   };
@@ -355,7 +356,7 @@ function HomeContent() {
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualTitle || !manualContent) {
-      setManualError('El título y el contenido son obligatorios.');
+      setManualError(t('errors.manualFieldsRequired'));
       return;
     }
 
@@ -366,7 +367,7 @@ function HomeContent() {
       const paragraphs = manualContent.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
       if (paragraphs.length === 0) {
-        throw new Error('El contenido debe tener al menos un párrafo.');
+        throw new DisplayError(t('errors.manualNoParagraphs'));
       }
 
       const wordCount = paragraphs.join(' ').split(/\s+/).filter(Boolean).length || 0;
@@ -399,7 +400,7 @@ function HomeContent() {
         setManualContent('');
       }, 1600);
     } catch (err: unknown) {
-      setManualError(err instanceof Error ? err.message : 'Error al guardar el artículo.');
+      setManualError(err instanceof DisplayError ? err.message : t('errors.manualSaveGeneric'));
       setIsSavingManual(false);
     }
   };

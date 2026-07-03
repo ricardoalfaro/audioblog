@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Article } from '@/types';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { STATIC_CATEGORIES } from '@/lib/categories';
-import { useLocale, Locale } from '@/contexts/LocaleContext';
+import { useLocale, Locale, MessageKey } from '@/contexts/LocaleContext';
 
 const LOCALE_TO_BCP47: Record<Locale, string> = {
   es: 'es-ES', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE',
@@ -45,7 +45,12 @@ export default function ArticleReader() {
 
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Se guarda la CLAVE de traducción, no el texto ya traducido: el efecto de fetchArticle
+  // corre en el mismo commit de montaje que el efecto de LocaleProvider que sincroniza el
+  // locale real desde localStorage, y como es hijo, se dispara antes — si tradujéramos aquí
+  // con t(), quedaría congelado en el locale por defecto ('es') en vez del guardado por el
+  // usuario. Traducir en el render (con el locale ya sincronizado) evita esa carrera.
+  const [errorKey, setErrorKey] = useState<MessageKey | ''>('');
 
   const {
     playingArticle, activeParagraphIndex, currentCharIndex, audioEngine, selectedEdgeVoice, selectedVoiceName, voices, handleEngineChange, handleEdgeVoiceChange, handleVoiceChange, playArticle, handleParagraphClick,
@@ -112,16 +117,18 @@ export default function ArticleReader() {
         setIsLoading(true);
         const localData = localStorage.getItem('articles');
         if (!localData) {
-          throw new Error('No se encontró el historial de artículos.');
+          setErrorKey('errors.historyNotFound');
+          return;
         }
         const articlesList: Article[] = JSON.parse(localData);
         const data = articlesList.find((a) => a.id === id);
         if (!data) {
-          throw new Error('No se pudo encontrar el artículo.');
+          setErrorKey('errors.articleNotFound');
+          return;
         }
         setArticle(data);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Error al cargar el artículo.');
+      } catch {
+        setErrorKey('errors.loadArticleGeneric');
       } finally {
         setIsLoading(false);
       }
@@ -178,12 +185,12 @@ export default function ArticleReader() {
     );
   }
 
-  if (error || !article) {
+  if (errorKey || !article) {
     return (
       <main className="container" style={{ padding: '80px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
         <h2 style={{ marginBottom: '16px' }}>{t('reader.errorTitle')}</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{error || t('reader.errorFallback')}</p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{errorKey ? t(errorKey) : t('reader.errorFallback')}</p>
         <button className="btn btn-primary" onClick={() => router.push('/app')}>
           {t('reader.backHome')}
         </button>

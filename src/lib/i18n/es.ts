@@ -131,6 +131,39 @@ const es = {
   'category.Historia': 'Historia',
   'category.Economía': 'Economía',
   'category.Noticias': 'Noticias',
+
+  // Mensajes de error dinámicos (F17): 'errors.*' agrupa tanto los códigos devueltos por las
+  // API routes (traducidos vía translateApiError, ver src/lib/i18n/apiError.ts) como los
+  // mensajes armados enteramente en el cliente. Los que llevan {placeholder} se resuelven con
+  // t(key, { ... }) — ver la interpolación agregada en LocaleContext.
+  'errors.rateLimit': 'Demasiadas solicitudes. Intenta de nuevo en un minuto.',
+  'errors.urlRequired': 'La URL es requerida',
+  'errors.urlInvalid': 'La URL no es válida. Asegúrate de incluir http:// o https://',
+  'errors.scrapeTimeout': 'El sitio no respondió a tiempo (timeout de 10 segundos).',
+  'errors.fetchFailed': 'No se pudo obtener el artículo (código {status}).',
+  'errors.contentTooLarge': 'El artículo es demasiado grande para procesarlo.',
+  'errors.antiBotBlocked': 'Este sitio bloquea el acceso automático (protección anti-bots). Puedes copiar el texto del artículo y agregarlo usando la pestaña "{tab}".',
+  'errors.extractFailed': 'No se pudo extraer contenido legible de este sitio web. Intenta copiarlo manualmente.',
+  'errors.mediumBlocked': 'No se pudo importar este artículo de Medium (bloqueado por su protección anti-bots, ni el RSS del autor ni el archivo lo tienen disponible). Si es un artículo "member-only", pide a quien lo compartió el "friend link" de Medium e intenta con esa URL, o copia el texto manualmente.',
+  'errors.noParagraphs': 'No se encontraron párrafos de texto legibles.',
+  'errors.scrapeInternal': 'Error interno al procesar el artículo.',
+  'errors.textRequired': 'El texto es requerido',
+  'errors.textTooLong': 'El texto es demasiado largo.',
+  'errors.invalidVoice': 'Voz no válida.',
+  'errors.ttsInternal': 'Error interno al generar el habla.',
+  'errors.shortenOriginOnly': 'Solo se pueden acortar links de Audiodocs.',
+  'errors.shortenFailed': 'No se pudo acortar el link.',
+  'errors.scrapeGeneric': 'Ocurrió un error al extraer el artículo.',
+  'errors.serverErrorStatus': 'Error del servidor (código {status}).',
+  'errors.importGeneric': 'Error al importar el artículo.',
+  'errors.manualFieldsRequired': 'El título y el contenido son obligatorios.',
+  'errors.manualNoParagraphs': 'El contenido debe tener al menos un párrafo.',
+  'errors.manualSaveGeneric': 'Error al guardar el artículo.',
+  'errors.historyNotFound': 'No se encontró el historial de artículos.',
+  'errors.articleNotFound': 'No se pudo encontrar el artículo.',
+  'errors.loadArticleGeneric': 'Error al cargar el artículo.',
+  'errors.audioError': 'Error de audio{detail}. Intenta de nuevo.',
+  'errors.playbackBlocked': 'play() bloqueado [{name}]. Intenta de nuevo.',
 } as const;
 
 export default es;

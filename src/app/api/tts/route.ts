@@ -9,7 +9,7 @@ const MAX_TEXT_LENGTH = 5000;
 
 export async function POST(request: Request) {
   if (!rateLimit(getIP(request), 60, 60_000)) {
-    return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 });
+    return NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429 });
   }
 
   try {
@@ -18,13 +18,13 @@ export async function POST(request: Request) {
     const voice = typeof body.voice === 'string' ? body.voice.trim() : 'es-MX-DaliaNeural';
 
     if (!text) {
-      return NextResponse.json({ error: 'El texto es requerido' }, { status: 400 });
+      return NextResponse.json({ error: 'TEXT_REQUIRED' }, { status: 400 });
     }
     if (text.length > MAX_TEXT_LENGTH) {
-      return NextResponse.json({ error: 'El texto es demasiado largo.' }, { status: 400 });
+      return NextResponse.json({ error: 'TEXT_TOO_LONG' }, { status: 400 });
     }
     if (!VALID_VOICE_RE.test(voice)) {
-      return NextResponse.json({ error: 'Voz no válida.' }, { status: 400 });
+      return NextResponse.json({ error: 'INVALID_VOICE' }, { status: 400 });
     }
 
     const tts = new EdgeTTS(text, voice);
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error('Error in TTS endpoint:', error);
     return NextResponse.json(
-      { error: 'Error interno al generar el habla.' },
+      { error: 'TTS_INTERNAL' },
       { status: 500 }
     );
   }
