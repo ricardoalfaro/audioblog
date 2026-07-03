@@ -285,20 +285,18 @@ function HomeContent() {
       // (no sabemos con certeza el idioma original del artículo). Si no se detecta género,
       // se deja el default.
       if (scrapeData.authorGender === 'male' || scrapeData.authorGender === 'female') {
+        const gender = scrapeData.authorGender;
+        const targetLangPrefix = isTranslating ? effectiveTranslateTo : EDGE_VOICES.find(v => v.value === selectedEdgeVoice)?.lang.split('-')[0];
         let matchedVoice: typeof EDGE_VOICES[number] | undefined;
-        if (isTranslating) {
-          matchedVoice = EDGE_VOICES.find(v => v.lang.startsWith(effectiveTranslateTo) && v.gender === scrapeData.authorGender);
-        } else {
+        if (targetLangPrefix) {
           const currentVoice = EDGE_VOICES.find(v => v.value === selectedEdgeVoice);
-          if (currentVoice) {
-            const langPrefix = currentVoice.lang.split('-')[0];
-            // Preferir la misma región (ej. es-MX) que la voz actual antes de conformarse con
-            // cualquier variante del idioma — si no, con "Dalia (México)" seleccionada, el
-            // import terminaba igual en "Alvaro (España)" porque es-ES aparece primero en
-            // EDGE_VOICES y `find` se queda con el primer match del prefijo de 2 letras.
-            matchedVoice = EDGE_VOICES.find(v => v.lang === currentVoice.lang && v.gender === scrapeData.authorGender)
-              ?? EDGE_VOICES.find(v => v.lang.startsWith(langPrefix) && v.gender === scrapeData.authorGender);
+          // Preferir la misma región (ej. es-MX) que la voz actual, si coincide con el idioma
+          // destino, antes de conformarse con la primera variante regional del idioma en
+          // EDGE_VOICES — que por default es la mexicana (ver orden del array), no la española.
+          if (currentVoice && currentVoice.lang.startsWith(targetLangPrefix)) {
+            matchedVoice = EDGE_VOICES.find(v => v.lang === currentVoice.lang && v.gender === gender);
           }
+          matchedVoice ??= EDGE_VOICES.find(v => v.lang.startsWith(targetLangPrefix) && v.gender === gender);
         }
         if (matchedVoice) newArticle.preferredEdgeVoice = matchedVoice.value;
       }

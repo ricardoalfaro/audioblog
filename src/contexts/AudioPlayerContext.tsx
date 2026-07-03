@@ -8,10 +8,13 @@ import { useQueue } from '@/hooks/useQueue';
 import { useLocale } from '@/contexts/LocaleContext';
 
 export const EDGE_VOICES = [
-  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES', gender: 'male' },
-  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES', gender: 'female' },
+  // Variantes de español: México antes que España — es la región preferida por default (ver
+  // uso de `EDGE_VOICES.find` en AppClient.tsx, que se queda con el primer match del idioma
+  // cuando no hay una voz de la misma región ya seleccionada).
   { name: 'Dalia (México, Neural)', value: 'es-MX-DaliaNeural', lang: 'es-MX', gender: 'female' },
   { name: 'Jorge (México, Neural)', value: 'es-MX-JorgeNeural', lang: 'es-MX', gender: 'male' },
+  { name: 'Alvaro (España, Neural)', value: 'es-ES-AlvaroNeural', lang: 'es-ES', gender: 'male' },
+  { name: 'Elvira (España, Neural)', value: 'es-ES-ElviraNeural', lang: 'es-ES', gender: 'female' },
   { name: 'Aria (EE.UU., Neural)', value: 'en-US-AriaNeural', lang: 'en-US', gender: 'female' },
   { name: 'Guy (EE.UU., Neural)', value: 'en-US-GuyNeural', lang: 'en-US', gender: 'male' },
   { name: 'Francisca (Brasil, Neural)', value: 'pt-BR-FranciscaNeural', lang: 'pt-BR', gender: 'female' },
