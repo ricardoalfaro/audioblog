@@ -1441,6 +1441,15 @@ a {
   border-radius: 4px;
 }
 
+.player-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.player-btn:disabled:hover {
+  color: var(--text-primary);
+}
+
 .player-btn-play {
   font-size: 24px;
   color: var(--color-primary);

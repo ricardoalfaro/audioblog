@@ -20,6 +20,8 @@ export default function GlobalPlayer() {
     handleEngineChange,
     ttsError,
     queue,
+    hasNext,
+    hasPrevious,
   } = useAudioPlayer();
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function GlobalPlayer() {
           </div>
 
           <div className="player-core" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '16px', flexShrink: 0 }}>
-            <button className="player-btn" onClick={handleSkipBackward}>
+            <button className="player-btn" onClick={handleSkipBackward} disabled={!hasPrevious} title="Anterior">
               <i className="fa-solid fa-backward-step"></i>
             </button>
             <button className="player-btn player-btn-play" onClick={handlePlayPause} disabled={isLoading}>
@@ -101,7 +103,7 @@ export default function GlobalPlayer() {
                 <i className={`fa-solid ${isPlaying && !isPaused ? 'fa-pause' : 'fa-play'}`}></i>
               )}
             </button>
-            <button className="player-btn" onClick={handleSkipForward}>
+            <button className="player-btn" onClick={handleSkipForward} disabled={!hasNext} title="Siguiente">
               <i className="fa-solid fa-forward-step"></i>
             </button>
           </div>

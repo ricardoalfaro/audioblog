@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 import { Article } from '@/types';
 import { audioToDataUrl } from '@/lib/audioUtils';
 import { getArticlesList, updateArticleProgress, saveArticleVoicePreference } from '@/lib/articleStorage';
@@ -39,6 +39,8 @@ interface AudioPlayerContextType {
   isLoading: boolean;
   ttsError: string | null;
   queue: Article[];
+  hasNext: boolean;
+  hasPrevious: boolean;
 
   playArticle: (article: Article, forceParagraphIndex?: number) => void;
   handlePlayPause: () => void;
@@ -631,6 +633,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Para deshabilitar los botones prev/next cuando no hay a dónde saltar. Memoizado por
+  // playingArticle?.id (no recalcula en cada word-boundary de la reproducción) — puede quedar
+  // desactualizado si la librería cambia (import/delete) sin que cambie el artículo en curso,
+  // igual que ya asumían handleSkipForward/Backward antes de este fix.
+  const articleId = playingArticle?.id;
+  const hasNext = useMemo(() => {
+    if (!articleId) return false;
+    const list = getArticlesList();
+    const idx = list.findIndex(a => a.id === articleId);
+    return idx !== -1 && idx < list.length - 1;
+  }, [articleId]);
+
+  const hasPrevious = useMemo(() => {
+    if (!articleId) return false;
+    const list = getArticlesList();
+    const idx = list.findIndex(a => a.id === articleId);
+    return idx > 0;
+  }, [articleId]);
+
   const handleEngineChange = (engine: 'device' | 'edge') => {
     playSessionRef.current += 1;
     setAudioEngine(engine);
@@ -770,6 +791,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       selectedVoiceName,
       selectedEdgeVoice,
       queue,
+      hasNext,
+      hasPrevious,
       playArticle,
       handlePlayPause,
       handleStop,
