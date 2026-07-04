@@ -672,6 +672,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // handlePlayPause/handleSkipBackward/handleSkipForward son funciones planas que se
+  // redefinen en cada render (memoizarlas en cascada arrastraría a playArticle/speakParagraph/
+  // playEdgeParagraph y chocaría con la memoización automática del compiler). Se guarda la
+  // versión más reciente en un ref — actualizado sin array de dependencias, así que corre en
+  // cada render — para que el efecto de Media Session de abajo pueda llamarlas sin declararlas
+  // como dependencia (evita el warning de exhaustive-deps sin tocar la lógica de reproducción).
+  const latestHandlersRef = useRef({ handlePlayPause, handleSkipBackward, handleSkipForward });
+  useEffect(() => {
+    latestHandlersRef.current = { handlePlayPause, handleSkipBackward, handleSkipForward };
+  });
+
   // Media Session API: expone metadata y controles a la lock screen / Control Center del SO
   useEffect(() => {
     if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
@@ -696,11 +707,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       artwork,
     });
 
-    navigator.mediaSession.setActionHandler('play', handlePlayPause);
-    navigator.mediaSession.setActionHandler('pause', handlePlayPause);
-    navigator.mediaSession.setActionHandler('previoustrack', handleSkipBackward);
-    navigator.mediaSession.setActionHandler('nexttrack', handleSkipForward);
-  }, [playingArticle, handlePlayPause, handleSkipBackward, handleSkipForward]);
+    navigator.mediaSession.setActionHandler('play', () => latestHandlersRef.current.handlePlayPause());
+    navigator.mediaSession.setActionHandler('pause', () => latestHandlersRef.current.handlePlayPause());
+    navigator.mediaSession.setActionHandler('previoustrack', () => latestHandlersRef.current.handleSkipBackward());
+    navigator.mediaSession.setActionHandler('nexttrack', () => latestHandlersRef.current.handleSkipForward());
+  }, [playingArticle]);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
