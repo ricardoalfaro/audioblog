@@ -18,7 +18,10 @@ function HomeContent() {
   const router = useRouter();
   const { t, tCategory } = useLocale();
   const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // Arranca en true: la lectura de localStorage es síncrona (dura ~0ms), así que sin esto
+  // nunca se llega a pintar el estado de carga — pasa directo de "vacío" a poblado en el
+  // mismo tick. Con esto, el primer render (server y cliente) ya muestra el skeleton (U17).
+  const [isLoading, setIsLoading] = useState(true);
   
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -140,7 +143,12 @@ function HomeContent() {
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState('');
 
-  const fetchArticles = () => {
+  // withMinDuration: solo para la carga inicial (U17) — el refetch al cambiar de artículo
+  // reproduciéndose (más abajo) debe seguir siendo instantáneo, si no cada play/skip mostraría
+  // el skeleton completo tapando el reordenamiento en vivo del carrusel "Estás escuchando" (B20).
+  const SKELETON_MIN_MS = 500;
+  const fetchArticles = (withMinDuration = false) => {
+    const startedAt = Date.now();
     try {
       setIsLoading(true);
       const localData = localStorage.getItem('articles');
@@ -156,20 +164,36 @@ function HomeContent() {
     } catch (err) {
       console.error('Error loading articles from localStorage:', err);
     } finally {
-      setIsLoading(false);
+      if (withMinDuration) {
+        const remaining = Math.max(0, SKELETON_MIN_MS - (Date.now() - startedAt));
+        setTimeout(() => setIsLoading(false), remaining);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchArticles();
+    fetchArticles(true);
     const savedView = localStorage.getItem('viewMode') as 'grid' | 'list' | null;
     if (savedView) {
       setViewMode(savedView);
     }
   }, []);
 
-  // Refresh sections when the playing article changes (start, stop, next-in-queue)
-  useEffect(() => { fetchArticles(); }, [playingArticle?.id]);
+  // Refresh sections when the playing article changes (start, stop, next-in-queue).
+  // Este efecto también corre en el montaje inicial (todo efecto corre una vez al montar,
+  // sin importar sus dependencias) — sin el guard de abajo, pisaba el isLoading recién
+  // seteado por el efecto de arriba y el skeleton (U17) desaparecía en el mismo tick, sin
+  // llegar a mostrarse nunca pese al mínimo de duración.
+  const isInitialMountRef = useRef(true);
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    fetchArticles();
+  }, [playingArticle?.id]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
@@ -624,7 +648,16 @@ function HomeContent() {
     <>
     <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-      {(articles.length > 0 || isLoading) && <section className="tabs-container">
+      {isLoading && <section className="tabs-container">
+        <div className="skeleton-tabs">
+          <div className="skeleton-block skeleton-tab" style={{ width: 48 }} />
+          <div className="skeleton-block skeleton-tab" style={{ width: 76 }} />
+          <div className="skeleton-block skeleton-tab" style={{ width: 60 }} />
+          <div className="skeleton-block skeleton-tab" style={{ width: 88 }} />
+        </div>
+      </section>}
+
+      {(articles.length > 0 && !isLoading) && <section className="tabs-container">
         <div className="tabs-scroll-wrapper">
           <div className="categories-scroll">
             {categories.map((category) => (
@@ -650,8 +683,30 @@ function HomeContent() {
       </section>}
 
       {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', flex: 1 }}>
-          <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }}></div>
+        // U17: en vez de un spinner genérico, un preview de la forma real del contenido
+        // (carruseles con cards) para que el usuario ya entienda cómo se organiza la librería.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '24px' }}>
+          <section>
+            <div className="skeleton-section-header">
+              <div className="skeleton-block skeleton-icon" />
+              <div className="skeleton-block skeleton-title" style={{ width: 170 }} />
+            </div>
+            <div className="skeleton-cards-row">
+              <div className="skeleton-block skeleton-card" />
+              <div className="skeleton-block skeleton-card" />
+              <div className="skeleton-block skeleton-card" />
+            </div>
+          </section>
+          <section>
+            <div className="skeleton-section-header">
+              <div className="skeleton-block skeleton-icon" />
+              <div className="skeleton-block skeleton-title" style={{ width: 140 }} />
+            </div>
+            <div className="skeleton-cards-row">
+              <div className="skeleton-block skeleton-card" />
+              <div className="skeleton-block skeleton-card" />
+            </div>
+          </section>
         </div>
       ) : (
         <>

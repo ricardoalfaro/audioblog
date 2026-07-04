@@ -931,6 +931,95 @@ a {
   .card-image { animation: none; }
 }
 
+/* Skeleton de carga inicial de la librería (U17) */
+.skeleton-block {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-card-hover);
+  border-radius: var(--border-radius-sm);
+}
+
+.skeleton-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent);
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+:root[data-theme="dark"] .skeleton-block::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .skeleton-block::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  }
+}
+
+@keyframes skeletonShimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block::after { animation: none; }
+}
+
+.skeleton-tabs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 0;
+}
+
+.skeleton-tab {
+  height: 16px;
+}
+
+.skeleton-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.skeleton-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-title {
+  height: 20px;
+}
+
+.skeleton-cards-row {
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.skeleton-card {
+  min-width: 264px;
+  width: 264px;
+  height: 336px;
+  border-radius: var(--border-radius-md);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .skeleton-card {
+    width: 70vw;
+    min-width: 70vw;
+    height: 380px;
+  }
+  .skeleton-cards-row {
+    gap: 12px;
+  }
+}
+
 /* Gradient overrides when there is no image. We use dynamic classes assigned in TSX */
 .card-gradient-1 { background: linear-gradient(135deg, #FF6D1F, #FF3A3A); }
 .card-gradient-2 { background: linear-gradient(135deg, #12b886, #0ca678); }
