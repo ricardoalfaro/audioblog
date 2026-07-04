@@ -57,14 +57,12 @@ export default function HeaderActions() {
     <div className="header-right">
       <div className="avatar-dropdown" ref={langDropdownRef}>
         <button
-          className="avatar-btn"
+          className="locale-btn"
           onClick={() => setIsLangOpen(!isLangOpen)}
           title={t('header.language')}
           aria-label={t('header.language')}
-          style={{ padding: 0, overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/flags/${locale}.svg`} alt="" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          {locale}
         </button>
 
         {isLangOpen && (
@@ -96,11 +94,14 @@ export default function HeaderActions() {
 
         {isDropdownOpen && (
           <div className="dropdown-menu">
+            <div className="dropdown-section-label">{t('header.preferences')}</div>
             <div className="theme-switcher-dropdown">
-              <i className="fa-solid fa-circle-half-stroke" style={{ color: 'var(--color-primary)', fontSize: '13px' }}></i>
+              <span className="icon-badge"><i className="fa-solid fa-circle-half-stroke"></i></span>
               <span>{t('header.theme')}</span>
               <ThemeSwitcher />
             </div>
+
+            <div className="dropdown-section-label">{t('header.actions')}</div>
             <button
               className="dropdown-item"
               onClick={() => {
@@ -112,10 +113,12 @@ export default function HeaderActions() {
                 }
               }}
             >
-              <i className="fa-solid fa-file-import"></i> {t('header.importArticle')}
+              <span className="icon-badge"><i className="fa-solid fa-file-import"></i></span>
+              {t('header.importArticle')}
             </button>
             <button className="dropdown-item" onClick={handleShare}>
-              <i className="fa-solid fa-arrow-up-from-bracket"></i> {t('header.shareApp')}
+              <span className="icon-badge"><i className="fa-solid fa-arrow-up-from-bracket"></i></span>
+              {t('header.shareApp')}
             </button>
           </div>
         )}

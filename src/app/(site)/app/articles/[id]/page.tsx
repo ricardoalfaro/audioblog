@@ -67,7 +67,8 @@ export default function ArticleReader() {
 
   // Accordion state
   const [isMetaExpanded, setIsMetaExpanded] = useState(true);
-  const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
+  const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
+  const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Reader accessibility state
@@ -236,14 +237,17 @@ export default function ArticleReader() {
       >
         <div className="sidebar-topbar">
           <span>{t('reader.options')}</span>
+          <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)} title={t('reader.close')} aria-label={t('reader.close')}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <div className="sidebar-panel glass">
 
           {/* Section: Detalles */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsMetaExpanded(v => !v)}>
-              <span><i className="fa-solid fa-circle-info"></i> {t('reader.articleDetails')}</span>
-              <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'}`}></i>
+              <span><span className="icon-badge"><i className="fa-solid fa-circle-info"></i></span> {t('reader.articleDetails')}</span>
+              <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'} chevron`}></i>
             </div>
             {isMetaExpanded && (
               <div className="sidebar-section-body">
@@ -260,8 +264,8 @@ export default function ArticleReader() {
                   <span>{article.paragraphs.length}</span>
                 </div>
                 <div className="meta-item">
-                  <span className="meta-label">{t('reader.remaining')}</span>
-                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>~ {formatTime(article.duration)}</span>
+                  <span className="meta-label">{t('reader.duration')}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatTime(article.duration)}</span>
                 </div>
               </div>
             )}
@@ -272,8 +276,8 @@ export default function ArticleReader() {
           {/* Section: Ajustes */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsSettingsExpanded(v => !v)}>
-              <span><i className="fa-solid fa-sliders"></i> {t('reader.playbackSettings')}</span>
-              <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'}`}></i>
+              <span><span className="icon-badge"><i className="fa-solid fa-sliders"></i></span> {t('reader.playbackSettings')}</span>
+              <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'} chevron`}></i>
             </div>
             {isSettingsExpanded && (
               <div className="sidebar-section-body">
@@ -289,26 +293,23 @@ export default function ArticleReader() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>{t('reader.readingVoice')}</label>
                   {audioEngine === 'device' ? (
-                    <select className="player-select" value={selectedVoiceName} onChange={handleVoiceChange} style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                    <select className="sidebar-select" value={selectedVoiceName} onChange={handleVoiceChange}>
                       {sortedVoices.map((voice) => (
                         <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang.split('-')[0].toUpperCase()})</option>
                       ))}
                     </select>
                   ) : (
-                    <select className="player-select" value={selectedEdgeVoice} onChange={handleEdgeVoiceChange} style={{ width: '100%', padding: '6px 10px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                    <select className="sidebar-select" value={selectedEdgeVoice} onChange={handleEdgeVoiceChange}>
                       {EDGE_VOICES.map((voice) => (
                         <option key={voice.value} value={voice.value}>{voice.name}</option>
                       ))}
                     </select>
                   )}
                 </div>
-                {audioEngine === 'device' ? (
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3' }}>
-                    {t('reader.localEngineWarning.pre')} <strong>{t('reader.naturalVoice')}</strong> {t('reader.localEngineWarning.post')}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '10px', color: '#137333', background: 'rgba(52, 168, 83, 0.05)', padding: '6px 8px', borderRadius: '4px', lineHeight: '1.3', borderLeft: '2px solid #34a853' }}>
-                    {t('reader.edgeEngineNote')}
+                {audioEngine === 'device' && (
+                  <div className="sidebar-note">
+                    <i className="fa-solid fa-triangle-exclamation"></i>
+                    <span>{t('reader.localEngineWarning.pre')} <strong>{t('reader.naturalVoice')}</strong> {t('reader.localEngineWarning.post')}</span>
                   </div>
                 )}
               </div>
@@ -319,30 +320,33 @@ export default function ArticleReader() {
 
           {/* Section: Categoría */}
           <div className="sidebar-section">
-            <div className="sidebar-section-header" style={{ cursor: 'default' }}>
-              <span><i className="fa-solid fa-tag"></i> {t('reader.category')}</span>
+            <div className="sidebar-section-header" onClick={() => setIsCategoryExpanded(v => !v)}>
+              <span><span className="icon-badge"><i className="fa-solid fa-tag"></i></span> {t('reader.category')}</span>
+              <i className={`fa-solid fa-chevron-${isCategoryExpanded ? 'up' : 'down'} chevron`}></i>
             </div>
-            <div className="sidebar-section-body">
-              <select
-                className="form-control"
-                value={article.category || ''}
-                onChange={(e) => {
-                  const updated = { ...article, category: e.target.value };
-                  setArticle(updated);
-                  const localData = localStorage.getItem('articles');
-                  if (localData) {
-                    try {
-                      const articlesList = JSON.parse(localData);
-                      const index = articlesList.findIndex((a: { id: string }) => a.id === article.id);
-                      if (index !== -1) { articlesList[index] = updated; localStorage.setItem('articles', JSON.stringify(articlesList)); }
-                    } catch {}
-                  }
-                }}
-              >
-                <option value="" disabled>{t('reader.selectCategory')}</option>
-                {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{tCategory(cat)}</option>)}
-              </select>
-            </div>
+            {isCategoryExpanded && (
+              <div className="sidebar-section-body">
+                <select
+                  className="sidebar-select"
+                  value={article.category || ''}
+                  onChange={(e) => {
+                    const updated = { ...article, category: e.target.value };
+                    setArticle(updated);
+                    const localData = localStorage.getItem('articles');
+                    if (localData) {
+                      try {
+                        const articlesList = JSON.parse(localData);
+                        const index = articlesList.findIndex((a: { id: string }) => a.id === article.id);
+                        if (index !== -1) { articlesList[index] = updated; localStorage.setItem('articles', JSON.stringify(articlesList)); }
+                      } catch {}
+                    }
+                  }}
+                >
+                  <option value="" disabled>{t('reader.selectCategory')}</option>
+                  {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{tCategory(cat)}</option>)}
+                </select>
+              </div>
+            )}
           </div>
 
         </div>
