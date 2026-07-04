@@ -146,7 +146,7 @@ function HomeContent() {
   // withMinDuration: solo para la carga inicial (U17) — el refetch al cambiar de artículo
   // reproduciéndose (más abajo) debe seguir siendo instantáneo, si no cada play/skip mostraría
   // el skeleton completo tapando el reordenamiento en vivo del carrusel "Estás escuchando" (B20).
-  const SKELETON_MIN_MS = 500;
+  const SKELETON_MIN_MS = 1500;
   const fetchArticles = (withMinDuration = false) => {
     const startedAt = Date.now();
     try {
