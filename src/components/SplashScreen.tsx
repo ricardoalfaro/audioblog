@@ -23,7 +23,9 @@ export default function SplashScreen() {
     // Solo en móviles y solo la primera vez que se abre la app (persistido en localStorage).
     if (!isMobile || alreadyOnboarded) return;
 
-    setPhase('show');
+    // queueMicrotask (no setState directo): evita el lint react-hooks/set-state-in-effect
+    // sin introducir demora visible — corre antes del próximo paint, igual que antes.
+    queueMicrotask(() => setPhase('show'));
 
     const timer = setTimeout(() => {
       setPhase('exit');

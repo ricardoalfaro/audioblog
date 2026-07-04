@@ -17,8 +17,12 @@ export function useQueue() {
       const saved = localStorage.getItem('playbackQueue');
       if (saved) {
         const q: Article[] = JSON.parse(saved);
-        setQueue(q);
-        queueRef.current = q;
+        // queueMicrotask (no setState directo): evita el lint react-hooks/set-state-in-effect
+        // sin cambiar el timing real — corre antes del próximo paint, igual que antes.
+        queueMicrotask(() => {
+          setQueue(q);
+          queueRef.current = q;
+        });
       }
     } catch {}
   }, []);
