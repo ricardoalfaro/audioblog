@@ -2343,19 +2343,6 @@ input:checked + .slider:before {
   filter: blur(40px);
 }
 
-/* Landing hero — same animated background treatment as the splash */
-.landing-hero {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: linear-gradient(135deg, rgba(20, 33, 61, 0.92), rgba(0, 0, 0, 0.96)), url('/bg_01.jpg');
-  background-size: cover;
-  animation: gradientMove 30s ease-in-out infinite;
-}
-
 /* Import inline button (next to section title) */
 .import-inline-btn {
   background: var(--color-primary);
@@ -2439,14 +2426,6 @@ input:checked + .slider:before {
 .splash-logo {
   width: min(438px, 100%);
   height: auto;
-  animation: logoGrow 1s ease-out both;
-}
-
-.landing-logo {
-  width: min(438px, 100%);
-  height: auto;
-  position: relative;
-  z-index: 2;
   animation: logoGrow 1s ease-out both;
 }
 
