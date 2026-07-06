@@ -2,14 +2,32 @@ import { NextResponse } from 'next/server';
 import { parseHTML } from 'linkedom';
 import { Readability } from '@mozilla/readability';
 import dns from 'node:dns/promises';
+import { Agent } from 'undici';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 
 export const maxDuration = 30;
 
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+// S4: dns.lookup() puede devolver una IPv4 disfrazada de IPv6 — mapeada (::ffff:a.b.c.d o su
+// forma hex ::ffff:XXXX:YYYY) o NAT64 (64:ff9b::/96, RFC 6052) — que isPrivateIP no reconocería
+// como privada si se comparara tal cual contra los rangos v4. Se extrae la v4 embebida antes de
+// clasificar.
+function extractEmbeddedIPv4(ip: string): string | null {
+  const v6 = ip.toLowerCase();
+  let m = v6.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (m) return m[1];
+  m = v6.match(/^(?:::ffff:|64:ff9b::)([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (m) {
+    const hi = parseInt(m[1], 16);
+    const lo = parseInt(m[2], 16);
+    return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+  }
+  return null;
+}
+
 function isPrivateIP(ip: string): boolean {
-  const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  const v4 = (extractEmbeddedIPv4(ip) ?? ip).match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (v4) {
     const a = Number(v4[1]);
     const b = Number(v4[2]);
@@ -29,7 +47,26 @@ function isPrivateIP(ip: string): boolean {
   return v6 === '::1' || v6 === '::' || v6.startsWith('fc') || v6.startsWith('fd') || v6.startsWith('fe80');
 }
 
-async function assertSafeURL(rawUrl: string): Promise<void> {
+interface PinnedIP { address: string; family: number }
+
+// S4: resuelve y valida el hostname UNA sola vez, devolviendo la IP concreta a usar. safeFetch
+// obliga a undici a conectar exactamente a esa IP (ver dispatcher más abajo) en vez de dejar que
+// fetch() vuelva a resolver el hostname por su cuenta — sin esto, un DNS malicioso podría
+// responder una IP pública a esta validación y una privada al fetch real (DNS rebinding, TOCTOU).
+async function resolveSafeIP(host: string): Promise<PinnedIP> {
+  let records: PinnedIP[];
+  try {
+    records = await dns.lookup(host, { all: true });
+  } catch {
+    throw new Error('DNS_FAIL');
+  }
+  if (records.length === 0 || records.some(r => isPrivateIP(r.address))) {
+    throw new Error('SSRF_BLOCKED');
+  }
+  return records[0];
+}
+
+async function assertSafeURL(rawUrl: string): Promise<PinnedIP> {
   const parsed = new URL(rawUrl);
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new Error('SSRF_BLOCKED');
@@ -38,15 +75,7 @@ async function assertSafeURL(rawUrl: string): Promise<void> {
   if (host === 'localhost' || host === '0.0.0.0' || host === '::1') {
     throw new Error('SSRF_BLOCKED');
   }
-  let records: { address: string; family: number }[];
-  try {
-    records = await dns.lookup(host, { all: true });
-  } catch {
-    throw new Error('DNS_FAIL');
-  }
-  if (records.some(r => isPrivateIP(r.address))) {
-    throw new Error('SSRF_BLOCKED');
-  }
+  return resolveSafeIP(host);
 }
 
 const MAX_REDIRECTS = 5;
@@ -54,8 +83,27 @@ const MAX_REDIRECTS = 5;
 async function safeFetch(url: string, options: RequestInit): Promise<Response> {
   let current = url;
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
-    await assertSafeURL(current);
-    const res = await fetch(current, { ...options, redirect: 'manual' });
+    const pinned = await assertSafeURL(current);
+    // Pinning: el dispatcher intercepta la resolución DNS que undici haría internamente y le
+    // impone la IP ya validada — el Host header y el SNI de TLS siguen viniendo de `current`
+    // (la URL original), así que sitios con virtual hosting/TLS SNI siguen funcionando normal.
+    const dispatcher = new Agent({
+      connect: {
+        // Node 20+ habilita Happy Eyeballs (RFC 8305) por default y pide la resolución con
+        // { all: true }, esperando el callback en forma de array — sin esta rama, el intento
+        // fallaba con "Invalid IP address: undefined" porque solo se cubría la firma legacy
+        // (err, address, family) de un único resultado.
+        lookup: (_hostname, opts, callback) => {
+          if (opts && (opts as { all?: boolean }).all) {
+            callback(null, [{ address: pinned.address, family: pinned.family }]);
+          } else {
+            callback(null, pinned.address, pinned.family);
+          }
+        },
+      },
+    });
+    const init: RequestInit & { dispatcher?: Agent } = { ...options, redirect: 'manual', dispatcher };
+    const res = await fetch(current, init);
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (!loc) throw new Error('Redirect sin Location header.');
