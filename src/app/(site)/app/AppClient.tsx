@@ -6,7 +6,7 @@ import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
-import { validateArticle } from '@/lib/articleStorage';
+import { validateArticle, getArticlesList } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 import { useLocale } from '@/contexts/LocaleContext';
@@ -326,7 +326,12 @@ function HomeContent() {
         if (matchedVoice) newArticle.preferredEdgeVoice = matchedVoice.value;
       }
 
-      const existingArticle = articles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
+      // B25: usar la copia más fresca de localStorage (no el estado `articles`, que puede
+      // estar stale si el player escribió progress/lastPlayedAt directo vía articleStorage.ts
+      // desde el último fetchArticles) para no pisar esos cambios al persistir el import
+      const freshArticles = getArticlesList();
+
+      const existingArticle = freshArticles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
       if (existingArticle) {
         setIsScraping(false);
         setScrapeStep(0);
@@ -340,7 +345,7 @@ function HomeContent() {
         return;
       }
 
-      const updatedArticles = pruneArticles([newArticle, ...articles]);
+      const updatedArticles = pruneArticles([newArticle, ...freshArticles]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
@@ -419,7 +424,8 @@ function HomeContent() {
         progress: 0,
       };
 
-      const updatedArticles = pruneArticles([newArticle, ...articles]);
+      // B25: mergear desde la copia fresca de localStorage, ver comentario en runScrape
+      const updatedArticles = pruneArticles([newArticle, ...getArticlesList()]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
 
@@ -446,7 +452,8 @@ function HomeContent() {
     }
 
     removeFromQueue(id);
-    const updatedArticles = articles.filter((a) => a.id !== id);
+    // B25: mergear desde la copia fresca de localStorage, ver comentario en runScrape
+    const updatedArticles = getArticlesList().filter((a) => a.id !== id);
     setArticles(updatedArticles);
     localStorage.setItem('articles', JSON.stringify(updatedArticles));
   };
