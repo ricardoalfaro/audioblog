@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article } from '@/types';
+import { shareArticle } from '@/lib/shareArticle';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { STATIC_CATEGORIES } from '@/lib/categories';
 import { useLocale, Locale, MessageKey } from '@/contexts/LocaleContext';
@@ -77,37 +78,11 @@ export default function ArticleReader() {
   const [shareCopied, setShareCopied] = useState(false);
 
   const handleShare = async () => {
-    if (!article || article.url === 'manual') return;
-    const params = new URLSearchParams({ url: article.url, ogTitle: article.title });
-    if (article.imageUrl) params.set('ogImage', article.imageUrl);
-    // F8: si este artículo se importó traducido, quien reciba el link lo importa ya traducido al mismo idioma
-    if (article.translateTo) params.set('lang', article.translateTo);
-    const deepLink = `${window.location.origin}/app?${params.toString()}`;
-
-    // Acortamos vía TinyURL para que el link no arrastre los ~400-600 chars de url+ogTitle+ogImage.
-    // Si falla (timeout, rate-limit, servicio caído), compartimos el link largo igual — nunca bloquea el share (F16)
-    let shareLink = deepLink;
-    try {
-      const res = await fetch('/api/shorten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: deepLink }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.shortUrl) shareLink = data.shortUrl;
-      }
-    } catch {}
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: article.title, url: shareLink });
-        return;
-      } catch {}
+    if (!article) return;
+    if (await shareArticle(article) === 'copied') {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
     }
-    await navigator.clipboard.writeText(shareLink);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
   };
 
   // Load article

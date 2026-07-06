@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { shareArticle } from '@/lib/shareArticle';
 
 export default function GlobalPlayer() {
   const {
@@ -9,7 +10,6 @@ export default function GlobalPlayer() {
     isPlaying,
     isPaused,
     handlePlayPause,
-    handleStop,
     handleSkipForward,
     handleSkipBackward,
     getProgressPercentage,
@@ -23,6 +23,16 @@ export default function GlobalPlayer() {
     hasNext,
     hasPrevious,
   } = useAudioPlayer();
+
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (!playingArticle) return;
+    if (await shareArticle(playingArticle) === 'copied') {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -119,8 +129,14 @@ export default function GlobalPlayer() {
             >
               <i className={`fa-solid ${audioEngine === 'edge' ? 'fa-user' : 'fa-robot'}`}></i>
             </button>
-            <button className="player-btn" onClick={handleStop} title="Cerrar reproductor">
-              <i className="fa-solid fa-times"></i>
+            <button
+              className="player-btn"
+              onClick={handleShare}
+              disabled={playingArticle.url === 'manual'}
+              title={shareCopied ? 'Enlace copiado' : 'Compartir artículo'}
+              aria-label={shareCopied ? 'Enlace copiado' : 'Compartir artículo'}
+            >
+              <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`}></i>
             </button>
           </div>
         </div>
