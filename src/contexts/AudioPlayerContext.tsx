@@ -94,6 +94,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Keep ref in sync so async prefetch callbacks always use the current voice
   useEffect(() => { selectedEdgeVoiceRef.current = selectedEdgeVoice; }, [selectedEdgeVoice]);
+  // B22: la cadena onended/onend de cada párrafo llama a la siguiente dentro de un closure
+  // congelado al iniciar esa reproducción — sin el ref, toggleSpeed cambiaría el párrafo
+  // actual pero el siguiente volvería a la velocidad vieja.
+  const speechRateRef = useRef(speechRate);
+  useEffect(() => { speechRateRef.current = speechRate; }, [speechRate]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   // Load persisted preferences on mount (client-only).
@@ -230,7 +235,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (voice) utterance.voice = voice;
     }
     
-    utterance.rate = speechRate;
+    utterance.rate = speechRateRef.current;
 
     utterance.onboundary = (event) => {
       if (event.name === 'word') {
@@ -388,7 +393,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       };
 
       audioRef.current.src = audioSrc;
-      audioRef.current.playbackRate = speechRate;
+      audioRef.current.playbackRate = speechRateRef.current;
       setIsLoading(true);
       const playCallSession = playSessionRef.current;
       audioRef.current.play().catch(e => {
