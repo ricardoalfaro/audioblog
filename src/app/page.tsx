@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { existsSync } from 'fs';
-import path from 'path';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
+import HeroReveal from '@/components/landing/HeroReveal';
+import MomentsPinned from '@/components/landing/MomentsPinned';
+import Reveal from '@/components/landing/Reveal';
+import Parallax from '@/components/landing/Parallax';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
@@ -12,27 +14,21 @@ export const metadata: Metadata = {
     'Convierte cualquier artículo web en audio con voces neurales que suenan a persona. Pega un link y escúchalo en el trayecto, entrenando o descansando la vista. Gratis en beta.',
 };
 
-/* Alturas deterministas (mismo HTML en server y cliente) para la waveform del hero */
-const WAVE_BARS = Array.from({ length: 56 }, (_, i) => {
-  const h = 26 + Math.abs(Math.sin(i * 0.83)) * 118 + Math.abs(Math.sin(i * 0.29)) * 42;
-  return Math.round(h);
-});
-
 const STEPS = [
   {
     number: '01',
     title: 'Pega el link',
-    text: 'Copia la URL de casi cualquier artículo — blogs, Medium, prensa — y pégala en Audiodocs. Extraemos solo el texto, sin avisos ni distracciones.',
+    text: 'Copia la URL de cualquier artículo — Medium, Substack, blogs, prensa — y pégala en Audiodocs. La aplicación solo extrae el texto, sin avisos ni distracciones.',
   },
   {
     number: '02',
-    title: 'Elige la voz',
-    text: 'Voces neurales que suenan a persona, no a robot. Y si el artículo está en otro idioma, puedes traducirlo antes de que empiece a sonar.',
+    title: 'Traduce y etiqueta',
+    text: 'Si el texto está en otro idioma, escoge el que prefieras escuchar, dale una categoría para que aparezca clasificado en tu biblioteca.',
   },
   {
     number: '03',
-    title: 'Escucha donde sea',
-    text: 'Con la pantalla bloqueada, desde los audífonos o en la pantalla del auto con CarPlay. Tu progreso queda guardado para retomar justo donde ibas.',
+    title: 'Dale play',
+    text: 'Escucha donde sea. En tu teléfono, en tu computador, en tu auto con CarPlay. Tu progreso queda guardado para retomar.',
   },
 ];
 
@@ -70,13 +66,12 @@ const FEATURES = [
     text: 'Encadena artículos como una playlist y ajusta la velocidad de reproducción a tu ritmo.',
   },
   {
-    icon: 'fa-share-nodes',
-    title: 'Comparte el audio',
-    text: 'Un link y la otra persona lo escucha en su navegador. Sin cuentas y sin instalar nada.',
+    icon: 'fa-car',
+    title: 'Compatible con CarPlay y Android Auto',
+    text: 'Lleva tus artículos a la pantalla del auto y controla la reproducción desde el volante. Tus trayectos se convierten en tiempo de lectura.',
   },
 ];
 
-/* Deja tus fotos en public/landing/momentos/ con estos nombres; mientras falten se muestra un placeholder */
 const MOMENTS = [
   {
     number: '01',
@@ -143,185 +138,120 @@ const FAQS = [
   },
 ];
 
-function momentPhotoExists(file: string): boolean {
-  return existsSync(path.join(process.cwd(), 'public', 'landing', 'momentos', file));
-}
-
 export default function LandingPage() {
   return (
     <div className={styles.lp}>
       <LandingHeader variant="transparent" />
 
-      <header className={styles.hero}>
-        <div className={styles.container}>
-          <h1 className={styles.heroTitle}>
-            Deja de acumular artículos. Empieza a <em>escucharlos</em>.
-          </h1>
-          <p className={styles.heroSub}>
-            Audiodocs reproduce cualquier publicación para que la escuches como si fuera un
-            episodio de podcast con voces que suenan reales. Aprovecha tus tiempos muertos en el
-            transporte, en el auto, o deja de caminar leyendo.
-          </p>
-          <div className={styles.ctaRow}>
-            <Link href="/registro" className={styles.btnPrimary}>
-              Probar Audiodocs
-              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
-            </Link>
-            <a href="#como-funciona" className={styles.btnGhost}>
-              Ver cómo funciona
-            </a>
-          </div>
-        </div>
+      <HeroReveal />
 
-        <div className={styles.heroStage}>
-          <div className={styles.wave} aria-hidden="true">
-            {WAVE_BARS.map((height, i) => (
-              <span
-                key={i}
-                className={styles.waveBar}
-                style={{
-                  height,
-                  animationDelay: `${(i % 9) * -0.21}s`,
-                  animationDuration: `${1.5 + (i % 5) * 0.22}s`,
-                }}
-              />
-            ))}
-          </div>
-          <div className={styles.playerCard} aria-hidden="true">
-            <span className={styles.playerChip}>Tecnología</span>
-            <p className={styles.playerTitle}>Por qué el audio está cambiando cómo leemos</p>
-            <p className={styles.playerMeta}>María Fernanda Rojas · 12 min</p>
-            <div className={styles.playerProgress}>
-              <i />
-            </div>
-            <div className={styles.playerControls}>
-              <i className="fa-solid fa-backward-step" />
-              <span className={styles.playButton}>
-                <i className="fa-solid fa-play" />
-              </span>
-              <i className="fa-solid fa-forward-step" />
+      <div className={styles.content}>
+        <section id="como-funciona" className={styles.section}>
+          <div className={styles.container}>
+            <Parallax speed={0.05}>
+              <p className={styles.sectionEyebrow}>Cómo funciona</p>
+              <h2 className={styles.sectionTitle}>
+                Convierte tus links en audio como si fuera un podcast.
+              </h2>
+            </Parallax>
+            <div className={styles.steps}>
+              {STEPS.map((step, i) => (
+                <Reveal key={step.number} delay={i * 0.1} className={styles.step}>
+                  <span className={styles.stepNumber}>{step.number}</span>
+                  <h3 className={styles.stepTitle}>{step.title}</h3>
+                  <p className={styles.stepText}>{step.text}</p>
+                </Reveal>
+              ))}
             </div>
           </div>
-        </div>
-      </header>
+        </section>
 
-      <section id="como-funciona" className={styles.section}>
-        <div className={styles.container}>
-          <p className={styles.sectionEyebrow}>Cómo funciona</p>
-          <h2 className={styles.sectionTitle}>Convierte tus links en audio como si fuera un podcast.</h2>
-          <div className={styles.steps}>
-            {STEPS.map((step) => (
-              <div key={step.number} className={styles.step}>
-                <span className={styles.stepNumber}>{step.number}</span>
-                <h3 className={styles.stepTitle}>{step.title}</h3>
-                <p className={styles.stepText}>{step.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.darkPanel}>
-        <div className={styles.container}>
-          <p className={styles.sectionEyebrow}>Lo que hay adentro</p>
-          <h2 className={styles.sectionTitle}>Hecho para escuchar en serio.</h2>
-          <p className={styles.darkPanelSub}>
-            No es un lector de pantalla con play. Es un reproductor pensado desde cero para
-            artículos: voces, biblioteca, cola y traducción trabajando juntas.
-          </p>
-          <div className={styles.bento}>
-            {FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className={`${styles.bentoCard}${feature.wide ? ` ${styles.bentoWide}` : ''}`}
-              >
-                <div className={styles.bentoIcon}>
-                  <i className={`fa-solid ${feature.icon}`} aria-hidden="true" />
-                </div>
-                <h3 className={styles.bentoTitle}>{feature.title}</h3>
-                <p className={styles.bentoText}>{feature.text}</p>
-                {feature.chips && (
-                  <div className={styles.voiceChips}>
-                    {feature.chips.map((chip) => (
-                      <span key={chip}>{chip}</span>
-                    ))}
+        <section className={styles.darkPanel}>
+          <div className={styles.container}>
+            <Parallax speed={0.05}>
+              <p className={styles.sectionEyebrow}>Lo que hay adentro</p>
+              <h2 className={styles.sectionTitle}>Hecho para escuchar en serio.</h2>
+              <p className={styles.darkPanelSub}>
+                No es un lector de pantalla con play. Es un reproductor pensado desde cero para
+                artículos: voces, biblioteca, cola y traducción trabajando juntas.
+              </p>
+            </Parallax>
+            <div className={styles.bento}>
+              {FEATURES.map((feature, i) => (
+                <Reveal
+                  key={feature.title}
+                  delay={(i % 3) * 0.08}
+                  className={`${styles.bentoCard}${feature.wide ? ` ${styles.bentoWide}` : ''}`}
+                >
+                  <div className={styles.bentoIcon}>
+                    <i className={`fa-solid ${feature.icon}`} aria-hidden="true" />
                   </div>
-                )}
-                {feature.flags && (
-                  <div className={styles.flagRow}>
-                    {TRANSLATION_FLAGS.map((flag) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={flag.src} src={flag.src} alt={flag.alt} title={flag.alt} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="momentos" className={styles.section}>
-        <div className={styles.container}>
-          <p className={styles.sectionEyebrow}>Momentos</p>
-          <h2 className={styles.sectionTitle}>Los ratos muertos son la nueva sala de lectura.</h2>
-          <div className={styles.moments}>
-            {MOMENTS.map((moment, index) => (
-              <div
-                key={moment.number}
-                className={`${styles.moment}${index % 2 === 1 ? ` ${styles.momentAlt}` : ''}`}
-              >
-                <div>
-                  <span className={styles.momentNumber}>{moment.number}</span>
-                  <h3 className={styles.momentTitle}>{moment.title}</h3>
-                  <p className={styles.momentText}>{moment.text}</p>
-                </div>
-                <div className={styles.momentPhoto}>
-                  {momentPhotoExists(moment.photo) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/landing/momentos/${moment.photo}`} alt={moment.title} loading="lazy" />
-                  ) : (
-                    <span className={styles.momentPhotoPlaceholder} aria-hidden="true">
-                      <i className="fa-regular fa-image" />
-                    </span>
+                  <h3 className={styles.bentoTitle}>{feature.title}</h3>
+                  <p className={styles.bentoText}>{feature.text}</p>
+                  {feature.chips && (
+                    <div className={styles.voiceChips}>
+                      {feature.chips.map((chip) => (
+                        <span key={chip}>{chip}</span>
+                      ))}
+                    </div>
                   )}
-                </div>
-              </div>
-            ))}
+                  {feature.flags && (
+                    <div className={styles.flagRow}>
+                      {TRANSLATION_FLAGS.map((flag) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={flag.src} src={flag.src} alt={flag.alt} title={flag.alt} />
+                      ))}
+                    </div>
+                  )}
+                </Reveal>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="preguntas" className={styles.section}>
-        <div className={styles.container}>
-          <p className={styles.sectionEyebrow}>Preguntas frecuentes</p>
-          <h2 className={styles.sectionTitle}>Lo que todos se preguntan antes de probar Audiodocs.</h2>
-          <div className={styles.faqGrid}>
-            {FAQS.map((faq) => (
-              <div key={faq.q} className={styles.faqItem}>
-                <span className={styles.faqIcon}>
-                  <i className={`fa-solid ${faq.icon}`} aria-hidden="true" />
-                </span>
-                <div>
-                  <h3>{faq.q}</h3>
-                  <p>{faq.a}</p>
-                </div>
-              </div>
-            ))}
+        <MomentsPinned
+          eyebrow="Momentos"
+          title="Los ratos muertos son la nueva sala de lectura."
+          moments={MOMENTS}
+        />
+
+        <section id="preguntas" className={styles.section}>
+          <div className={styles.container}>
+            <Parallax speed={0.05}>
+              <p className={styles.sectionEyebrow}>Preguntas frecuentes</p>
+              <h2 className={styles.sectionTitle}>
+                Lo que todos se preguntan antes de probar Audiodocs.
+              </h2>
+            </Parallax>
+            <div className={styles.faqGrid}>
+              {FAQS.map((faq, i) => (
+                <Reveal key={faq.q} delay={(i % 2) * 0.08} className={styles.faqItem}>
+                  <span className={styles.faqIcon}>
+                    <i className={`fa-solid ${faq.icon}`} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3>{faq.q}</h3>
+                    <p>{faq.a}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className={styles.finalCta}>
-        <h2 className={styles.finalCtaTitle}>Tus artículos pendientes encontraron su lugar.</h2>
-        <p className={styles.finalCtaSub}>
-          Prueba Audiodocs ahora. Es gratis, no requiere nada más que un par de datos que me sirven
-          para saber quién lo está usando.
-        </p>
-        <Link href="/registro" className={styles.btnDark}>
-          Probar ahora
-        </Link>
-      </section>
+        <Reveal as="section" className={styles.finalCta}>
+          <h2 className={styles.finalCtaTitle}>
+            Tus artículos pendientes<br />encontraron su lugar.
+          </h2>
+          <p className={styles.finalCtaSub}>
+            Prueba Audiodocs ahora. Es gratis, no requiere nada más que un par de datos que me
+            sirven para saber quién lo está usando.
+          </p>
+          <Link href="/registro" className={styles.btnDark}>
+            Probar ahora
+          </Link>
+        </Reveal>
+      </div>
 
       <LandingFooter />
     </div>

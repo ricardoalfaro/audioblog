@@ -63,7 +63,9 @@ export default function LandingFooter() {
 
         <div className={styles.footerBottom}>
           <span className={styles.footerCopy}>© {new Date().getFullYear()} Audiodocs</span>
-          <span className={styles.footerCopy}>Hecho para escuchar en serio.</span>
+          <span className={styles.footerCopy}>
+            Hecho con amor por los detalles y la experiencia de usuario.
+          </span>
         </div>
       </div>
     </footer>

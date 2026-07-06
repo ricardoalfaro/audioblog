@@ -39,7 +39,7 @@
 /* ---------- Header (mismo patrón que .main-header de /app) ---------- */
 
 .header {
-  height: 64px;
+  height: 88px;
   display: flex;
   align-items: center;
   position: sticky;
@@ -235,8 +235,8 @@
 }
 
 .heroTitle {
-  font-size: clamp(2.9rem, 8vw, 6.1rem);
-  line-height: 0.98;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  line-height: 1;
   font-weight: 800;
   letter-spacing: -0.035em;
   margin: 0 auto;
@@ -346,6 +346,47 @@
   }
 }
 
+/* Variante de puntitos a todo el ancho del viewport para el hero.
+   Cada columna es una línea de puntos (radial-gradient) cuya altura da la silueta de la
+   onda; los puntos fluyen hacia arriba con un movimiento sutil. */
+.waveDots {
+  width: 100vw;
+  max-width: 100vw;
+  gap: 0;
+  justify-content: space-between;
+  height: 116px;
+  padding: 0 2vw;
+  opacity: 0.72;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.waveDots .waveBar {
+  width: 4px;
+  height: var(--h, 40px);
+  border-radius: 0;
+  background: radial-gradient(circle at center, rgba(252, 163, 17, 0.85) 1.4px, transparent 1.9px);
+  background-size: 4px 10px;
+  background-repeat: repeat-y;
+  background-position: center bottom;
+  transform: none;
+  /* Ecualizador: la columna crece y decrece (clip desde arriba) manteniendo los puntos
+     redondos. Los delays/durations por columna vienen inline → parece audio sonando. */
+  animation: dotEq 1s ease-in-out infinite alternate;
+}
+
+@keyframes dotEq {
+  from { clip-path: inset(58% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waveDots .waveBar {
+    animation: none;
+    clip-path: none;
+  }
+}
+
 .playerCard {
   position: absolute;
   left: 50%;
@@ -433,6 +474,209 @@
   opacity: 1;
   color: var(--lp-navy);
   margin-left: 2px;
+}
+
+/* ---------- Hero reveal (zoom de la foto + copy que sube) ---------- */
+
+.heroStatic {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroScene {
+  position: relative;
+  height: 220vh;
+  background: var(--lp-navy-deep);
+}
+
+.heroSticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--lp-navy-deep);
+  --zoom: 1;
+  --fg-op: 1;
+  --fg-y: 0px;
+}
+
+.heroMedia {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--zoom));
+  will-change: transform;
+}
+
+.heroPhoto {
+  position: absolute;
+  inset: 0;
+  background: url('/landing/hero.jpg') center / cover no-repeat;
+}
+
+.heroVeil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 9, 18, 0.55) 0%,
+    rgba(5, 9, 18, 0.32) 45%,
+    rgba(5, 9, 18, 0.72) 100%
+  );
+}
+
+/* Primer plano: copy centrado + reproductor al pie; se desvanece y sube al scrollear */
+.heroForeground {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding-top: 96px;
+  opacity: var(--fg-op);
+  transform: translateY(var(--fg-y));
+  will-change: opacity, transform;
+}
+
+.heroCopy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  color: #f9f6ee;
+}
+
+/* ---------- Panel de contenido que sube sobre la foto ---------- */
+
+.content {
+  position: relative;
+  z-index: 3;
+  background: var(--lp-cream);
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  .content {
+    margin-top: -58vh;
+    border-top-left-radius: 42px;
+    border-top-right-radius: 42px;
+    box-shadow: 0 -30px 60px rgba(11, 18, 34, 0.28);
+  }
+}
+
+/* ---------- Reveal on scroll ---------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+.reveal.isVisible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- Momentos: sección "pinned" con imagen que cambia (desktop) ---------- */
+
+.pinned {
+  position: relative;
+}
+
+.pinnedSticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pinnedHead {
+  position: absolute;
+  top: clamp(84px, 12vh, 140px);
+  left: 0;
+  right: 0;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.pinnedTitle {
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  max-width: 20ch;
+  margin: 10px auto 0;
+}
+
+.pinnedFrame {
+  position: relative;
+  width: clamp(360px, 38vw, 480px);
+  aspect-ratio: 4 / 3;
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--lp-cream-deep);
+  box-shadow: 0 30px 80px rgba(16, 25, 46, 0.28);
+}
+
+.pinnedImg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.6s ease;
+  will-change: opacity;
+}
+
+.pinnedCaption {
+  position: absolute;
+  top: 50%;
+  width: clamp(200px, 20vw, 290px);
+  transform: translateY(-50%) translateY(26px);
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+
+.pinnedLeft {
+  right: calc(50% + clamp(190px, 20vw, 270px));
+  text-align: right;
+}
+
+.pinnedRight {
+  left: calc(50% + clamp(190px, 20vw, 270px));
+  text-align: left;
+}
+
+.pinnedCaptionTitle {
+  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 8px 0 12px;
+}
+
+.pinnedCaptionText {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--lp-muted);
+  margin: 0;
 }
 
 /* ---------- Secciones comunes ---------- */
@@ -732,12 +976,12 @@
 }
 
 .finalCtaTitle {
-  font-size: clamp(2.6rem, 7vw, 5.4rem);
+  font-size: clamp(2.3rem, 5.6vw, 4.8rem);
   font-weight: 800;
   letter-spacing: -0.035em;
-  line-height: 0.98;
+  line-height: 1;
   margin: 0 auto;
-  max-width: 14ch;
+  max-width: 26ch;
 }
 
 .finalCtaSub {

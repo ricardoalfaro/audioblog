@@ -153,6 +153,20 @@ html {
   background-color: var(--bg-main);
   min-height: 100vh;
   overflow-x: hidden;
+  scrollbar-width: none; /* Firefox: ocultar la barra de scroll de la página */
+}
+
+/* Ocultar la barra de scroll de la ventana en todo el sitio (el scroll sigue activo) */
+html::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome / Safari / Edge */
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
