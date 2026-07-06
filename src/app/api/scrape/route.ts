@@ -137,7 +137,10 @@ async function translateWithGoogle(text: string, targetLang: string): Promise<st
 async function translateWithMyMemory(text: string, targetLang: string): Promise<string | null> {
   try {
     const key = process.env.MYMEMORY_API_KEY;
-    const qs = new URLSearchParams({ q: text, langpair: `en|${targetLang}` });
+    // B26: 'en' fijo como origen traducía mal (eco sin traducir) cualquier artículo que no
+    // estuviera ya en inglés cuando Google Translate fallaba — MyMemory soporta autodetección
+    // real de idioma origen vía 'autodetect' (verificado contra su API)
+    const qs = new URLSearchParams({ q: text, langpair: `autodetect|${targetLang}` });
     if (key) qs.set('key', key);
     const res = await fetch(`https://api.mymemory.translated.net/get?${qs}`, {
       signal: AbortSignal.timeout(8000),
