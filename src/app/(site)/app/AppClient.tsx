@@ -197,41 +197,6 @@ function HomeContent() {
   }, [playingArticle?.id]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  useEffect(() => {
-    let startY = 0;
-    let currentY = 0;
-    
-    const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY === 0) {
-        startY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (startY > 0) {
-        currentY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (startY > 0 && currentY > startY + 120 && window.scrollY === 0) {
-        window.location.reload();
-      }
-      startY = 0;
-      currentY = 0;
-    };
-
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, []);
-
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
