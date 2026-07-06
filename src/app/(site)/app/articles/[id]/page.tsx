@@ -71,6 +71,26 @@ export default function ArticleReader() {
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarToggleRef = useRef<HTMLButtonElement>(null);
+
+  // B30: en mobile el .sidebar-backdrop ya cierra al tap (display:none desde 901px, ver
+  // globals.css), pero en desktop la sidebar flotaba sin ninguna forma de cerrarla con
+  // click afuera. Mismo patrón que el dropdown del avatar (HeaderActions.tsx).
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        sidebarRef.current && !sidebarRef.current.contains(target) &&
+        sidebarToggleRef.current && !sidebarToggleRef.current.contains(target)
+      ) {
+        setIsSidebarOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSidebarOpen]);
 
   // Reader accessibility state
   const [fontSize, setFontSize] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 768 ? 16 : 20));
@@ -207,6 +227,7 @@ export default function ArticleReader() {
 
       {/* Sidebar fijo overlay, alineado a la izquierda del viewport */}
       <aside
+        ref={sidebarRef}
         className={`reader-sidebar${isSidebarOpen ? ' is-open' : ''}`}
         style={{ top: headerHeight }}
       >
@@ -334,7 +355,7 @@ export default function ArticleReader() {
             <Link href="/app" className="back-link">
               <i className="fa-solid fa-arrow-left"></i> {t('reader.backToLibrary')}
             </Link>
-            <button className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title={t('reader.options')} aria-label={t('reader.options')}>
+            <button ref={sidebarToggleRef} className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title={t('reader.options')} aria-label={t('reader.options')}>
               <i className="fa-solid fa-sliders"></i><span className="cta-label"> {t('reader.options')}</span>
             </button>
           </div>
