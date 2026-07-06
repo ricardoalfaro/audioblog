@@ -41,7 +41,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#000000",
+  // U20: fijo en negro dejaba la barra de estado oscura también en modo claro. Dual, alineado
+  // a --bg-header (globals.css) — sigue el prefers-color-scheme del sistema, igual que el
+  // fallback del theme picker cuando no hay override explícito guardado en localStorage.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
+  ],
 };
 
 export default function RootLayout({
