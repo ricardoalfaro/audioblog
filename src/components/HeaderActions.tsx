@@ -11,6 +11,7 @@ export default function HeaderActions() {
   const { t, locale, setLocale } = useLocale();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const langDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,16 +42,19 @@ export default function HeaderActions() {
       } catch (err) {
         console.error('Error sharing:', err);
       }
+      setIsDropdownOpen(false);
     } else {
-      // Fallback: copy to clipboard
+      // U19: feedback inline (icono + texto del propio item) en vez de alert() bloqueante —
+      // mismo patrón que el botón de compartir del reader/GlobalPlayer
       try {
         await navigator.clipboard.writeText(shareData.url);
-        alert(t('header.linkCopied'));
+        setLinkCopied(true);
+        setTimeout(() => { setLinkCopied(false); setIsDropdownOpen(false); }, 1500);
       } catch (err) {
         console.error('Error copying to clipboard:', err);
+        setIsDropdownOpen(false);
       }
     }
-    setIsDropdownOpen(false);
   };
 
   return (
@@ -117,8 +121,8 @@ export default function HeaderActions() {
               {t('header.importArticle')}
             </button>
             <button className="dropdown-item" onClick={handleShare}>
-              <span className="icon-badge"><i className="fa-solid fa-arrow-up-from-bracket"></i></span>
-              {t('header.shareApp')}
+              <span className="icon-badge"><i className={`fa-solid ${linkCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`}></i></span>
+              {linkCopied ? t('header.linkCopied') : t('header.shareApp')}
             </button>
           </div>
         )}
