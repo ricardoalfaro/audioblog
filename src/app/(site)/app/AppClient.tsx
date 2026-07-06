@@ -11,6 +11,7 @@ import SplashScreen from '@/components/SplashScreen';
 import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 import { useLocale } from '@/contexts/LocaleContext';
 import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
+import { getGradientClass } from '@/lib/gradientClass';
 
 const VALID_TRANSLATE_LANGS = ['es', 'en', 'pt', 'de', 'fr'];
 
@@ -491,10 +492,6 @@ function HomeContent() {
   useStackedCarousel(newArticlesCarouselRef, [newArticles.length, viewMode], viewMode === 'grid');
   useStackedCarousel(archivedCarouselRef, [archivedArticles.length, viewMode], viewMode === 'grid');
 
-  const getGradientClass = (id: string) => {
-    const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return `card-gradient-${(sum % 5) + 1}`;
-  };
 
   const renderArticleCard = (article: Article, shapeClass: string) => {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;

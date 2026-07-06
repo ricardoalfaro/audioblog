@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { shareArticle } from '@/lib/shareArticle';
+import { getGradientClass } from '@/lib/gradientClass';
 
 export default function GlobalPlayer() {
   const {
@@ -54,19 +55,6 @@ export default function GlobalPlayer() {
   }, [handlePlayPause, handleSkipForward, handleSkipBackward]);
 
   if (!playingArticle) return null;
-
-  const getGradientClass = (id: string) => {
-    const chars = id.slice(-2);
-    const sum = chars.charCodeAt(0) + chars.charCodeAt(1);
-    const options = [
-      'gradient-blue-purple',
-      'gradient-pink-orange',
-      'gradient-green-teal',
-      'gradient-purple-pink',
-      'gradient-orange-red'
-    ];
-    return options[sum % options.length];
-  };
 
   return (
     <div className="bottom-player-container">
