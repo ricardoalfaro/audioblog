@@ -21,11 +21,7 @@ export function getArticlesList(): Article[] {
   } catch { return []; }
 }
 
-export function updateArticleProgress(
-  article: Article,
-  paragraphIndex: number,
-  updateLastPlayed = false
-): void {
+function writeProgressNow(article: Article, paragraphIndex: number, updateLastPlayed: boolean): void {
   try {
     const localData = localStorage.getItem('articles');
     if (localData) {
@@ -40,6 +36,46 @@ export function updateArticleProgress(
   } catch (err) {
     console.error('Error updating progress:', err);
   }
+}
+
+// P6: sin throttle, cada avance de párrafo parseaba+reescribía la librería completa
+// (todos los artículos, con su texto) en localStorage — costoso en artículos largos o
+// bibliotecas grandes. Se debounce por PROGRESS_DEBOUNCE_MS, colapsando ráfagas de avances
+// (ej. saltar varios párrafos rápido) en una sola escritura con el último valor.
+const PROGRESS_DEBOUNCE_MS = 1000;
+let pendingProgress: { article: Article; paragraphIndex: number; updateLastPlayed: boolean } | null = null;
+let progressDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function updateArticleProgress(
+  article: Article,
+  paragraphIndex: number,
+  updateLastPlayed = false
+): void {
+  pendingProgress = { article, paragraphIndex, updateLastPlayed };
+  if (progressDebounceTimer) clearTimeout(progressDebounceTimer);
+  progressDebounceTimer = setTimeout(() => {
+    progressDebounceTimer = null;
+    flushArticleProgress();
+  }, PROGRESS_DEBOUNCE_MS);
+}
+
+// Escribe inmediatamente cualquier progreso pendiente del debounce — se llama al detener la
+// reproducción (handleStop) y en beforeunload, para no perder el último avance real si el
+// usuario para de escuchar o cierra la pestaña dentro de la ventana de debounce.
+export function flushArticleProgress(): void {
+  if (progressDebounceTimer) {
+    clearTimeout(progressDebounceTimer);
+    progressDebounceTimer = null;
+  }
+  if (pendingProgress) {
+    const { article, paragraphIndex, updateLastPlayed } = pendingProgress;
+    pendingProgress = null;
+    writeProgressNow(article, paragraphIndex, updateLastPlayed);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', flushArticleProgress);
 }
 
 export function saveArticleVoicePreference(

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 import { Article } from '@/types';
 import { audioToDataUrl } from '@/lib/audioUtils';
-import { getArticlesList, updateArticleProgress, saveArticleVoicePreference } from '@/lib/articleStorage';
+import { getArticlesList, updateArticleProgress, saveArticleVoicePreference, flushArticleProgress } from '@/lib/articleStorage';
 import { useQueue } from '@/hooks/useQueue';
 import { useLocale } from '@/contexts/LocaleContext';
 
@@ -597,6 +597,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const handleStop = () => {
     playSessionRef.current += 1;
+    flushArticleProgress(); // P6: persistir de inmediato el último progreso pendiente del debounce
     if (typeof window !== 'undefined') {
       try { window.speechSynthesis.cancel(); } catch {}
     }
