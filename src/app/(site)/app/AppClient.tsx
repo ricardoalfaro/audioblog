@@ -679,6 +679,9 @@ function HomeContent() {
                 {tCategory(category)}
               </button>
             ))}
+            {/* B31: spacer para que el degradado de .tabs-scroll-wrapper::after no tape el
+                último tab real cuando el scroll llega al final */}
+            <div className="categories-scroll-spacer" aria-hidden="true" />
           </div>
         </div>
         <div className="view-toggles">
