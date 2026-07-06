@@ -40,7 +40,7 @@ function HomeContent() {
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<{ url: string; lang?: string } | null>(null);
 
-  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice } = useAudioPlayer();
+  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice, notifyLibraryChanged } = useAudioPlayer();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
@@ -348,6 +348,7 @@ function HomeContent() {
       const updatedArticles = pruneArticles([newArticle, ...freshArticles]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
+      notifyLibraryChanged(); // B28: hasNext/hasPrevious del reproductor pueden depender de esta lista
 
       setIsScraping(false);
       setScrapeStep(0);
@@ -428,6 +429,7 @@ function HomeContent() {
       const updatedArticles = pruneArticles([newArticle, ...getArticlesList()]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
+      notifyLibraryChanged(); // B28
 
       setIsSavingManual(false);
       setImportSuccess(true);
@@ -456,6 +458,7 @@ function HomeContent() {
     const updatedArticles = getArticlesList().filter((a) => a.id !== id);
     setArticles(updatedArticles);
     localStorage.setItem('articles', JSON.stringify(updatedArticles));
+    notifyLibraryChanged(); // B28
   };
 
   const toggleViewMode = (mode: 'grid' | 'list') => {
