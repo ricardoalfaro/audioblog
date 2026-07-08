@@ -35,10 +35,10 @@ const pt = {
   'about.openSourceTitle': 'Código aberto',
   'about.openSource.p1': 'O Audiodocs é open source. Você pode ver como funciona, reportar problemas ou contribuir diretamente pelo repositório.',
 
-  'app.listening': 'Você está ouvindo',
+  'app.listening': 'Ouvindo...',
   'app.importDocument': 'Importar documento',
   'app.importNewArticle': 'Importar um novo artigo',
-  'app.readyToListen': 'Prontos para ouvir',
+  'app.readyToListen': 'Importados recentemente',
   'app.backToListen': 'Voltar a ouvir',
   'app.emptyLibraryTitle': 'Sua biblioteca está vazia',
   'app.emptyLibrarySubtitle': 'Importe seu primeiro artigo para começar a ouvir.',

@@ -35,10 +35,10 @@ const fr = {
   'about.openSourceTitle': 'Open source',
   'about.openSource.p1': 'Audiodocs est open source. Vous pouvez voir comment ça fonctionne, signaler des problèmes ou contribuer directement depuis le dépôt.',
 
-  'app.listening': 'Vous écoutez',
+  'app.listening': 'En écoute...',
   'app.importDocument': 'Importer un document',
   'app.importNewArticle': 'Importer un nouvel article',
-  'app.readyToListen': 'Prêts à écouter',
+  'app.readyToListen': 'Importés récemment',
   'app.backToListen': 'Réécouter',
   'app.emptyLibraryTitle': 'Votre bibliothèque est vide',
   'app.emptyLibrarySubtitle': 'Importez votre premier article pour commencer à écouter.',

@@ -615,6 +615,13 @@ a {
   display: none;
 }
 
+/* B31: al scrollear hasta el final, el degradado de .tabs-scroll-wrapper::after (48px) tapaba
+   parcialmente el último tab real. Este spacer absorbe ese degradado en su lugar. */
+.categories-scroll-spacer {
+  flex: 0 0 24px;
+  width: 24px;
+}
+
 .tab-item {
   background: none;
   border: none;

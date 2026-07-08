@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 import { Article } from '@/types';
 import { audioToDataUrl } from '@/lib/audioUtils';
-import { getArticlesList, updateArticleProgress, saveArticleVoicePreference } from '@/lib/articleStorage';
+import { getArticlesList, updateArticleProgress, saveArticleVoicePreference, flushArticleProgress } from '@/lib/articleStorage';
 import { useQueue } from '@/hooks/useQueue';
 import { useLocale } from '@/contexts/LocaleContext';
 
@@ -57,6 +57,7 @@ interface AudioPlayerContextType {
   addToQueue: (article: Article) => void;
   removeFromQueue: (id: string) => void;
   clearQueue: () => void;
+  notifyLibraryChanged: () => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | null>(null);
@@ -94,6 +95,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Keep ref in sync so async prefetch callbacks always use the current voice
   useEffect(() => { selectedEdgeVoiceRef.current = selectedEdgeVoice; }, [selectedEdgeVoice]);
+  // B22: la cadena onended/onend de cada párrafo llama a la siguiente dentro de un closure
+  // congelado al iniciar esa reproducción — sin el ref, toggleSpeed cambiaría el párrafo
+  // actual pero el siguiente volvería a la velocidad vieja.
+  const speechRateRef = useRef(speechRate);
+  useEffect(() => { speechRateRef.current = speechRate; }, [speechRate]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   // Load persisted preferences on mount (client-only).
@@ -230,7 +236,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (voice) utterance.voice = voice;
     }
     
-    utterance.rate = speechRate;
+    utterance.rate = speechRateRef.current;
 
     utterance.onboundary = (event) => {
       if (event.name === 'word') {
@@ -388,7 +394,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       };
 
       audioRef.current.src = audioSrc;
-      audioRef.current.playbackRate = speechRate;
+      audioRef.current.playbackRate = speechRateRef.current;
       setIsLoading(true);
       const playCallSession = playSessionRef.current;
       audioRef.current.play().catch(e => {
@@ -591,6 +597,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const handleStop = () => {
     playSessionRef.current += 1;
+    flushArticleProgress(); // P6: persistir de inmediato el último progreso pendiente del debounce
     if (typeof window !== 'undefined') {
       try { window.speechSynthesis.cancel(); } catch {}
     }
@@ -633,24 +640,31 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Para deshabilitar los botones prev/next cuando no hay a dónde saltar. Memoizado por
-  // playingArticle?.id (no recalcula en cada word-boundary de la reproducción) — puede quedar
-  // desactualizado si la librería cambia (import/delete) sin que cambie el artículo en curso,
-  // igual que ya asumían handleSkipForward/Backward antes de este fix.
+  // B28: además de por playingArticle?.id, recalcula cuando libraryVersion cambia — AppClient
+  // llama a notifyLibraryChanged() tras cada import/delete, así que hasNext/hasPrevious no
+  // quedan stale si la lista cambia sin cambiar el artículo en curso. Sigue memoizado (no
+  // recalcula en cada word-boundary de la reproducción, ver P1) para no repetir el costo de
+  // parsear toda la librería en cada render.
+  const [libraryVersion, setLibraryVersion] = useState(0);
+  const notifyLibraryChanged = () => setLibraryVersion(v => v + 1);
   const articleId = playingArticle?.id;
   const hasNext = useMemo(() => {
     if (!articleId) return false;
     const list = getArticlesList();
     const idx = list.findIndex(a => a.id === articleId);
     return idx !== -1 && idx < list.length - 1;
-  }, [articleId]);
+    // libraryVersion no se usa en el cuerpo — es un trigger deliberado de recálculo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articleId, libraryVersion]);
 
   const hasPrevious = useMemo(() => {
     if (!articleId) return false;
     const list = getArticlesList();
     const idx = list.findIndex(a => a.id === articleId);
     return idx > 0;
-  }, [articleId]);
+    // libraryVersion no se usa en el cuerpo — es un trigger deliberado de recálculo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articleId, libraryVersion]);
 
   const handleEngineChange = (engine: 'device' | 'edge') => {
     playSessionRef.current += 1;
@@ -808,6 +822,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       addToQueue,
       removeFromQueue,
       clearQueue,
+      notifyLibraryChanged,
     }}>
       {children}
     </AudioPlayerContext.Provider>

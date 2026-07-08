@@ -6,11 +6,12 @@ import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
-import { validateArticle } from '@/lib/articleStorage';
+import { validateArticle, getArticlesList } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 import { useLocale } from '@/contexts/LocaleContext';
 import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
+import { getGradientClass } from '@/lib/gradientClass';
 
 const VALID_TRANSLATE_LANGS = ['es', 'en', 'pt', 'de', 'fr'];
 
@@ -39,7 +40,7 @@ function HomeContent() {
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<{ url: string; lang?: string } | null>(null);
 
-  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice } = useAudioPlayer();
+  const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice, notifyLibraryChanged } = useAudioPlayer();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const newArticlesCarouselRef = useRef<HTMLDivElement>(null);
@@ -196,41 +197,6 @@ function HomeContent() {
   }, [playingArticle?.id]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  useEffect(() => {
-    let startY = 0;
-    let currentY = 0;
-    
-    const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY === 0) {
-        startY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (startY > 0) {
-        currentY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (startY > 0 && currentY > startY + 120 && window.scrollY === 0) {
-        window.location.reload();
-      }
-      startY = 0;
-      currentY = 0;
-    };
-
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, []);
-
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -325,7 +291,12 @@ function HomeContent() {
         if (matchedVoice) newArticle.preferredEdgeVoice = matchedVoice.value;
       }
 
-      const existingArticle = articles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
+      // B25: usar la copia más fresca de localStorage (no el estado `articles`, que puede
+      // estar stale si el player escribió progress/lastPlayedAt directo vía articleStorage.ts
+      // desde el último fetchArticles) para no pisar esos cambios al persistir el import
+      const freshArticles = getArticlesList();
+
+      const existingArticle = freshArticles.find(a => a.url !== 'manual' && a.url.toLowerCase() === newArticle.url.toLowerCase());
       if (existingArticle) {
         setIsScraping(false);
         setScrapeStep(0);
@@ -339,9 +310,10 @@ function HomeContent() {
         return;
       }
 
-      const updatedArticles = pruneArticles([newArticle, ...articles]);
+      const updatedArticles = pruneArticles([newArticle, ...freshArticles]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
+      notifyLibraryChanged(); // B28: hasNext/hasPrevious del reproductor pueden depender de esta lista
 
       setIsScraping(false);
       setScrapeStep(0);
@@ -418,9 +390,11 @@ function HomeContent() {
         progress: 0,
       };
 
-      const updatedArticles = pruneArticles([newArticle, ...articles]);
+      // B25: mergear desde la copia fresca de localStorage, ver comentario en runScrape
+      const updatedArticles = pruneArticles([newArticle, ...getArticlesList()]);
       setArticles(updatedArticles);
       localStorage.setItem('articles', JSON.stringify(updatedArticles));
+      notifyLibraryChanged(); // B28
 
       setIsSavingManual(false);
       setImportSuccess(true);
@@ -445,9 +419,11 @@ function HomeContent() {
     }
 
     removeFromQueue(id);
-    const updatedArticles = articles.filter((a) => a.id !== id);
+    // B25: mergear desde la copia fresca de localStorage, ver comentario en runScrape
+    const updatedArticles = getArticlesList().filter((a) => a.id !== id);
     setArticles(updatedArticles);
     localStorage.setItem('articles', JSON.stringify(updatedArticles));
+    notifyLibraryChanged(); // B28
   };
 
   const toggleViewMode = (mode: 'grid' | 'list') => {
@@ -487,14 +463,16 @@ function HomeContent() {
   }, [firstListeningArticleId]);
 
   // U11: mantiene la card "activa" del stack de mobile al frente del z-index mientras se scrollea
-  useStackedCarousel(listeningCarouselRef, [listeningArticles.length, viewMode], viewMode === 'grid');
-  useStackedCarousel(newArticlesCarouselRef, [newArticles.length, viewMode], viewMode === 'grid');
-  useStackedCarousel(archivedCarouselRef, [archivedArticles.length, viewMode], viewMode === 'grid');
+  // B32: la firma de orden (no solo length) es necesaria porque "Escuchando..." se reordena
+  // por lastPlayedAt sin cambiar el largo — con solo .length como dep, el z-index imperativo
+  // del hook queda pegado a los nodos DOM que React reordena por key, invirtiendo el stack
+  const listeningOrderKey = listeningArticles.map(a => a.id).join(',');
+  const newArticlesOrderKey = newArticles.map(a => a.id).join(',');
+  const archivedOrderKey = archivedArticles.map(a => a.id).join(',');
+  useStackedCarousel(listeningCarouselRef, [listeningOrderKey, viewMode], viewMode === 'grid');
+  useStackedCarousel(newArticlesCarouselRef, [newArticlesOrderKey, viewMode], viewMode === 'grid');
+  useStackedCarousel(archivedCarouselRef, [archivedOrderKey, viewMode], viewMode === 'grid');
 
-  const getGradientClass = (id: string) => {
-    const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return `card-gradient-${(sum % 5) + 1}`;
-  };
 
   const renderArticleCard = (article: Article, shapeClass: string) => {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;
@@ -669,6 +647,9 @@ function HomeContent() {
                 {tCategory(category)}
               </button>
             ))}
+            {/* B31: spacer para que el degradado de .tabs-scroll-wrapper::after no tape el
+                último tab real cuando el scroll llega al final */}
+            <div className="categories-scroll-spacer" aria-hidden="true" />
           </div>
         </div>
         <div className="view-toggles">

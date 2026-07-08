@@ -2,6 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
+// D2: sin NEXT_PUBLIC_APP_URL en prod, metadataBase cae en silencio a localhost:3000 y rompe
+// las URLs absolutas de OG/Twitter (ver .env.example) — se avisa una vez al arrancar el server.
+if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_APP_URL) {
+  console.warn('[config] NEXT_PUBLIC_APP_URL no está definida — metadataBase cae a localhost:3000, rompiendo los previews de OG/Twitter en producción. Ver .env.example.');
+}
+
 export const metadata: Metadata = {
   title: "Audiodocs",
   description: "Escucha tus artículos favoritos como podcasts",
@@ -41,7 +47,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#000000",
+  // U20: fijo en negro dejaba la barra de estado oscura también en modo claro. Dual, alineado
+  // a --bg-header (globals.css) — sigue el prefers-color-scheme del sistema, igual que el
+  // fallback del theme picker cuando no hay override explícito guardado en localStorage.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
+  ],
 };
 
 export default function RootLayout({
