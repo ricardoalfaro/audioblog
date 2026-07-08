@@ -117,6 +117,15 @@ const es = {
   'reader.share': 'Compartir',
   'reader.pause': 'Pausar',
   'reader.listen': 'Escuchar',
+  'reader.edit': 'Editar',
+  'reader.editArticle': 'Editar artículo',
+  'reader.editHint': 'Ajusta el texto completo del artículo. Separa los párrafos con una línea en blanco.',
+  'reader.cancelEdit': 'Cancelar edición',
+  'reader.saveEdit': 'Guardar cambios',
+  'reader.savingEdit': 'Guardando...',
+  'reader.retranslateEdited': 'Retraducir todo al guardar',
+  'reader.retranslateTo': 'Retraducir a',
+  'reader.editStopConfirm': 'Este artículo se está reproduciendo. Para guardar cambios en el texto hay que detener la reproducción actual. ¿Detener y guardar?',
 
   // Nombres de categoría: el VALOR guardado en Article.category y usado para filtrar/comparar
   // sigue siendo el string en español (STATIC_CATEGORIES, src/lib/categories.ts) — esto es
@@ -155,6 +164,9 @@ const es = {
   'errors.ttsInternal': 'Error interno al generar el habla.',
   'errors.shortenOriginOnly': 'Solo se pueden acortar links de Audiodocs.',
   'errors.shortenFailed': 'No se pudo acortar el link.',
+  'errors.translateLangInvalid': 'Idioma de traducción no válido.',
+  'errors.translateInternal': 'Error interno al traducir el artículo.',
+  'errors.translateGeneric': 'Error al traducir el artículo.',
   'errors.scrapeGeneric': 'Ocurrió un error al extraer el artículo.',
   'errors.serverErrorStatus': 'Error del servidor (código {status}).',
   'errors.importGeneric': 'Error al importar el artículo.',

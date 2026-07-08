@@ -20,6 +20,8 @@ export const ERROR_CODES = [
   'TTS_INTERNAL',
   'SHORTEN_ORIGIN_ONLY',
   'SHORTEN_FAILED',
+  'TRANSLATE_LANG_INVALID',
+  'TRANSLATE_INTERNAL',
 ] as const;
 
 export type ErrorCode = typeof ERROR_CODES[number];

@@ -93,3 +93,17 @@ export function saveArticleVoicePreference(
     }
   } catch {}
 }
+
+export function saveArticlePatch(articleId: string, patch: Partial<Article>): Article | null {
+  try {
+    const list = getArticlesList();
+    const idx = list.findIndex(a => a.id === articleId);
+    if (idx === -1) return null;
+    const updated = { ...list[idx], ...patch };
+    list[idx] = updated;
+    localStorage.setItem('articles', JSON.stringify(list));
+    return updated;
+  } catch {
+    return null;
+  }
+}

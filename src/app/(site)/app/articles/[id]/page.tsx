@@ -5,13 +5,17 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article } from '@/types';
 import { shareArticle } from '@/lib/shareArticle';
+import { saveArticlePatch } from '@/lib/articleStorage';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { STATIC_CATEGORIES } from '@/lib/categories';
 import { useLocale, Locale, MessageKey } from '@/contexts/LocaleContext';
+import { DisplayError, translateApiError } from '@/lib/i18n/apiError';
 
 const LOCALE_TO_BCP47: Record<Locale, string> = {
   es: 'es-ES', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE',
 };
+
+const TRANSLATE_LANGS: Locale[] = ['es', 'en', 'pt', 'fr', 'de'];
 
 interface Token {
   text: string;
@@ -38,6 +42,18 @@ function parseTokens(text: string): Token[] {
   return tokens;
 }
 
+function splitArticleText(text: string): string[] {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
+function estimateDurationSeconds(paragraphs: string[]): number {
+  const wordCount = paragraphs.join(' ').split(/\s+/).filter(Boolean).length;
+  return Math.max(30, Math.round((wordCount / 160) * 60));
+}
+
 export default function ArticleReader() {
   const params = useParams();
   const router = useRouter();
@@ -55,7 +71,7 @@ export default function ArticleReader() {
 
   const {
     playingArticle, activeParagraphIndex, currentCharIndex, audioEngine, selectedEdgeVoice, selectedVoiceName, voices, handleEngineChange, handleEdgeVoiceChange, handleVoiceChange, playArticle, handleParagraphClick,
-    isPlaying, isPaused, handlePlayPause
+    isPlaying, isPaused, handlePlayPause, handleStop, notifyLibraryChanged
   } = useAudioPlayer();
 
   // Tokens del párrafo activo — memoizado para no re-tokenizar en cada render
@@ -96,12 +112,116 @@ export default function ArticleReader() {
   const [fontSize, setFontSize] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 768 ? 16 : 20));
   const [fontFamily, setFontFamily] = useState<'serif' | 'sans'>('serif');
   const [shareCopied, setShareCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [shouldRetranslate, setShouldRetranslate] = useState(false);
+  const [editTranslateTo, setEditTranslateTo] = useState<Locale>(locale);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState('');
 
   const handleShare = async () => {
     if (!article) return;
     if (await shareArticle(article) === 'copied') {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
+
+  const startEditing = () => {
+    if (!article) return;
+    setEditTitle(article.title);
+    setEditContent(article.paragraphs.join('\n\n'));
+    setShouldRetranslate(false);
+    setEditTranslateTo(TRANSLATE_LANGS.includes(article.translateTo as Locale) ? article.translateTo as Locale : locale);
+    setEditError('');
+    setIsEditing(true);
+    setTimeout(() => document.getElementById('article-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditError('');
+    setIsSavingEdit(false);
+  };
+
+  const saveEditedArticle = async () => {
+    if (!article) return;
+    setIsSavingEdit(true);
+    setEditError('');
+
+    try {
+      let nextTitle = editTitle.trim();
+      let nextParagraphs = splitArticleText(editContent);
+
+      if (!nextTitle || nextParagraphs.length === 0) {
+        throw new DisplayError(t('errors.manualFieldsRequired'));
+      }
+
+      if (shouldRetranslate) {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetLang: editTranslateTo,
+            title: nextTitle,
+            excerpt: nextParagraphs[0]?.slice(0, 160) ?? '',
+            paragraphs: nextParagraphs,
+          }),
+        });
+
+        if (!res.ok) {
+          let message: string;
+          try {
+            message = translateApiError(t, await res.json(), 'errors.translateGeneric');
+          } catch {
+            message = t('errors.serverErrorStatus', { status: res.status });
+          }
+          throw new DisplayError(message);
+        }
+
+        const translated = await res.json();
+        nextTitle = typeof translated.title === 'string' ? translated.title : nextTitle;
+        nextParagraphs = Array.isArray(translated.paragraphs)
+          ? translated.paragraphs
+              .filter((p: unknown): p is string => typeof p === 'string' && p.trim().length > 0)
+              .map((p: string) => p.trim())
+          : nextParagraphs;
+      }
+
+      if (!nextTitle || nextParagraphs.length === 0) {
+        throw new DisplayError(t('errors.manualNoParagraphs'));
+      }
+
+      const nextProgress = Math.min(article.progress ?? 0, Math.max(0, nextParagraphs.length - 1));
+      const updatedPatch: Partial<Article> = {
+        title: nextTitle,
+        paragraphs: nextParagraphs,
+        excerpt: nextParagraphs[0]?.slice(0, 160) + '...',
+        duration: estimateDurationSeconds(nextParagraphs),
+        progress: nextProgress,
+        translateTo: shouldRetranslate ? editTranslateTo : article.translateTo,
+      };
+
+      if (playingArticle?.id === article.id) {
+        const shouldStop = window.confirm(t('reader.editStopConfirm'));
+        if (!shouldStop) {
+          setIsSavingEdit(false);
+          return;
+        }
+        handleStop();
+      }
+
+      const updated = saveArticlePatch(article.id, updatedPatch);
+      if (!updated) throw new DisplayError(t('errors.manualSaveGeneric'));
+
+      setArticle(updated);
+      notifyLibraryChanged();
+      setIsEditing(false);
+    } catch (err: unknown) {
+      setEditError(err instanceof DisplayError ? err.message : t('errors.manualSaveGeneric'));
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -402,6 +522,14 @@ export default function ArticleReader() {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={isEditing ? cancelEditing : startEditing}
+                title={isEditing ? t('reader.cancelEdit') : t('reader.editArticle')}
+                aria-label={isEditing ? t('reader.cancelEdit') : t('reader.editArticle')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: isEditing ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+              >
+                <i className={`fa-solid ${isEditing ? 'fa-xmark' : 'fa-pen-to-square'}`} /><span className="cta-label"> {isEditing ? t('reader.cancelEdit') : t('reader.edit')}</span>
+              </button>
               {article.url !== 'manual' && (
                 <button
                   onClick={handleShare}
@@ -431,58 +559,116 @@ export default function ArticleReader() {
           </div>
 
           {/* Texto del artículo */}
-          <article
-            className="article-text"
-            style={{
-              fontSize: `${fontSize}px`,
-              fontFamily: fontFamily === 'serif' ? 'var(--font-serif)' : 'var(--font-sans)',
-            }}
-          >
-            {article.paragraphs.map((paragraph, pIdx) => {
-              const isActive = activeParagraphIndex === pIdx;
-              const isInactive = activeParagraphIndex >= 0 && !isActive;
-              const isHeader = paragraph.length < 80 && (paragraph.startsWith('###') || paragraph.startsWith('##') || paragraph.toUpperCase() === paragraph);
+          {isEditing ? (
+            <section id="article-editor" className="article-editor">
+              <div className="article-editor-header">
+                <div>
+                  <h2>{t('reader.editArticle')}</h2>
+                  <p>{t('reader.editHint')}</p>
+                </div>
+                <div className="article-editor-actions">
+                  <button className="btn btn-secondary" onClick={cancelEditing} disabled={isSavingEdit}>{t('reader.cancelEdit')}</button>
+                  <button className="btn btn-primary" onClick={saveEditedArticle} disabled={isSavingEdit}>
+                    {isSavingEdit ? t('reader.savingEdit') : t('reader.saveEdit')}
+                  </button>
+                </div>
+              </div>
+              <label className="article-editor-label" htmlFor="article-edit-title">{t('modal.title')}</label>
+              <input
+                id="article-edit-title"
+                className="form-control article-editor-title"
+                value={editTitle}
+                onChange={(event) => setEditTitle(event.target.value)}
+                disabled={isSavingEdit}
+              />
+              <label className="article-editor-label" htmlFor="article-edit-content">{t('modal.content')}</label>
+              <textarea
+                id="article-edit-content"
+                className="form-control article-editor-textarea"
+                value={editContent}
+                onChange={(event) => setEditContent(event.target.value)}
+                disabled={isSavingEdit}
+              />
+              <div className="article-editor-footer">
+                <label className="article-editor-check">
+                  <input
+                    type="checkbox"
+                    checked={shouldRetranslate}
+                    onChange={(event) => setShouldRetranslate(event.target.checked)}
+                    disabled={isSavingEdit}
+                  />
+                  <span>{t('reader.retranslateEdited')}</span>
+                </label>
+                <select
+                  className="sidebar-select article-editor-language"
+                  value={editTranslateTo}
+                  onChange={(event) => setEditTranslateTo(event.target.value as Locale)}
+                  disabled={!shouldRetranslate || isSavingEdit}
+                  aria-label={t('reader.retranslateTo')}
+                >
+                  <option value="es">{t('modal.langEs')}</option>
+                  <option value="en">{t('modal.langEn')}</option>
+                  <option value="pt">{t('modal.langPt')}</option>
+                  <option value="de">{t('modal.langDe')}</option>
+                  <option value="fr">{t('modal.langFr')}</option>
+                </select>
+              </div>
+              {editError && <p className="article-editor-error" role="alert">{editError}</p>}
+            </section>
+          ) : (
+            <article
+              className="article-text"
+              style={{
+                fontSize: `${fontSize}px`,
+                fontFamily: fontFamily === 'serif' ? 'var(--font-serif)' : 'var(--font-sans)',
+              }}
+            >
+              {article.paragraphs.map((paragraph, pIdx) => {
+                const isActive = activeParagraphIndex === pIdx;
+                const isInactive = activeParagraphIndex >= 0 && !isActive;
+                const isHeader = paragraph.length < 80 && (paragraph.startsWith('###') || paragraph.startsWith('##') || paragraph.toUpperCase() === paragraph);
 
-              const cleanParagraph = paragraph.replace(/^#+\s+/, '');
+                const cleanParagraph = paragraph.replace(/^#+\s+/, '');
 
-              if (isActive) {
+                if (isActive) {
+                  return (
+                    <p
+                      key={pIdx}
+                      id={`p-${pIdx}`}
+                      className={`readable-paragraph is-active ${isHeader ? 'header-paragraph' : ''}`}
+                      onClick={() => handleParagraphClick(pIdx)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {activeTokens.map((token, tIdx) => {
+                        const isWordActive =
+                          token.isWord &&
+                          currentCharIndex >= token.startIndex &&
+                          currentCharIndex < token.endIndex;
+
+                        return (
+                          <span key={tIdx} className={isWordActive ? 'word-highlight' : ''}>
+                            {token.text}
+                          </span>
+                        );
+                      })}
+                    </p>
+                  );
+                }
+
                 return (
                   <p
                     key={pIdx}
                     id={`p-${pIdx}`}
-                    className={`readable-paragraph is-active ${isHeader ? 'header-paragraph' : ''}`}
+                    className={`readable-paragraph ${isInactive ? 'is-inactive' : ''} ${isHeader ? 'header-paragraph' : ''}`}
                     onClick={() => handleParagraphClick(pIdx)}
                     style={{ cursor: 'pointer' }}
                   >
-                    {activeTokens.map((token, tIdx) => {
-                      const isWordActive =
-                        token.isWord &&
-                        currentCharIndex >= token.startIndex &&
-                        currentCharIndex < token.endIndex;
-
-                      return (
-                        <span key={tIdx} className={isWordActive ? 'word-highlight' : ''}>
-                          {token.text}
-                        </span>
-                      );
-                    })}
+                    {cleanParagraph}
                   </p>
                 );
-              }
-
-              return (
-                <p
-                  key={pIdx}
-                  id={`p-${pIdx}`}
-                  className={`readable-paragraph ${isInactive ? 'is-inactive' : ''} ${isHeader ? 'header-paragraph' : ''}`}
-                  onClick={() => handleParagraphClick(pIdx)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {cleanParagraph}
-                </p>
-              );
-            })}
-          </article>
+              })}
+            </article>
+          )}
         </div>
       </main>
     </>

@@ -19,6 +19,8 @@ const ERROR_CODE_TO_KEY: Record<ErrorCode, MessageKey> = {
   TTS_INTERNAL: 'errors.ttsInternal',
   SHORTEN_ORIGIN_ONLY: 'errors.shortenOriginOnly',
   SHORTEN_FAILED: 'errors.shortenFailed',
+  TRANSLATE_LANG_INVALID: 'errors.translateLangInvalid',
+  TRANSLATE_INTERNAL: 'errors.translateInternal',
 };
 
 type TFn = (key: MessageKey, params?: Record<string, string | number>) => string;

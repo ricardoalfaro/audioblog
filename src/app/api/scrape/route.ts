@@ -4,6 +4,7 @@ import { Readability } from '@mozilla/readability';
 import dns from 'node:dns/promises';
 import { Agent } from 'undici';
 import { rateLimit, getIP } from '@/lib/rate-limit';
+import { translateConcurrent, translateText } from '@/lib/translation';
 
 export const maxDuration = 30;
 
@@ -115,51 +116,6 @@ async function safeFetch(url: string, options: RequestInit): Promise<Response> {
   throw new Error('Demasiados redirects.');
 }
 
-// Helper function to translate text using Google Translate free endpoint
-async function translateWithGoogle(text: string, targetLang: string): Promise<string | null> {
-  try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(8000),
-      headers: {
-        'User-Agent': USER_AGENT,
-      },
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    // Google returns: [[[translatedSegment, originalSegment, ...], ...], ...]
-    return (json[0] as [string, ...unknown[]][])?.map((part) => part[0]).join('') || null;
-  } catch {
-    return null;
-  }
-}
-
-async function translateWithMyMemory(text: string, targetLang: string): Promise<string | null> {
-  try {
-    const key = process.env.MYMEMORY_API_KEY;
-    // B26: 'en' fijo como origen traducía mal (eco sin traducir) cualquier artículo que no
-    // estuviera ya en inglés cuando Google Translate fallaba — MyMemory soporta autodetección
-    // real de idioma origen vía 'autodetect' (verificado contra su API)
-    const qs = new URLSearchParams({ q: text, langpair: `autodetect|${targetLang}` });
-    if (key) qs.set('key', key);
-    const res = await fetch(`https://api.mymemory.translated.net/get?${qs}`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json?.responseStatus === 200 ? (json.responseData?.translatedText ?? null) : null;
-  } catch {
-    return null;
-  }
-}
-
-async function translateText(text: string, targetLang: string): Promise<string> {
-  if (!text || !targetLang || targetLang === 'original' || targetLang === 'none') return text;
-  return (await translateWithGoogle(text, targetLang))
-    ?? (await translateWithMyMemory(text, targetLang))
-    ?? text;
-}
-
 // Detecta el género del primer nombre del autor con genderize.io, para autoseleccionar
 // voz masculina/femenina en el cliente. Si el "autor" es en realidad un dominio (fallback
 // cuando el artículo no tiene byline, ej. "paulgraham.com"), el nombre no pasa el filtro
@@ -177,19 +133,6 @@ async function detectAuthorGender(author: string): Promise<'male' | 'female' | n
   } catch {
     return null;
   }
-}
-
-async function translateConcurrent(items: string[], targetLang: string, concurrency: number): Promise<string[]> {
-  const results = new Array<string>(items.length);
-  const queue = items.map((item, i) => ({ item, i }));
-  async function worker() {
-    while (queue.length > 0) {
-      const { item, i } = queue.shift()!;
-      results[i] = await translateText(item, targetLang);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
-  return results;
 }
 
 // Tags whose subtree we skip entirely (decorative / metadata)
