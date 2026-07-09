@@ -1391,6 +1391,31 @@ a {
   gap: 12px;
 }
 
+.bottom-player.is-empty {
+  border-color: var(--border-color);
+}
+
+.player-empty-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.player-empty-thumb:hover,
+.player-empty-thumb:focus-visible {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  outline: none;
+}
+
 @media (max-width: 600px) {
   .bottom-player-container {
     bottom: 0;

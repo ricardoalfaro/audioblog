@@ -57,6 +57,11 @@ const en = {
   'card.gridView': 'Grid view',
   'card.listView': 'List view',
 
+  'player.emptyTitle': 'No article playing',
+  'player.emptySubtitle': 'Import or choose an article to start',
+  'player.emptyPlayDisabled': 'Choose an article to play',
+  'player.emptyCoverImport': 'Import first article',
+
   'modal.importArticle': 'Import article',
   'modal.createArticle': 'Create article',
   'modal.byUrl': 'By URL',

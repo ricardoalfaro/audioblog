@@ -57,6 +57,11 @@ const pt = {
   'card.gridView': 'Visualização em grade',
   'card.listView': 'Visualização em lista',
 
+  'player.emptyTitle': 'Nenhum artigo em reprodução',
+  'player.emptySubtitle': 'Importe ou escolha um artigo para começar',
+  'player.emptyPlayDisabled': 'Escolha um artigo para reproduzir',
+  'player.emptyCoverImport': 'Importar primeiro artigo',
+
   'modal.importArticle': 'Importar artigo',
   'modal.createArticle': 'Criar artigo',
   'modal.byUrl': 'Por URL',

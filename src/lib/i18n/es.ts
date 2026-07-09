@@ -57,6 +57,11 @@ const es = {
   'card.gridView': 'Vista en cuadrícula',
   'card.listView': 'Vista en lista',
 
+  'player.emptyTitle': 'Sin artículo en reproducción',
+  'player.emptySubtitle': 'Importa o elige un artículo para empezar',
+  'player.emptyPlayDisabled': 'Elige un artículo para reproducir',
+  'player.emptyCoverImport': 'Importar primer artículo',
+
   'modal.importArticle': 'Importar artículo',
   'modal.createArticle': 'Crear artículo',
   'modal.byUrl': 'Por URL',

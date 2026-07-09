@@ -57,6 +57,11 @@ const fr = {
   'card.gridView': 'Vue grille',
   'card.listView': 'Vue liste',
 
+  'player.emptyTitle': 'Aucun article en lecture',
+  'player.emptySubtitle': 'Importez ou choisissez un article pour commencer',
+  'player.emptyPlayDisabled': 'Choisissez un article à lire',
+  'player.emptyCoverImport': 'Importer le premier article',
+
   'modal.importArticle': 'Importer un article',
   'modal.createArticle': 'Créer un article',
   'modal.byUrl': 'Par URL',

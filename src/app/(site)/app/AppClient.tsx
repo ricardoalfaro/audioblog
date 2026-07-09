@@ -39,6 +39,8 @@ function HomeContent() {
   const [importSuccess, setImportSuccess] = useState(false);
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<{ url: string; lang?: string } | null>(null);
+  const emptyAutoImportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const emptyAutoImportDismissedRef = useRef(false);
 
   const { playArticle, playingArticle, handleStop, isPlaying, isPaused, handlePlayPause, activeParagraphIndex, addToQueue, removeFromQueue, queue, selectedEdgeVoice, notifyLibraryChanged } = useAudioPlayer();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -93,6 +95,48 @@ function HomeContent() {
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, []);
+
+  // Para usuarios nuevos: si la biblioteca está vacía y no hacen nada durante 10s,
+  // abrir el modal de importación una sola vez. Cualquier interacción real cancela el
+  // disparo automático para no interrumpir a quien ya está explorando la pantalla.
+  useEffect(() => {
+    if (isLoading || articles.length > 0 || isModalOpen || emptyAutoImportDismissedRef.current) {
+      if (emptyAutoImportTimerRef.current) {
+        clearTimeout(emptyAutoImportTimerRef.current);
+        emptyAutoImportTimerRef.current = null;
+      }
+      return;
+    }
+
+    const cancelAutoOpen = () => {
+      emptyAutoImportDismissedRef.current = true;
+      if (emptyAutoImportTimerRef.current) {
+        clearTimeout(emptyAutoImportTimerRef.current);
+        emptyAutoImportTimerRef.current = null;
+      }
+    };
+
+    emptyAutoImportTimerRef.current = setTimeout(() => {
+      emptyAutoImportDismissedRef.current = true;
+      emptyAutoImportTimerRef.current = null;
+      setModalTab('url');
+      setIsModalOpen(true);
+    }, 10_000);
+
+    window.addEventListener('pointerdown', cancelAutoOpen, { once: true });
+    window.addEventListener('keydown', cancelAutoOpen, { once: true });
+    window.addEventListener('scroll', cancelAutoOpen, { once: true, passive: true });
+
+    return () => {
+      if (emptyAutoImportTimerRef.current) {
+        clearTimeout(emptyAutoImportTimerRef.current);
+        emptyAutoImportTimerRef.current = null;
+      }
+      window.removeEventListener('pointerdown', cancelAutoOpen);
+      window.removeEventListener('keydown', cancelAutoOpen);
+      window.removeEventListener('scroll', cancelAutoOpen);
+    };
+  }, [articles.length, isLoading, isModalOpen]);
 
   // Close modal on Escape
   useEffect(() => {

@@ -57,6 +57,11 @@ const de = {
   'card.gridView': 'Rasteransicht',
   'card.listView': 'Listenansicht',
 
+  'player.emptyTitle': 'Kein Artikel wird abgespielt',
+  'player.emptySubtitle': 'Importiere oder wähle einen Artikel zum Starten',
+  'player.emptyPlayDisabled': 'Wähle einen Artikel zum Abspielen',
+  'player.emptyCoverImport': 'Ersten Artikel importieren',
+
   'modal.importArticle': 'Artikel importieren',
   'modal.createArticle': 'Artikel erstellen',
   'modal.byUrl': 'Per URL',

@@ -42,6 +42,8 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| U22 | Abrir import automáticamente tras 10s sin interacción en biblioteca vacía | sesión 2026-07-09 |
+| U21 | Reproductor siempre visible aunque no haya artículo activo | sesión 2026-07-09 |
 | F23 | Editar manualmente artículos importados y retraducir | `HEAD` |
 | D2 | Env vars sin documentar | `454d24e` |
 | P6 | `updateArticleProgress` reescribe el array completo por párrafo | `45aac23` |
