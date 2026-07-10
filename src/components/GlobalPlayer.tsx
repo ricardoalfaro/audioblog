@@ -20,11 +20,10 @@ export default function GlobalPlayer() {
     handleSkipForward,
     handleSkipBackward,
     getProgressPercentage,
+    getRemainingTime,
     speechRate,
     isLoading,
     toggleSpeed,
-    audioEngine,
-    handleEngineChange,
     ttsError,
     queue,
     hasNext,
@@ -33,6 +32,18 @@ export default function GlobalPlayer() {
 
   const [shareCopied, setShareCopied] = useState(false);
   const hasArticle = Boolean(playingArticle);
+
+  const formatRemainingTime = (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.ceil(seconds));
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainingSeconds = safeSeconds % 60;
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const hourMinutes = minutes % 60;
+      return `-${hours}:${hourMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    return `-${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleEmptyCoverClick = () => {
     if (playingArticle || getArticlesList().length > 0) return;
@@ -136,15 +147,11 @@ export default function GlobalPlayer() {
           </div>
           
           <div className="player-settings" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
-            <button className="player-btn" onClick={toggleSpeed} disabled={!hasArticle} title="Velocidad" style={{ fontSize: '13px', fontWeight: 600, width: '32px' }}>
+            <span className="player-remaining-time" aria-live="off">
+              {hasArticle ? formatRemainingTime(getRemainingTime()) : '--:--'}
+            </span>
+            <button className="player-btn player-speed-btn" onClick={toggleSpeed} disabled={!hasArticle} title="Velocidad">
               {speechRate}x
-            </button>
-            <button
-              className="player-btn"
-              onClick={() => handleEngineChange(audioEngine === 'edge' ? 'device' : 'edge')}
-              title={audioEngine === 'edge' ? 'Voz Natural activa — click para cambiar a voz del sistema' : 'Voz del sistema activa — click para cambiar a voz natural'}
-            >
-              <i className={`fa-solid ${audioEngine === 'edge' ? 'fa-user' : 'fa-robot'}`}></i>
             </button>
             <button
               className="player-btn"

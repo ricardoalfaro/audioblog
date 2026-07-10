@@ -8,7 +8,6 @@ import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { validateArticle, getArticlesList } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
-import { useStackedCarousel } from '@/hooks/useStackedCarousel';
 import { useLocale } from '@/contexts/LocaleContext';
 import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
 import { getGradientClass } from '@/lib/gradientClass';
@@ -505,18 +504,6 @@ function HomeContent() {
   useEffect(() => {
     if (listeningCarouselRef.current) listeningCarouselRef.current.scrollLeft = 0;
   }, [firstListeningArticleId]);
-
-  // U11: mantiene la card "activa" del stack de mobile al frente del z-index mientras se scrollea
-  // B32: la firma de orden (no solo length) es necesaria porque "Escuchando..." se reordena
-  // por lastPlayedAt sin cambiar el largo — con solo .length como dep, el z-index imperativo
-  // del hook queda pegado a los nodos DOM que React reordena por key, invirtiendo el stack
-  const listeningOrderKey = listeningArticles.map(a => a.id).join(',');
-  const newArticlesOrderKey = newArticles.map(a => a.id).join(',');
-  const archivedOrderKey = archivedArticles.map(a => a.id).join(',');
-  useStackedCarousel(listeningCarouselRef, [listeningOrderKey, viewMode], viewMode === 'grid');
-  useStackedCarousel(newArticlesCarouselRef, [newArticlesOrderKey, viewMode], viewMode === 'grid');
-  useStackedCarousel(archivedCarouselRef, [archivedOrderKey, viewMode], viewMode === 'grid');
-
 
   const renderArticleCard = (article: Article, shapeClass: string) => {
     const isCurrentPlaying = playingArticle?.id === article.id && isPlaying && !isPaused;

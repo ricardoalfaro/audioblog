@@ -69,6 +69,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [isPaused, setIsPaused] = useState(false);
   const [activeParagraphIndex, setActiveParagraphIndex] = useState(-1);
   const [currentCharIndex, setCurrentCharIndex] = useState(-1);
+  const [audioProgressTick, setAudioProgressTick] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
   
@@ -383,6 +384,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         if (index >= 0) prefetchNextParagraph(index, article);
       };
+      audioRef.current.ontimeupdate = () => {
+        const seconds = Math.floor(audioRef.current?.currentTime ?? 0);
+        setAudioProgressTick((prev) => (prev === seconds ? prev : seconds));
+      };
       audioRef.current.onended = () => {
         if (!isPausedRef.current && playingArticleIdRef.current === article.id) {
           playEdgeParagraph(index + 1, article);
@@ -470,6 +475,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.pause();
       audioRef.current.onended = null;
       audioRef.current.onerror = null;
+      audioRef.current.ontimeupdate = null;
       audioRef.current.src = '';
     }
     if (jingleAudioRef.current) {
@@ -603,6 +609,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.ontimeupdate = null;
       audioRef.current.src = '';
     }
     if (jingleAudioRef.current) {
@@ -672,7 +679,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEngine: engine });
     if ((isPlaying || isLoading) && playingArticle) {
       try { window.speechSynthesis.cancel(); } catch {}
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.ontimeupdate = null; audioRef.current.src = ''; }
       revokePrefetchedBlob();
       setIsPlaying(false);
       setIsPaused(false);
@@ -779,6 +786,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const getRemainingTime = () => {
+    void audioProgressTick;
     if (!playingArticle) return 0;
     const paragraphs = playingArticle.paragraphs;
     if (!paragraphs?.length) return 0;
@@ -786,8 +794,22 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const wordCounts = paragraphs.map(p => p.split(/\s+/).filter(Boolean).length || 1);
     const totalWords = wordCounts.reduce((a, b) => a + b, 0);
     if (totalWords === 0) return 0;
-    const wordsRemaining = wordCounts.slice(idx).reduce((a, b) => a + b, 0);
-    return playingArticle.duration * (wordsRemaining / totalWords);
+    const safeRate = Math.max(0.25, speechRateRef.current);
+    if (idx < 0) return playingArticle.duration / safeRate;
+
+    const currentWords = wordCounts[idx] ?? 0;
+    let currentParagraphProgress = 0;
+    if (audioEngine === 'edge' && audioRef.current && Number.isFinite(audioRef.current.duration) && audioRef.current.duration > 0) {
+      currentParagraphProgress = Math.min(1, Math.max(0, audioRef.current.currentTime / audioRef.current.duration));
+    } else if (currentCharIndex >= 0 && paragraphs[idx]) {
+      const spokenText = paragraphs[idx].slice(0, currentCharIndex);
+      const spokenWords = spokenText.split(/\s+/).filter(Boolean).length;
+      currentParagraphProgress = Math.min(1, Math.max(0, spokenWords / currentWords));
+    }
+
+    const wordsAfterCurrent = wordCounts.slice(idx + 1).reduce((a, b) => a + b, 0);
+    const wordsRemaining = (currentWords * (1 - currentParagraphProgress)) + wordsAfterCurrent;
+    return (playingArticle.duration * (wordsRemaining / totalWords)) / safeRate;
   };
 
   return (

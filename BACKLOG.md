@@ -42,6 +42,9 @@
 
 | # | Título | Commit / Sesión |
 |---|--------|-----------------|
+| U25 | Restaurar cards mobile en carrusel horizontal sin apilado tipo naipe | `HEAD` |
+| U24 | Reordenar controles del reproductor con tiempo restante dinámico | `HEAD` |
+| U23 | Retraducir artículo desde panel lateral y fijar toolbar del reader al scrollear | `HEAD` |
 | U22 | Abrir import automáticamente tras 10s sin interacción en biblioteca vacía | sesión 2026-07-09 |
 | U21 | Reproductor siempre visible aunque no haya artículo activo | sesión 2026-07-09 |
 | F23 | Editar manualmente artículos importados y retraducir | `HEAD` |

@@ -85,6 +85,7 @@ export default function ArticleReader() {
   // Accordion state
   const [isMetaExpanded, setIsMetaExpanded] = useState(true);
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
+  const [isTranslationExpanded, setIsTranslationExpanded] = useState(true);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -119,6 +120,9 @@ export default function ArticleReader() {
   const [editTranslateTo, setEditTranslateTo] = useState<Locale>(locale);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState('');
+  const [sidebarTranslateTo, setSidebarTranslateTo] = useState<Locale>(locale);
+  const [isRetranslating, setIsRetranslating] = useState(false);
+  const [retranslateMessage, setRetranslateMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleShare = async () => {
     if (!article) return;
@@ -216,12 +220,87 @@ export default function ArticleReader() {
       if (!updated) throw new DisplayError(t('errors.manualSaveGeneric'));
 
       setArticle(updated);
+      if (shouldRetranslate) setSidebarTranslateTo(editTranslateTo);
       notifyLibraryChanged();
       setIsEditing(false);
     } catch (err: unknown) {
       setEditError(err instanceof DisplayError ? err.message : t('errors.manualSaveGeneric'));
     } finally {
       setIsSavingEdit(false);
+    }
+  };
+
+  const retranslateArticle = async () => {
+    if (!article || isRetranslating) return;
+    setIsRetranslating(true);
+    setRetranslateMessage(null);
+
+    try {
+      if (playingArticle?.id === article.id) {
+        const shouldStop = window.confirm(t('reader.editStopConfirm'));
+        if (!shouldStop) {
+          setIsRetranslating(false);
+          return;
+        }
+        handleStop();
+      }
+
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetLang: sidebarTranslateTo,
+          title: article.title,
+          excerpt: article.excerpt,
+          paragraphs: article.paragraphs,
+        }),
+      });
+
+      if (!res.ok) {
+        let message: string;
+        try {
+          message = translateApiError(t, await res.json(), 'errors.translateGeneric');
+        } catch {
+          message = t('errors.serverErrorStatus', { status: res.status });
+        }
+        throw new DisplayError(message);
+      }
+
+      const translated = await res.json();
+      const nextTitle = typeof translated.title === 'string' && translated.title.trim()
+        ? translated.title.trim()
+        : article.title;
+      const nextParagraphs = Array.isArray(translated.paragraphs)
+        ? translated.paragraphs
+            .filter((p: unknown): p is string => typeof p === 'string' && p.trim().length > 0)
+            .map((p: string) => p.trim())
+        : article.paragraphs;
+
+      if (nextParagraphs.length === 0) {
+        throw new DisplayError(t('errors.manualNoParagraphs'));
+      }
+
+      const updated = saveArticlePatch(article.id, {
+        title: nextTitle,
+        paragraphs: nextParagraphs,
+        excerpt: `${nextParagraphs[0]?.slice(0, 160) ?? ''}...`,
+        duration: estimateDurationSeconds(nextParagraphs),
+        progress: Math.min(article.progress ?? 0, Math.max(0, nextParagraphs.length - 1)),
+        translateTo: sidebarTranslateTo,
+      });
+
+      if (!updated) throw new DisplayError(t('errors.manualSaveGeneric'));
+
+      setArticle(updated);
+      notifyLibraryChanged();
+      setRetranslateMessage({ type: 'success', text: t('reader.retranslateDone') });
+    } catch (err: unknown) {
+      setRetranslateMessage({
+        type: 'error',
+        text: err instanceof DisplayError ? err.message : t('errors.translateGeneric'),
+      });
+    } finally {
+      setIsRetranslating(false);
     }
   };
 
@@ -243,6 +322,8 @@ export default function ArticleReader() {
           return;
         }
         setArticle(data);
+        setSidebarTranslateTo(TRANSLATE_LANGS.includes(data.translateTo as Locale) ? data.translateTo as Locale : locale);
+        setRetranslateMessage(null);
       } catch {
         setErrorKey('errors.loadArticleGeneric');
       } finally {
@@ -250,7 +331,7 @@ export default function ArticleReader() {
       }
     };
     fetchArticle();
-  }, [id]);
+  }, [id, locale]);
 
   // Track header height so the fixed topbar always sits right below it
   const [headerHeight, setHeaderHeight] = useState(64);
@@ -434,6 +515,51 @@ export default function ArticleReader() {
 
           <div className="sidebar-divider" />
 
+          {/* Section: Traducción */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-header" onClick={() => setIsTranslationExpanded(v => !v)}>
+              <span><span className="icon-badge"><i className="fa-solid fa-language"></i></span> {t('reader.translation')}</span>
+              <i className={`fa-solid fa-chevron-${isTranslationExpanded ? 'up' : 'down'} chevron`}></i>
+            </div>
+            {isTranslationExpanded && (
+              <div className="sidebar-section-body">
+                <label className="sidebar-field-label" htmlFor="sidebar-translate-to">{t('reader.retranslateTo')}</label>
+                <select
+                  id="sidebar-translate-to"
+                  className="sidebar-select"
+                  value={sidebarTranslateTo}
+                  onChange={(event) => setSidebarTranslateTo(event.target.value as Locale)}
+                  disabled={isRetranslating}
+                >
+                  <option value="es">{t('modal.langEs')}</option>
+                  <option value="en">{t('modal.langEn')}</option>
+                  <option value="pt">{t('modal.langPt')}</option>
+                  <option value="de">{t('modal.langDe')}</option>
+                  <option value="fr">{t('modal.langFr')}</option>
+                </select>
+                <button
+                  className="btn btn-secondary sidebar-action-btn"
+                  onClick={retranslateArticle}
+                  disabled={isRetranslating}
+                >
+                  <i className={`fa-solid ${isRetranslating ? 'fa-spinner fa-spin' : 'fa-language'}`}></i>
+                  <span>{isRetranslating ? t('reader.retranslating') : t('reader.retranslateArticle')}</span>
+                </button>
+                <p className="sidebar-note">
+                  <i className="fa-solid fa-circle-info"></i>
+                  <span>{t('reader.retranslateHint')}</span>
+                </p>
+                {retranslateMessage && (
+                  <p className={`sidebar-status ${retranslateMessage.type === 'error' ? 'is-error' : ''}`} role={retranslateMessage.type === 'error' ? 'alert' : 'status'}>
+                    {retranslateMessage.text}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="sidebar-divider" />
+
           {/* Section: Categoría */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsCategoryExpanded(v => !v)}>
@@ -476,7 +602,7 @@ export default function ArticleReader() {
               <i className="fa-solid fa-arrow-left"></i> {t('reader.backToLibrary')}
             </Link>
             <button ref={sidebarToggleRef} className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title={t('reader.options')} aria-label={t('reader.options')}>
-              <i className="fa-solid fa-sliders"></i><span className="cta-label"> {t('reader.options')}</span>
+              <span className="cta-label">{t('reader.options')}</span><span className="panel-toggle-icon" aria-hidden="true"></span>
             </button>
           </div>
         </div>
@@ -502,7 +628,7 @@ export default function ArticleReader() {
           </div>
 
           {/* Barra de controles de accesibilidad */}
-          <div className="reader-controls-bar">
+          <div className="reader-controls-bar" style={{ top: headerHeight + 49 }}>
             <div className="reader-controls-left">
               <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.max(14, s - 2))} title={t('reader.decreaseText')}>A−</button>
               <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.min(28, s + 2))} title={t('reader.increaseText')}>A+</button>
