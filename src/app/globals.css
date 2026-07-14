@@ -21,11 +21,8 @@
   --color-primary: #FCA311;
   --color-primary-glow: rgba(252, 163, 17, 0.15);
   --color-secondary: #14213D;
-  --color-accent: #14213D; 
-  
-  --gradient-brand: none;
-  --gradient-card: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.4) 100%);
-  
+  --color-accent: #14213D;
+
   /* Missing article detail accordion variables */
   --article-info-bg: #FFFFFF;
   --article-info-border: #D4D4D4;
@@ -124,7 +121,6 @@
 :root[data-theme="dark"] .site-body { background: var(--bg-site); }
 :root[data-theme="dark"] .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
 :root[data-theme="dark"] .main-footer { border-top: 1px solid var(--border-color); }
-:root[data-theme="dark"] .footer-svg-wordmark { fill: white; }
 :root[data-theme="dark"] .back-link { color: var(--color-primary); }
 :root[data-theme="dark"] .sidebar-toggle-btn i,
 :root[data-theme="dark"] .panel-toggle-icon { color: var(--color-primary); }
@@ -134,7 +130,6 @@
   :root:not([data-theme="light"]) .site-body { background: var(--bg-site); }
   :root:not([data-theme="light"]) .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
   :root:not([data-theme="light"]) .main-footer { border-top: 1px solid var(--border-color); }
-  :root:not([data-theme="light"]) .footer-svg-wordmark { fill: white; }
   :root:not([data-theme="light"]) .back-link { color: var(--color-primary); }
   :root:not([data-theme="light"]) .sidebar-toggle-btn i,
   :root:not([data-theme="light"]) .panel-toggle-icon { color: var(--color-primary); }
@@ -156,6 +151,11 @@ html {
   min-height: 100vh;
   overflow-x: hidden;
   scrollbar-width: none; /* Firefox: ocultar la barra de scroll de la página */
+  /* El viewport meta (userScalable:false/maximumScale:1 en layout.tsx) no alcanza en iOS
+     Safari — desde iOS 10 el navegador lo ignora a propósito por accesibilidad y el pinch-zoom
+     sigue funcionando igual. touch-action sí lo respeta: permite paneo normal (scroll vertical
+     y horizontal de carruseles) pero bloquea el gesto de pellizco para zoomear la página. */
+  touch-action: pan-x pan-y;
 }
 
 /* Ocultar la barra de scroll de la ventana en todo el sitio (el scroll sigue activo) */
@@ -215,6 +215,14 @@ a {
   width: 100%;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+/* Deja espacio para que el reproductor fijo (.bottom-player-container) no tape la última
+   fila de artículos — mismo criterio que .article-text en el reader. Reducido a pedido
+   (120px se sentía excesivo); sigue siendo mayor a la altura real del reproductor flotante
+   (~90-100px + 40px de offset desde el borde), así que conserva margen de sobra. */
+.app-main {
+  padding-bottom: 100px;
 }
 
 /* Theme Switcher Styles */
@@ -283,33 +291,6 @@ a {
   opacity: 0.9;
 }
 
-/* Toast notification */
-.toast-notification {
-  position: fixed;
-  top: 72px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: var(--shadow-md);
-  z-index: 200;
-  white-space: nowrap;
-  animation: toast-slide-in 0.2s ease;
-}
-
-@keyframes toast-slide-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
 /* Header */
 .main-header {
   height: 64px;
@@ -338,11 +319,6 @@ a {
   color: var(--text-primary);
 }
 
-.logo-icon {
-  color: var(--color-primary);
-  font-size: 24px;
-}
-
 .main-logo-img {
   height: 55px;
   width: auto;
@@ -360,38 +336,6 @@ a {
   gap: 16px;
 }
 
-/* Search in Header */
-.header-search {
-  position: relative;
-  width: 240px;
-}
-
-
-
-.header-search input {
-  width: 100%;
-  padding: 8px 16px 8px 36px;
-  border-radius: var(--border-radius-xl);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  font-size: 14px;
-  color: var(--text-primary);
-  outline: none;
-  transition: all var(--transition-fast);
-}
-
-.header-search input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-glow);
-}
-
-.header-search i {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-}
 
 /* Avatar Dropdown */
 .avatar-dropdown {
@@ -645,6 +589,26 @@ a {
   border-bottom: 2px solid var(--color-primary);
 }
 
+/* Select de categorías para mobile — reemplaza la barra scrolleable de tabs para liberar
+   espacio en .tabs-container (sticky) y que el CTA de Importar quede siempre fijo ahí. */
+.category-select {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .tabs-scroll-wrapper {
+    display: none;
+  }
+
+  .category-select {
+    display: block;
+    width: auto;
+    max-width: 130px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+}
+
 /* View Toggles */
 .view-toggles {
   display: flex;
@@ -683,6 +647,24 @@ a {
     color: var(--color-primary);
     background: rgba(255, 109, 31, 0.15);
   }
+}
+
+/* CTA de Importar en la barra de tabs (sticky) — a diferencia de .view-btn (icon-only, muted),
+   este debe destacar como acción principal, no mimetizarse con el toggle de grid/list. */
+.tabs-import-btn {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  color: var(--color-primary);
+  background: var(--color-primary-glow);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tabs-import-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-glow);
+  opacity: 0.85;
 }
 
 /* Sections */
@@ -784,12 +766,6 @@ a {
   scroll-snap-align: end;
 }
 
-/* Square Card */
-.card-square {
-  aspect-ratio: 1 / 1;
-  height: auto;
-}
-
 @media (max-width: 600px) {
   .listening-carousel {
     gap: 16px;
@@ -864,72 +840,6 @@ a {
 .list-item-meta {
   font-size: 13px;
   color: var(--text-secondary);
-}
-
-/* Grid Layout (Sin leer) */
-.grid-new {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  margin-bottom: 28px;
-}
-
-.grid-new .article-card {
-  width: 100%;
-  min-width: unset;
-  height: auto;
-  aspect-ratio: 11 / 14;
-}
-
-.import-card-cta {
-  border-radius: var(--border-radius-md);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: transparent;
-  border: 2px dashed var(--border-color);
-  transition: all var(--transition-fast);
-  color: var(--text-secondary);
-  font-family: var(--font-sans);
-  width: 100%;
-  aspect-ratio: 11 / 14;
-}
-
-.import-card-cta:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: scale(1.01);
-}
-
-.import-card-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  pointer-events: none;
-}
-
-.import-card-inner i {
-  font-size: 28px;
-}
-
-.import-card-inner span {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-@media (max-width: 900px) {
-  .grid-new {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .grid-new {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* Grayscale para cards archivadas */
@@ -1617,32 +1527,6 @@ a {
   border: none;
 }
 
-/* Modals */
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.dialog-content {
-  background: var(--bg-card);
-  padding: 32px;
-  border-radius: var(--border-radius-lg);
-  width: 100%;
-  max-width: 500px;
-  box-shadow: var(--shadow-lg);
-}
-
-.dialog-content h2 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 24px;
-}
-
 .form-group {
   margin-bottom: 16px;
 }
@@ -1680,13 +1564,6 @@ select.form-control {
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px;
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
 }
 
 /* Loader */
@@ -2162,7 +2039,12 @@ select.form-control {
   border-radius: var(--border-radius-md);
   background: var(--bg-card);
   padding: 20px;
-  margin-bottom: 48px;
+  /* La barra de accesibilidad/CTA (que daba separación con el hero) se oculta durante la
+     edición, así que el editor necesita su propio margen superior. */
+  margin-top: 24px;
+  /* 120px para que el reproductor fijo no tape los botones Cancelar/Guardar del pie —
+     mismo criterio que .article-text y .app-main. */
+  margin-bottom: 120px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -2190,8 +2072,12 @@ select.form-control {
 .article-editor-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
 }
 
 .article-editor-label {

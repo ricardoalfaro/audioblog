@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
@@ -474,19 +474,34 @@ function HomeContent() {
     localStorage.setItem('viewMode', mode);
   };
 
-  const filteredArticles = articles.filter((article) => {
+  // P4: memoizados porque el motor Edge dispara setAudioProgressTick/setCurrentCharIndex por
+  // palabra durante la reproducción — sin useMemo, cada uno de esos renders repetía los ~6
+  // filter/sort sobre toda la librería aunque `articles`/`selectedCategory` no hubieran cambiado.
+  const filteredArticles = useMemo(() => articles.filter((article) => {
     return selectedCategory === 'Todos' || article.category === selectedCategory;
-  });
+  }), [articles, selectedCategory]);
 
-  const activeArticles = articles.filter(a => !a.paragraphs?.length || (a.progress ?? 0) < a.paragraphs.length);
-  const filteredActiveArticles = activeArticles.filter(a => selectedCategory === 'Todos' || a.category === selectedCategory);
-  const categories = ['Todos', ...Array.from(new Set(activeArticles.map((a) => a.category).filter(Boolean)))];
+  const activeArticles = useMemo(
+    () => articles.filter(a => !a.paragraphs?.length || (a.progress ?? 0) < a.paragraphs.length),
+    [articles]
+  );
+  const filteredActiveArticles = useMemo(
+    () => activeArticles.filter(a => selectedCategory === 'Todos' || a.category === selectedCategory),
+    [activeArticles, selectedCategory]
+  );
+  const categories = useMemo(
+    () => ['Todos', ...Array.from(new Set(activeArticles.map((a) => a.category).filter(Boolean)))],
+    [activeArticles]
+  );
 
-  const listeningArticles = filteredArticles
+  const listeningArticles = useMemo(() => filteredArticles
     .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
-    .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1);
-  const newArticles = filteredArticles.filter(a => !a.lastPlayedAt);
-  const archivedArticles = filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length);
+    .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1), [filteredArticles]);
+  const newArticles = useMemo(() => filteredArticles.filter(a => !a.lastPlayedAt), [filteredArticles]);
+  const archivedArticles = useMemo(
+    () => filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length),
+    [filteredArticles]
+  );
 
   // Mismo problema que firstNewArticleId (línea 122): al reproducir un artículo se antepone
   // como primero en "Estás escuchando" (ordenado por lastPlayedAt desc). El overflow-anchor:
@@ -655,7 +670,7 @@ function HomeContent() {
 
   return (
     <>
-    <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <main className="container app-main" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {isLoading && <section className="tabs-container">
         <div className="skeleton-tabs">
@@ -683,6 +698,20 @@ function HomeContent() {
             <div className="categories-scroll-spacer" aria-hidden="true" />
           </div>
         </div>
+        {/* En mobile las categorías van en un <select> compacto en vez de la barra scrolleable
+            (que se oculta por CSS a partir de 600px) — libera espacio en esta barra sticky para
+            que el CTA de Importar de abajo quede siempre fijo ahí, sin depender de scrollear
+            hasta arriba para alcanzarlo. */}
+        <select
+          className="category-select sidebar-select"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          aria-label={t('reader.category')}
+        >
+          {categories.map((category) => (
+            <option key={category} value={category}>{tCategory(category)}</option>
+          ))}
+        </select>
         <div className="view-toggles">
           <button
             className="view-btn active"
@@ -690,6 +719,14 @@ function HomeContent() {
             title={viewMode === 'grid' ? t('card.gridView') : t('card.listView')}
           >
             <i className={`fa-solid ${viewMode === 'grid' ? 'fa-grip' : 'fa-list'}`}></i>
+          </button>
+          <button
+            className="view-btn tabs-import-btn"
+            onClick={() => setIsModalOpen(true)}
+            title={t('modal.importArticle')}
+            aria-label={t('modal.importArticle')}
+          >
+            <i className="fa-solid fa-file-import"></i><span className="cta-label"> {t('modal.import')}</span>
           </button>
         </div>
       </section>}
@@ -723,7 +760,7 @@ function HomeContent() {
       ) : (
         <>
           {(listeningArticles.length > 0 || filteredActiveArticles.length > 0 || archivedArticles.length > 0) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '16px' }}>
               {listeningArticles.length > 0 && (
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

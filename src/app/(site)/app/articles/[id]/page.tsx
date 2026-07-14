@@ -207,6 +207,34 @@ export default function ArticleReader() {
         translateTo: shouldRetranslate ? editTranslateTo : article.translateTo,
       };
 
+      // B38: al retraducir por edición, la voz preferida del artículo no se actualizaba —
+      // quedaba con el idioma viejo (ej. una voz en francés intentando leer el texto ya
+      // traducido a inglés). Mismo criterio que el auto-selector de voz al importar (F12/B17):
+      // si la voz actual (o la ya guardada en el artículo) no coincide con el idioma nuevo,
+      // se busca una voz del idioma destino preservando el género de la voz actual si se puede.
+      let matchedEdgeVoice: typeof EDGE_VOICES[number] | undefined;
+      let matchedDeviceVoiceName: string | undefined;
+      if (shouldRetranslate) {
+        if (audioEngine === 'edge') {
+          const currentVoice = EDGE_VOICES.find(v => v.value === (article.preferredEdgeVoice ?? selectedEdgeVoice));
+          if (!currentVoice || !currentVoice.lang.startsWith(editTranslateTo)) {
+            matchedEdgeVoice = (currentVoice && EDGE_VOICES.find(v => v.lang.startsWith(editTranslateTo) && v.gender === currentVoice.gender))
+              ?? EDGE_VOICES.find(v => v.lang.startsWith(editTranslateTo));
+            if (matchedEdgeVoice) updatedPatch.preferredEdgeVoice = matchedEdgeVoice.value;
+          }
+        } else {
+          const currentVoiceName = article.preferredVoiceName ?? selectedVoiceName;
+          const currentDeviceVoice = voices.find(v => v.name === currentVoiceName);
+          if (!currentDeviceVoice || !currentDeviceVoice.lang.startsWith(editTranslateTo)) {
+            const matchedDeviceVoice = voices.find(v => v.lang.startsWith(editTranslateTo));
+            if (matchedDeviceVoice) {
+              matchedDeviceVoiceName = matchedDeviceVoice.name;
+              updatedPatch.preferredVoiceName = matchedDeviceVoice.name;
+            }
+          }
+        }
+      }
+
       if (playingArticle?.id === article.id) {
         const shouldStop = window.confirm(t('reader.editStopConfirm'));
         if (!shouldStop) {
@@ -214,6 +242,21 @@ export default function ArticleReader() {
           return;
         }
         handleStop();
+      }
+
+      // Además de persistir la preferencia en el artículo (para la próxima vez que se
+      // reproduzca), actualiza la voz seleccionada YA MISMO — si el artículo ya se había
+      // reproducido antes en esta sesión, `playArticle` solo aplica `preferredEdgeVoice` la
+      // PRIMERA vez que ve ese id (para no pisar un cambio manual de voz posterior, ver B19),
+      // así que sin esto el próximo play seguiría usando la voz vieja pese al patch. Solo se
+      // aplica cuando no hay ambigüedad sobre a qué artículo corresponde (nada más sonando, o
+      // este mismo artículo era el que sonaba).
+      if (!playingArticle || playingArticle.id === article.id) {
+        if (matchedEdgeVoice) {
+          handleEdgeVoiceChange({ target: { value: matchedEdgeVoice.value } } as React.ChangeEvent<HTMLSelectElement>);
+        } else if (matchedDeviceVoiceName) {
+          handleVoiceChange({ target: { value: matchedDeviceVoiceName } } as React.ChangeEvent<HTMLSelectElement>);
+        }
       }
 
       const updated = saveArticlePatch(article.id, updatedPatch);
@@ -627,62 +670,67 @@ export default function ArticleReader() {
             </div>
           </div>
 
-          {/* Barra de controles de accesibilidad */}
-          <div className="reader-controls-bar" style={{ top: headerHeight + 49 }}>
-            <div className="reader-controls-left">
-              <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.max(14, s - 2))} title={t('reader.decreaseText')}>A−</button>
-              <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.min(28, s + 2))} title={t('reader.increaseText')}>A+</button>
-              <div className="reader-font-toggle">
+          {/* Barra de controles de accesibilidad + CTA — ninguno aplica durante la edición
+              (tamaño/tipo de letra son para leer, no para el textarea; Escuchar/Compartir no
+              tienen sentido a mitad de edición). El editor ya tiene sus propios Cancelar/
+              Guardar al pie (B35), así que ocultarla no deja al usuario sin forma de salir. */}
+          {!isEditing && (
+            <div className="reader-controls-bar" style={{ top: headerHeight + 49 }}>
+              <div className="reader-controls-left">
+                <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.max(14, s - 2))} title={t('reader.decreaseText')}>A−</button>
+                <button className="reader-ctrl-btn" onClick={() => setFontSize(s => Math.min(28, s + 2))} title={t('reader.increaseText')}>A+</button>
+                <div className="reader-font-toggle">
+                  <button
+                    className={`reader-font-btn${fontFamily === 'sans' ? ' active' : ''}`}
+                    onClick={() => setFontFamily('sans')}
+                    style={{ fontFamily: 'var(--font-sans)' }}
+                    title={t('reader.sansSerif')}
+                  >Aa</button>
+                  <button
+                    className={`reader-font-btn${fontFamily === 'serif' ? ' active' : ''}`}
+                    onClick={() => setFontFamily('serif')}
+                    style={{ fontFamily: 'var(--font-serif)' }}
+                    title={t('reader.serif')}
+                  >Aa</button>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
-                  className={`reader-font-btn${fontFamily === 'sans' ? ' active' : ''}`}
-                  onClick={() => setFontFamily('sans')}
-                  style={{ fontFamily: 'var(--font-sans)' }}
-                  title={t('reader.sansSerif')}
-                >Aa</button>
+                  onClick={startEditing}
+                  title={t('reader.editArticle')}
+                  aria-label={t('reader.editArticle')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+                >
+                  <i className="fa-solid fa-pen-to-square" /><span className="cta-label"> {t('reader.edit')}</span>
+                </button>
+                {article.url !== 'manual' && (
+                  <button
+                    onClick={handleShare}
+                    title={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
+                    aria-label={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+                  >
+                    <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} /><span className="cta-label">{shareCopied ? ` ${t('reader.copied')}` : ` ${t('reader.share')}`}</span>
+                  </button>
+                )}
                 <button
-                  className={`reader-font-btn${fontFamily === 'serif' ? ' active' : ''}`}
-                  onClick={() => setFontFamily('serif')}
-                  style={{ fontFamily: 'var(--font-serif)' }}
-                  title={t('reader.serif')}
-                >Aa</button>
+                  className="btn btn-primary reader-play-cta"
+                  onClick={() => {
+                    if (playingArticle?.id === article.id) {
+                      handlePlayPause();
+                    } else {
+                      playArticle(article, 0);
+                    }
+                  }}
+                >
+                  {playingArticle?.id === article.id && isPlaying && !isPaused
+                    ? <><i className="fa-solid fa-pause"></i><span className="cta-label"> {t('reader.pause')}</span></>
+                    : <><i className="fa-solid fa-play"></i><span className="cta-label"> {t('reader.listen')}</span></>
+                  }
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={isEditing ? cancelEditing : startEditing}
-                title={isEditing ? t('reader.cancelEdit') : t('reader.editArticle')}
-                aria-label={isEditing ? t('reader.cancelEdit') : t('reader.editArticle')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: isEditing ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
-              >
-                <i className={`fa-solid ${isEditing ? 'fa-xmark' : 'fa-pen-to-square'}`} /><span className="cta-label"> {isEditing ? t('reader.cancelEdit') : t('reader.edit')}</span>
-              </button>
-              {article.url !== 'manual' && (
-                <button
-                  onClick={handleShare}
-                  title={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
-                  aria-label={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
-                >
-                  <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} /><span className="cta-label">{shareCopied ? ` ${t('reader.copied')}` : ` ${t('reader.share')}`}</span>
-                </button>
-              )}
-              <button
-                className="btn btn-primary reader-play-cta"
-                onClick={() => {
-                  if (playingArticle?.id === article.id) {
-                    handlePlayPause();
-                  } else {
-                    playArticle(article, 0);
-                  }
-                }}
-              >
-                {playingArticle?.id === article.id && isPlaying && !isPaused
-                  ? <><i className="fa-solid fa-pause"></i><span className="cta-label"> {t('reader.pause')}</span></>
-                  : <><i className="fa-solid fa-play"></i><span className="cta-label"> {t('reader.listen')}</span></>
-                }
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Texto del artículo */}
           {isEditing ? (
@@ -691,12 +739,6 @@ export default function ArticleReader() {
                 <div>
                   <h2>{t('reader.editArticle')}</h2>
                   <p>{t('reader.editHint')}</p>
-                </div>
-                <div className="article-editor-actions">
-                  <button className="btn btn-secondary" onClick={cancelEditing} disabled={isSavingEdit}>{t('reader.cancelEdit')}</button>
-                  <button className="btn btn-primary" onClick={saveEditedArticle} disabled={isSavingEdit}>
-                    {isSavingEdit ? t('reader.savingEdit') : t('reader.saveEdit')}
-                  </button>
                 </div>
               </div>
               <label className="article-editor-label" htmlFor="article-edit-title">{t('modal.title')}</label>
@@ -740,6 +782,12 @@ export default function ArticleReader() {
                 </select>
               </div>
               {editError && <p className="article-editor-error" role="alert">{editError}</p>}
+              <div className="article-editor-actions">
+                <button className="btn btn-secondary" onClick={cancelEditing} disabled={isSavingEdit}>{t('reader.cancel')}</button>
+                <button className="btn btn-primary" onClick={saveEditedArticle} disabled={isSavingEdit}>
+                  {isSavingEdit ? t('reader.savingEdit') : t('reader.save')}
+                </button>
+              </div>
             </section>
           ) : (
             <article

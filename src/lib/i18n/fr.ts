@@ -128,6 +128,8 @@ const fr = {
   'reader.cancelEdit': 'Annuler la modification',
   'reader.saveEdit': 'Enregistrer les modifications',
   'reader.savingEdit': 'Enregistrement...',
+  'reader.cancel': 'Annuler',
+  'reader.save': 'Enregistrer',
   'reader.translation': 'Traduction',
   'reader.retranslateArticle': "Retraduire l'article",
   'reader.retranslating': 'Retraduction...',

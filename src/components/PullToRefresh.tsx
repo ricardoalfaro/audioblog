@@ -43,12 +43,17 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
     const onTouchEnd = () => {
       if (!pullingRef.current) return;
       pullingRef.current = false;
-      setSettling(true);
       if (pullDistanceRef.current >= THRESHOLD) {
         refreshingRef.current = true;
         setPullDistance(THRESHOLD);
         setRefreshing(true);
         window.location.reload();
+      } else if (pullDistanceRef.current > 0) {
+        // Solo hay algo que "asentar" (animar de vuelta a 0) si hubo un pull real — un tap
+        // sin arrastre no cambia ningún transform, así que nunca dispararía `onTransitionEnd`
+        // y `settling` (y con él, `will-change`) quedaría pegado en `true` para siempre.
+        setSettling(true);
+        setPullDistance(0);
       } else {
         setPullDistance(0);
       }
@@ -90,6 +95,14 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
           transition: settling ? 'transform 0.2s ease' : 'none',
           willChange: isTransforming ? 'transform' : undefined,
         }}
+        // `settling` solo debía durar lo que tarda el snap-back (la transición de arriba),
+        // pero nada la volvía a `false` una vez terminada — quedaba pegada en `true` para
+        // siempre después del primer gesto (cada `touchend` la vuelve a poner en `true`, y
+        // nunca se limpiaba). Eso dejaba `will-change: transform` permanente en este wrapper,
+        // rompiendo `position:fixed` en toda la app (reproductor, sidebar del reader) exactamente
+        // por lo que ya advertía el comentario de arriba — ver B18 y el hallazgo de sesión
+        // 2026-07-14 (bugs del reproductor tapando cards y sidebar en blanco al abrir scrolleado).
+        onTransitionEnd={(e) => { if (e.propertyName === 'transform') setSettling(false); }}
       >
         {children}
       </div>
