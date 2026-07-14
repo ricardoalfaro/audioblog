@@ -698,6 +698,20 @@ function HomeContent() {
             <div className="categories-scroll-spacer" aria-hidden="true" />
           </div>
         </div>
+        {/* En mobile las categorías van en un <select> compacto en vez de la barra scrolleable
+            (que se oculta por CSS a partir de 600px) — libera espacio en esta barra sticky para
+            que el CTA de Importar de abajo quede siempre fijo ahí, sin depender de scrollear
+            hasta arriba para alcanzarlo. */}
+        <select
+          className="category-select sidebar-select"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          aria-label={t('reader.category')}
+        >
+          {categories.map((category) => (
+            <option key={category} value={category}>{tCategory(category)}</option>
+          ))}
+        </select>
         <div className="view-toggles">
           <button
             className="view-btn active"
@@ -705,6 +719,14 @@ function HomeContent() {
             title={viewMode === 'grid' ? t('card.gridView') : t('card.listView')}
           >
             <i className={`fa-solid ${viewMode === 'grid' ? 'fa-grip' : 'fa-list'}`}></i>
+          </button>
+          <button
+            className="view-btn tabs-import-btn"
+            onClick={() => setIsModalOpen(true)}
+            title={t('modal.importArticle')}
+            aria-label={t('modal.importArticle')}
+          >
+            <i className="fa-solid fa-file-import"></i><span className="cta-label"> {t('modal.import')}</span>
           </button>
         </div>
       </section>}

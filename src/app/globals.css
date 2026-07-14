@@ -582,6 +582,26 @@ a {
   border-bottom: 2px solid var(--color-primary);
 }
 
+/* Select de categorías para mobile — reemplaza la barra scrolleable de tabs para liberar
+   espacio en .tabs-container (sticky) y que el CTA de Importar quede siempre fijo ahí. */
+.category-select {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .tabs-scroll-wrapper {
+    display: none;
+  }
+
+  .category-select {
+    display: block;
+    width: auto;
+    max-width: 130px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+}
+
 /* View Toggles */
 .view-toggles {
   display: flex;
@@ -620,6 +640,24 @@ a {
     color: var(--color-primary);
     background: rgba(255, 109, 31, 0.15);
   }
+}
+
+/* CTA de Importar en la barra de tabs (sticky) — a diferencia de .view-btn (icon-only, muted),
+   este debe destacar como acción principal, no mimetizarse con el toggle de grid/list. */
+.tabs-import-btn {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  color: var(--color-primary);
+  background: var(--color-primary-glow);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tabs-import-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-glow);
+  opacity: 0.85;
 }
 
 /* Sections */
