@@ -1994,6 +1994,9 @@ select.form-control {
   border-radius: var(--border-radius-md);
   background: var(--bg-card);
   padding: 20px;
+  /* La barra de accesibilidad/CTA (que daba separación con el hero) se oculta durante la
+     edición, así que el editor necesita su propio margen superior. */
+  margin-top: 24px;
   /* 120px para que el reproductor fijo no tape los botones Cancelar/Guardar del pie —
      mismo criterio que .article-text y .app-main. */
   margin-bottom: 120px;
