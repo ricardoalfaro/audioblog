@@ -207,6 +207,34 @@ export default function ArticleReader() {
         translateTo: shouldRetranslate ? editTranslateTo : article.translateTo,
       };
 
+      // B38: al retraducir por edición, la voz preferida del artículo no se actualizaba —
+      // quedaba con el idioma viejo (ej. una voz en francés intentando leer el texto ya
+      // traducido a inglés). Mismo criterio que el auto-selector de voz al importar (F12/B17):
+      // si la voz actual (o la ya guardada en el artículo) no coincide con el idioma nuevo,
+      // se busca una voz del idioma destino preservando el género de la voz actual si se puede.
+      let matchedEdgeVoice: typeof EDGE_VOICES[number] | undefined;
+      let matchedDeviceVoiceName: string | undefined;
+      if (shouldRetranslate) {
+        if (audioEngine === 'edge') {
+          const currentVoice = EDGE_VOICES.find(v => v.value === (article.preferredEdgeVoice ?? selectedEdgeVoice));
+          if (!currentVoice || !currentVoice.lang.startsWith(editTranslateTo)) {
+            matchedEdgeVoice = (currentVoice && EDGE_VOICES.find(v => v.lang.startsWith(editTranslateTo) && v.gender === currentVoice.gender))
+              ?? EDGE_VOICES.find(v => v.lang.startsWith(editTranslateTo));
+            if (matchedEdgeVoice) updatedPatch.preferredEdgeVoice = matchedEdgeVoice.value;
+          }
+        } else {
+          const currentVoiceName = article.preferredVoiceName ?? selectedVoiceName;
+          const currentDeviceVoice = voices.find(v => v.name === currentVoiceName);
+          if (!currentDeviceVoice || !currentDeviceVoice.lang.startsWith(editTranslateTo)) {
+            const matchedDeviceVoice = voices.find(v => v.lang.startsWith(editTranslateTo));
+            if (matchedDeviceVoice) {
+              matchedDeviceVoiceName = matchedDeviceVoice.name;
+              updatedPatch.preferredVoiceName = matchedDeviceVoice.name;
+            }
+          }
+        }
+      }
+
       if (playingArticle?.id === article.id) {
         const shouldStop = window.confirm(t('reader.editStopConfirm'));
         if (!shouldStop) {
@@ -214,6 +242,21 @@ export default function ArticleReader() {
           return;
         }
         handleStop();
+      }
+
+      // Además de persistir la preferencia en el artículo (para la próxima vez que se
+      // reproduzca), actualiza la voz seleccionada YA MISMO — si el artículo ya se había
+      // reproducido antes en esta sesión, `playArticle` solo aplica `preferredEdgeVoice` la
+      // PRIMERA vez que ve ese id (para no pisar un cambio manual de voz posterior, ver B19),
+      // así que sin esto el próximo play seguiría usando la voz vieja pese al patch. Solo se
+      // aplica cuando no hay ambigüedad sobre a qué artículo corresponde (nada más sonando, o
+      // este mismo artículo era el que sonaba).
+      if (!playingArticle || playingArticle.id === article.id) {
+        if (matchedEdgeVoice) {
+          handleEdgeVoiceChange({ target: { value: matchedEdgeVoice.value } } as React.ChangeEvent<HTMLSelectElement>);
+        } else if (matchedDeviceVoiceName) {
+          handleVoiceChange({ target: { value: matchedDeviceVoiceName } } as React.ChangeEvent<HTMLSelectElement>);
+        }
       }
 
       const updated = saveArticlePatch(article.id, updatedPatch);
