@@ -670,7 +670,7 @@ function HomeContent() {
 
   return (
     <>
-    <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <main className="container app-main" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {isLoading && <section className="tabs-container">
         <div className="skeleton-tabs">

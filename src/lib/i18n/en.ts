@@ -128,6 +128,8 @@ const en = {
   'reader.cancelEdit': 'Cancel editing',
   'reader.saveEdit': 'Save changes',
   'reader.savingEdit': 'Saving...',
+  'reader.cancel': 'Cancel',
+  'reader.save': 'Save',
   'reader.translation': 'Translation',
   'reader.retranslateArticle': 'Retranslate article',
   'reader.retranslating': 'Retranslating...',

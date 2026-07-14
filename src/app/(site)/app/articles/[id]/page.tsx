@@ -692,12 +692,6 @@ export default function ArticleReader() {
                   <h2>{t('reader.editArticle')}</h2>
                   <p>{t('reader.editHint')}</p>
                 </div>
-                <div className="article-editor-actions">
-                  <button className="btn btn-secondary" onClick={cancelEditing} disabled={isSavingEdit}>{t('reader.cancelEdit')}</button>
-                  <button className="btn btn-primary" onClick={saveEditedArticle} disabled={isSavingEdit}>
-                    {isSavingEdit ? t('reader.savingEdit') : t('reader.saveEdit')}
-                  </button>
-                </div>
               </div>
               <label className="article-editor-label" htmlFor="article-edit-title">{t('modal.title')}</label>
               <input
@@ -740,6 +734,12 @@ export default function ArticleReader() {
                 </select>
               </div>
               {editError && <p className="article-editor-error" role="alert">{editError}</p>}
+              <div className="article-editor-actions">
+                <button className="btn btn-secondary" onClick={cancelEditing} disabled={isSavingEdit}>{t('reader.cancel')}</button>
+                <button className="btn btn-primary" onClick={saveEditedArticle} disabled={isSavingEdit}>
+                  {isSavingEdit ? t('reader.savingEdit') : t('reader.save')}
+                </button>
+              </div>
             </section>
           ) : (
             <article

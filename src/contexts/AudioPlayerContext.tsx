@@ -609,6 +609,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.ontimeupdate = null;
       audioRef.current.src = '';
     }
@@ -679,7 +681,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (playingArticle) saveArticleVoicePreference(playingArticle.id, { preferredEngine: engine });
     if ((isPlaying || isLoading) && playingArticle) {
       try { window.speechSynthesis.cancel(); } catch {}
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current.ontimeupdate = null; audioRef.current.src = ''; }
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current.onerror = null; audioRef.current.ontimeupdate = null; audioRef.current.src = ''; }
       revokePrefetchedBlob();
       setIsPlaying(false);
       setIsPaused(false);
@@ -697,8 +699,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setSelectedVoiceName(e.target.value);
     const targetArticleId = playingArticle?.id ?? currentArticleIdRef.current;
     if (targetArticleId) saveArticleVoicePreference(targetArticleId, { preferredVoiceName: e.target.value });
-    if (isPlaying && audioEngine === 'device') {
-      handleStop();
+    // Reinicia el párrafo actual con la voz nueva sin perder el artículo en curso — usar
+    // handleStop() acá (como antes) limpiaba playingArticle, así que al volver a dar play
+    // el botón del reader ya no reconocía "mismo artículo en curso" y arrancaba de índice 0
+    // en vez de retomar donde iba (bug reportado: la voz cambiaba pero reiniciaba desde el
+    // principio). Mismo patrón que handleEngineChange.
+    if ((isPlaying || isLoading) && playingArticle && audioEngine === 'device') {
+      playSessionRef.current += 1;
+      try { window.speechSynthesis.cancel(); } catch {}
+      setIsPlaying(false);
+      setIsPaused(false);
+      isPausedRef.current = false;
+      const idx = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
+      speakParagraph(idx, playingArticle);
     }
   };
 
@@ -709,8 +722,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const targetArticleId = playingArticle?.id ?? currentArticleIdRef.current;
     if (targetArticleId) saveArticleVoicePreference(targetArticleId, { preferredEdgeVoice: e.target.value });
     revokePrefetchedBlob();
-    if (isPlaying && audioEngine === 'edge') {
-      handleStop();
+    // Ídem handleVoiceChange: reinicia el párrafo actual en vez de handleStop(), que además
+    // dejaba el <audio> con onerror/onended del párrafo anterior todavía enganchados —
+    // reasignar src='' sobre un audio en curso dispara un error de media (code 4) que ese
+    // handler viejo capturaba y mostraba como error real (bug reportado: "error de audio
+    // media 4" al cambiar de voz sin detener la reproducción).
+    if ((isPlaying || isLoading) && playingArticle && audioEngine === 'edge') {
+      playSessionRef.current += 1;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
+        audioRef.current.ontimeupdate = null;
+        audioRef.current.src = '';
+      }
+      setIsPlaying(false);
+      setIsPaused(false);
+      isPausedRef.current = false;
+      const idx = activeParagraphIndex >= 0 ? activeParagraphIndex : 0;
+      playEdgeParagraph(idx, playingArticle);
     }
   };
 

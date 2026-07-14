@@ -128,6 +128,8 @@ const pt = {
   'reader.cancelEdit': 'Cancelar edição',
   'reader.saveEdit': 'Salvar alterações',
   'reader.savingEdit': 'Salvando...',
+  'reader.cancel': 'Cancelar',
+  'reader.save': 'Salvar',
   'reader.translation': 'Tradução',
   'reader.retranslateArticle': 'Retraduzir artigo',
   'reader.retranslating': 'Retraduzindo...',

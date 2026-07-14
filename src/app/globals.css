@@ -212,6 +212,12 @@ a {
   padding: 0 24px;
 }
 
+/* Deja espacio para que el reproductor fijo (.bottom-player-container) no tape la última
+   fila de artículos — mismo criterio que .article-text en el reader. */
+.app-main {
+  padding-bottom: 120px;
+}
+
 /* Theme Switcher Styles */
 .theme-switcher {
   display: flex;
@@ -1988,7 +1994,9 @@ select.form-control {
   border-radius: var(--border-radius-md);
   background: var(--bg-card);
   padding: 20px;
-  margin-bottom: 48px;
+  /* 120px para que el reproductor fijo no tape los botones Cancelar/Guardar del pie —
+     mismo criterio que .article-text y .app-main. */
+  margin-bottom: 120px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -2016,8 +2024,12 @@ select.form-control {
 .article-editor-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
 }
 
 .article-editor-label {

@@ -128,6 +128,8 @@ const de = {
   'reader.cancelEdit': 'Bearbeitung abbrechen',
   'reader.saveEdit': 'Änderungen speichern',
   'reader.savingEdit': 'Wird gespeichert...',
+  'reader.cancel': 'Abbrechen',
+  'reader.save': 'Speichern',
   'reader.translation': 'Übersetzung',
   'reader.retranslateArticle': 'Artikel neu übersetzen',
   'reader.retranslating': 'Wird neu übersetzt...',
