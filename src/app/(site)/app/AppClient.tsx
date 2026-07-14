@@ -727,7 +727,7 @@ function HomeContent() {
               {listeningArticles.length > 0 && (
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '20px'}}></i> {t('app.listening')}</h2>
+                    <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '16px'}}></i> {t('app.listening')}</h2>
                     <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title={t('app.importNewArticle')}>
                       <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
                     </button>
@@ -742,7 +742,7 @@ function HomeContent() {
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
-                      <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '20px' }}></i> {t('app.readyToListen')}
+                      <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '16px' }}></i> {t('app.readyToListen')}
                     </h2>
                     {listeningArticles.length === 0 && (
                       <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title={t('app.importNewArticle')}>
@@ -760,7 +760,7 @@ function HomeContent() {
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
-                      <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '18px' }}></i> {t('app.backToListen')}
+                      <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '16px' }}></i> {t('app.backToListen')}
                     </h2>
                   </div>
                   <div ref={archivedCarouselRef} className={viewMode === 'grid' ? 'listening-carousel archived-cards' : 'articles-list archived-cards'}>

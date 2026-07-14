@@ -399,10 +399,10 @@ a {
 }
 
 .avatar-btn {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--text-muted);
   color: white;
   display: flex;
   align-items: center;
@@ -687,16 +687,10 @@ a {
 
 /* Sections */
 .section-title {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
   margin-bottom: 16px;
   color: var(--text-primary);
-}
-
-@media (max-width: 600px) {
-  .section-title {
-    font-size: 18px;
-  }
 }
 
 /* Horizontal Carousel (Estás Escuchando) */
@@ -716,15 +710,42 @@ a {
      card recién activada invisible hasta un refresh completo. Se desactiva acá; el reset a
      scrollLeft 0 para revelarla si el usuario había scrolleado manualmente lo hace JS. */
   overflow-anchor: none;
+  /* Full-bleed (mismo patrón que .tabs-container): el carrusel rompe el padding de
+     .container para que, al scrollear, las cards lleguen hasta el borde real del
+     viewport en vez de cortarse 24px antes. */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  /* El motor de scroll-snap corrige el scrollLeft inicial para alinearlo con el primer
+     elemento snap-eable, sin importar si el espacio previo es padding o un hijo flex —
+     por eso hacía falta declarar dónde está el punto de snap real (mismo valor que el
+     spacer de ::before) para que no lo pise y "rebote" a 0, comiéndose el margen inicial. */
+  scroll-padding-left: max(24px, calc((100vw - 1200px) / 2 + 24px));
+  /* Deja un respiro chico al snapear la última card por su borde derecho (ver
+     scroll-snap-align:end más abajo), para que no quede pegada a pixel 0 del borde. */
+  scroll-padding-right: 24px;
 }
 
 .listening-carousel::-webkit-scrollbar {
   display: none;
 }
 
+/* Spacer inicial en vez de padding-left: crea el espacio real que ve el usuario al
+   arrancar (alineado con el título de sección); junto con scroll-padding-left arriba
+   evita el rebote a scrollLeft:0 que se veía en el teléfono. El `gap` del flex también
+   se aplica entre este spacer y la primera card, así que se le resta acá (-16px) para
+   que el margen visible total dé exacto — si no, con una sola card (sin overflow, sin
+   scroll posible que "corrija" el desfasaje) quedaba desalineado 16px de más. */
+.listening-carousel::before {
+  content: '';
+  min-width: max(8px, calc((100vw - 1200px) / 2 + 8px));
+  flex-shrink: 0;
+}
+
 .listening-carousel::after {
   content: '';
   min-width: 32px;
+  height: 26px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
@@ -753,6 +774,14 @@ a {
   width: 264px;
   height: 336px;
   scroll-snap-align: start;
+}
+
+/* Todas las cards snapean por su borde izquierdo (start) — así el motor de snap nunca
+   puede asentar el scroll mostrando el final real de la última, dejando un hueco vacío
+   después de ella (ancho sobrante del viewport) en vez de flush contra el borde. Solo la
+   última alinea por su derecha para que el snap final quede pegado al borde real. */
+.listening-carousel > .article-card:last-child {
+  scroll-snap-align: end;
 }
 
 /* Square Card */
