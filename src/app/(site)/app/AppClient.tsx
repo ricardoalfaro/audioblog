@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
@@ -474,19 +474,34 @@ function HomeContent() {
     localStorage.setItem('viewMode', mode);
   };
 
-  const filteredArticles = articles.filter((article) => {
+  // P4: memoizados porque el motor Edge dispara setAudioProgressTick/setCurrentCharIndex por
+  // palabra durante la reproducción — sin useMemo, cada uno de esos renders repetía los ~6
+  // filter/sort sobre toda la librería aunque `articles`/`selectedCategory` no hubieran cambiado.
+  const filteredArticles = useMemo(() => articles.filter((article) => {
     return selectedCategory === 'Todos' || article.category === selectedCategory;
-  });
+  }), [articles, selectedCategory]);
 
-  const activeArticles = articles.filter(a => !a.paragraphs?.length || (a.progress ?? 0) < a.paragraphs.length);
-  const filteredActiveArticles = activeArticles.filter(a => selectedCategory === 'Todos' || a.category === selectedCategory);
-  const categories = ['Todos', ...Array.from(new Set(activeArticles.map((a) => a.category).filter(Boolean)))];
+  const activeArticles = useMemo(
+    () => articles.filter(a => !a.paragraphs?.length || (a.progress ?? 0) < a.paragraphs.length),
+    [articles]
+  );
+  const filteredActiveArticles = useMemo(
+    () => activeArticles.filter(a => selectedCategory === 'Todos' || a.category === selectedCategory),
+    [activeArticles, selectedCategory]
+  );
+  const categories = useMemo(
+    () => ['Todos', ...Array.from(new Set(activeArticles.map((a) => a.category).filter(Boolean)))],
+    [activeArticles]
+  );
 
-  const listeningArticles = filteredArticles
+  const listeningArticles = useMemo(() => filteredArticles
     .filter(a => a.lastPlayedAt && (!a.progress || a.progress < a.paragraphs.length))
-    .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1);
-  const newArticles = filteredArticles.filter(a => !a.lastPlayedAt);
-  const archivedArticles = filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length);
+    .sort((a, b) => (b.lastPlayedAt || '') > (a.lastPlayedAt || '') ? 1 : -1), [filteredArticles]);
+  const newArticles = useMemo(() => filteredArticles.filter(a => !a.lastPlayedAt), [filteredArticles]);
+  const archivedArticles = useMemo(
+    () => filteredArticles.filter(a => a.paragraphs?.length && (a.progress ?? 0) >= a.paragraphs.length),
+    [filteredArticles]
+  );
 
   // Mismo problema que firstNewArticleId (línea 122): al reproducir un artículo se antepone
   // como primero en "Estás escuchando" (ordenado por lastPlayedAt desc). El overflow-anchor:

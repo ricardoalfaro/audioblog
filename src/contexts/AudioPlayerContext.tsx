@@ -56,7 +56,6 @@ interface AudioPlayerContextType {
   getRemainingTime: () => number;
   addToQueue: (article: Article) => void;
   removeFromQueue: (id: string) => void;
-  clearQueue: () => void;
   notifyLibraryChanged: () => void;
 }
 
@@ -87,7 +86,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Increments on every new play session (new article, engine change, stop)
   // so in-flight TTS fetches from a previous session are discarded.
   const playSessionRef = useRef(0);
-  const { queue, queueRef, addToQueue, removeFromQueue, clearQueue, consumeNextInQueue } = useQueue();
+  const { queue, queueRef, addToQueue, removeFromQueue, consumeNextInQueue } = useQueue();
   const [speechRate, setSpeechRate] = useState(1);
   const [audioEngine, setAudioEngine] = useState<'device' | 'edge'>('edge');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -150,6 +149,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
     return () => {
+      window.speechSynthesis.onvoiceschanged = null;
       window.speechSynthesis?.cancel();
     };
   }, [selectedVoiceName]);
@@ -843,7 +843,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       getRemainingTime,
       addToQueue,
       removeFromQueue,
-      clearQueue,
       notifyLibraryChanged,
     }}>
       {children}
