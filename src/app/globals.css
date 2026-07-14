@@ -151,6 +151,11 @@ html {
   min-height: 100vh;
   overflow-x: hidden;
   scrollbar-width: none; /* Firefox: ocultar la barra de scroll de la página */
+  /* El viewport meta (userScalable:false/maximumScale:1 en layout.tsx) no alcanza en iOS
+     Safari — desde iOS 10 el navegador lo ignora a propósito por accesibilidad y el pinch-zoom
+     sigue funcionando igual. touch-action sí lo respeta: permite paneo normal (scroll vertical
+     y horizontal de carruseles) pero bloquea el gesto de pellizco para zoomear la página. */
+  touch-action: pan-x pan-y;
 }
 
 /* Ocultar la barra de scroll de la ventana en todo el sitio (el scroll sigue activo) */
@@ -213,9 +218,11 @@ a {
 }
 
 /* Deja espacio para que el reproductor fijo (.bottom-player-container) no tape la última
-   fila de artículos — mismo criterio que .article-text en el reader. */
+   fila de artículos — mismo criterio que .article-text en el reader. Reducido a pedido
+   (120px se sentía excesivo); sigue siendo mayor a la altura real del reproductor flotante
+   (~90-100px + 40px de offset desde el borde), así que conserva margen de sobra. */
 .app-main {
-  padding-bottom: 120px;
+  padding-bottom: 100px;
 }
 
 /* Theme Switcher Styles */

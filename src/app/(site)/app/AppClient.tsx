@@ -760,7 +760,7 @@ function HomeContent() {
       ) : (
         <>
           {(listeningArticles.length > 0 || filteredActiveArticles.length > 0 || archivedArticles.length > 0) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '16px' }}>
               {listeningArticles.length > 0 && (
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
