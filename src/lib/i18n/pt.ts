@@ -167,6 +167,7 @@ const pt = {
   'errors.textTooLong': 'O texto é muito longo.',
   'errors.invalidVoice': 'Voz inválida.',
   'errors.ttsInternal': 'Erro interno ao gerar a fala.',
+  'errors.ttsTimeout': 'O serviço de voz demorou demais para responder. Tente novamente.',
   'errors.shortenOriginOnly': 'Só é possível encurtar links do Audiodocs.',
   'errors.shortenFailed': 'Não foi possível encurtar o link.',
   'errors.translateLangInvalid': 'Idioma de tradução inválido.',

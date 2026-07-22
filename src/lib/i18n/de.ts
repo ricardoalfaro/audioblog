@@ -167,6 +167,7 @@ const de = {
   'errors.textTooLong': 'Der Text ist zu lang.',
   'errors.invalidVoice': 'Ungültige Stimme.',
   'errors.ttsInternal': 'Interner Fehler beim Erzeugen der Sprache.',
+  'errors.ttsTimeout': 'Der Sprachdienst hat zu lange gebraucht. Bitte versuche es erneut.',
   'errors.shortenOriginOnly': 'Es können nur Audiodocs-Links gekürzt werden.',
   'errors.shortenFailed': 'Der Link konnte nicht gekürzt werden.',
   'errors.translateLangInvalid': 'Ungültige Übersetzungssprache.',

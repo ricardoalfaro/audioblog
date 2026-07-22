@@ -17,6 +17,7 @@ const ERROR_CODE_TO_KEY: Record<ErrorCode, MessageKey> = {
   TEXT_TOO_LONG: 'errors.textTooLong',
   INVALID_VOICE: 'errors.invalidVoice',
   TTS_INTERNAL: 'errors.ttsInternal',
+  TTS_TIMEOUT: 'errors.ttsTimeout',
   SHORTEN_ORIGIN_ONLY: 'errors.shortenOriginOnly',
   SHORTEN_FAILED: 'errors.shortenFailed',
   TRANSLATE_LANG_INVALID: 'errors.translateLangInvalid',

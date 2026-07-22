@@ -5,6 +5,7 @@ import dns from 'node:dns/promises';
 import { Agent } from 'undici';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 import { translateConcurrent, translateText } from '@/lib/translation';
+import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 
 export const maxDuration = 30;
 
@@ -394,14 +395,14 @@ function getMediumHash(rawUrl: string): string | null {
 // diferencia de la página del artículo, que sí lo aplica). Se parsea con regex en vez de
 // DOM porque un parser HTML interpreta mal las secciones CDATA de XML (las convierte en
 // comentarios) y el tag <link> como elemento vacío/void.
-async function tryMediumRSS(targetUrl: string): Promise<ScrapedRaw | null> {
+async function tryMediumRSS(targetUrl: string, timeoutMs: number): Promise<ScrapedRaw | null> {
   const feedUrl = getMediumFeedUrl(targetUrl);
   const targetHash = getMediumHash(targetUrl);
   if (!feedUrl || !targetHash) return null;
 
   try {
     const res = await safeFetch(feedUrl, {
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/rss+xml, application/xml, text/xml' },
     });
     if (!res.ok) {
@@ -451,10 +452,10 @@ async function tryMediumRSS(targetUrl: string): Promise<ScrapedRaw | null> {
 
 // Última opción: la snapshot más reciente de archive.org puede tener el artículo cacheado
 // desde antes de que el muro de pago se aplicara (o crawleado con acceso completo).
-async function tryMediumArchive(targetUrl: string): Promise<ScrapedRaw | null> {
+async function tryMediumArchive(targetUrl: string, timeoutMs: number): Promise<ScrapedRaw | null> {
   try {
     const res = await safeFetch(`https://web.archive.org/web/2/${targetUrl}`, {
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: { 'User-Agent': USER_AGENT },
     });
     if (!res.ok) {
@@ -473,6 +474,15 @@ export async function POST(request: Request) {
   if (!rateLimit(getIP(request), 10, 60_000)) {
     return NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429 });
   }
+
+  // R7: la cascada de fallbacks (fetch 10s + RSS 8s + archive.org 15s) más la traducción
+  // encima podían sumar bastante más que maxDuration=30 en el peor caso — Vercel mataba la
+  // función a mitad de camino con un 504 sin cuerpo, en vez de un SCRAPE_TIMEOUT legible. Se
+  // reparte un presupuesto de tiempo compartido: cada etapa usa el mínimo entre su timeout
+  // original y lo que quede del presupuesto, dejando ~3s de margen bajo maxDuration para
+  // parsear/serializar la respuesta.
+  const deadline = Date.now() + 27_000;
+  const remaining = () => deadline - Date.now();
 
   try {
     const { url, translateTo } = await request.json();
@@ -570,10 +580,19 @@ export async function POST(request: Request) {
 
     // F13: fetch directo bloqueado en un artículo de Medium — cascada RSS → archive.org
     if (fetchBlocked && !scraped) {
-      scraped = await tryMediumRSS(url);
-      if (!scraped) scraped = await tryMediumArchive(url);
+      const MIN_STAGE_BUDGET_MS = 1500;
+      if (remaining() < MIN_STAGE_BUDGET_MS) {
+        return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
+      }
+      scraped = await tryMediumRSS(url, Math.min(8000, remaining()));
+      if (!scraped && remaining() >= MIN_STAGE_BUDGET_MS) {
+        scraped = await tryMediumArchive(url, Math.min(15_000, remaining()));
+      }
 
       if (!scraped) {
+        if (remaining() < MIN_STAGE_BUDGET_MS) {
+          return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
+        }
         return NextResponse.json({ error: 'MEDIUM_BLOCKED' }, { status: 422 });
       }
     }
@@ -625,22 +644,41 @@ export async function POST(request: Request) {
     // Apply translation if chosen and not 'original'
     let translationFailed = false;
     if (translateTo && translateTo !== 'original' && translateTo !== 'none') {
-      try {
-        const titleResult = await translateText(title, translateTo);
-        const excerptResult = await translateText(excerpt, translateTo);
-        // Translate paragraphs with capped concurrency to avoid hammering the translate API
-        const paragraphsResult = await translateConcurrent(paragraphs, translateTo, 5);
-
-        title = titleResult.text;
-        excerpt = excerptResult.text;
-        paragraphs = paragraphsResult.texts;
-        // R6: antes esto se perdía en silencio para el cliente — el artículo se guardaba sin
-        // traducir y el usuario no tenía forma de saber que no era lo que había pedido.
-        translationFailed = titleResult.failed || excerptResult.failed || paragraphsResult.failed;
-      } catch (transErr) {
-        console.error('Failed to translate content:', transErr);
-        // Fall back to original language on translation crash
+      if (remaining() < 1500) {
+        // R7: sin presupuesto para traducir sin arriesgar exceder maxDuration — se prioriza
+        // devolver el artículo en el idioma original antes que colgar la request entera.
+        console.warn('[scrape] Sin presupuesto de tiempo para traducir, se conserva el idioma original');
         translationFailed = true;
+      } else {
+        try {
+          // Promise.all en vez de secuencial: además de más rápido, permite acotar las tres
+          // traducciones a un único timeout compartido (remaining()) con withTimeout.
+          const [titleResult, excerptResult, paragraphsResult] = await withTimeout(
+            Promise.all([
+              translateText(title, translateTo),
+              translateText(excerpt, translateTo),
+              // Translate paragraphs with capped concurrency to avoid hammering the translate API
+              translateConcurrent(paragraphs, translateTo, 5),
+            ]),
+            remaining(),
+            'TRANSLATE_TIMEOUT',
+          );
+
+          title = titleResult.text;
+          excerpt = excerptResult.text;
+          paragraphs = paragraphsResult.texts;
+          // R6: antes esto se perdía en silencio para el cliente — el artículo se guardaba sin
+          // traducir y el usuario no tenía forma de saber que no era lo que había pedido.
+          translationFailed = titleResult.failed || excerptResult.failed || paragraphsResult.failed;
+        } catch (transErr) {
+          if (transErr instanceof TimeoutError) {
+            console.error('[scrape] Traducción excedió el presupuesto de tiempo restante');
+          } else {
+            console.error('Failed to translate content:', transErr);
+          }
+          // Fall back to original language on translation crash or timeout
+          translationFailed = true;
+        }
       }
     }
 

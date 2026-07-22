@@ -174,6 +174,7 @@ const es = {
   'errors.textTooLong': 'El texto es demasiado largo.',
   'errors.invalidVoice': 'Voz no válida.',
   'errors.ttsInternal': 'Error interno al generar el habla.',
+  'errors.ttsTimeout': 'El servicio de voz tardó demasiado en responder. Intenta de nuevo.',
   'errors.shortenOriginOnly': 'Solo se pueden acortar links de Audiodocs.',
   'errors.shortenFailed': 'No se pudo acortar el link.',
   'errors.translateLangInvalid': 'Idioma de traducción no válido.',

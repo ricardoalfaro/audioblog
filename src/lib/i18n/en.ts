@@ -167,6 +167,7 @@ const en = {
   'errors.textTooLong': 'The text is too long.',
   'errors.invalidVoice': 'Invalid voice.',
   'errors.ttsInternal': 'Internal error generating speech.',
+  'errors.ttsTimeout': 'The voice service took too long to respond. Please try again.',
   'errors.shortenOriginOnly': 'Only Audiodocs links can be shortened.',
   'errors.shortenFailed': 'Could not shorten the link.',
   'errors.translateLangInvalid': 'Invalid translation language.',

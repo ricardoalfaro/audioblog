@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { EdgeTTS } from 'edge-tts-universal';
 import { rateLimit, getIP } from '@/lib/rate-limit';
+import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 
 export const maxDuration = 30;
 
@@ -9,6 +10,12 @@ const MAX_TEXT_LENGTH = 5000;
 // Hard cap para que un párrafo pegado sin puntuación (sin límite de troceo por
 // oración) no genere un número desproporcionado de requests a Edge TTS.
 const MAX_CHUNKS = 10;
+// R7: tts.synthesize() no tiene timeout propio ni acepta AbortSignal — si Edge TTS se cuelga,
+// antes la única salida era esperar a que Vercel matara la función entera en maxDuration (30s),
+// devolviendo un 504 genérico sin cuerpo JSON que el cliente pudiera traducir. Los chunks
+// corren en paralelo (Promise.all), así que el tiempo total ya es ~el del más lento, no la
+// suma — 20s deja margen bajo los 30s para el resto de la request (parseo, combinar buffers).
+const CHUNK_TIMEOUT_MS = 20_000;
 
 // Trocea en oraciones para no cortar la prosodia a mitad de frase; si una
 // oración sola supera el límite (texto sin puntuación), la parte en bloques duros.
@@ -40,7 +47,7 @@ function chunkText(text: string, maxLen: number): string[] {
 
 async function synthesizeChunk(text: string, voice: string): Promise<ArrayBuffer> {
   const tts = new EdgeTTS(text, voice);
-  const result = await tts.synthesize();
+  const result = await withTimeout(tts.synthesize(), CHUNK_TIMEOUT_MS, 'TTS_TIMEOUT');
   return result.audio.arrayBuffer();
 }
 
@@ -82,6 +89,10 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: unknown) {
+    if (error instanceof TimeoutError) {
+      console.error('TTS synthesis timeout');
+      return NextResponse.json({ error: 'TTS_TIMEOUT' }, { status: 504 });
+    }
     console.error('Error in TTS endpoint:', error);
     return NextResponse.json(
       { error: 'TTS_INTERNAL' },
