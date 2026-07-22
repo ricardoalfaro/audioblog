@@ -2,14 +2,26 @@ import { NextResponse } from 'next/server';
 import { parseHTML } from 'linkedom';
 import { Readability } from '@mozilla/readability';
 import dns from 'node:dns/promises';
+import crypto from 'node:crypto';
 import { Agent } from 'undici';
 import { rateLimit, getIP } from '@/lib/rate-limit';
 import { translateConcurrent, translateText } from '@/lib/translation';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
+import { MemoryCache } from '@/lib/memoryCache';
 
 export const maxDuration = 30;
 
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+// P5: reimportar/re-previsualizar la misma URL (con la misma traducción) repetía fetch +
+// Readability + traducción completa desde cero. Cachea el resultado final ya procesado por
+// (url, translateTo) dentro de la misma instancia serverless. TTL más corto que el de TTS
+// (15 min, no 30) porque acá sí importa la frescura — el artículo fuente puede cambiar.
+const scrapeCache = new MemoryCache<Record<string, unknown>>(60, 15 * 60_000);
+
+function scrapeCacheKey(url: string, translateTo: unknown): string {
+  return crypto.createHash('sha256').update(`${url}|${typeof translateTo === 'string' ? translateTo : 'none'}`).digest('hex');
+}
 
 // S4: dns.lookup() puede devolver una IPv4 disfrazada de IPv6 — mapeada (::ffff:a.b.c.d o su
 // forma hex ::ffff:XXXX:YYYY) o NAT64 (64:ff9b::/96, RFC 6052) — que isPrivateIP no reconocería
@@ -490,6 +502,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL_REQUIRED' }, { status: 400 });
     }
 
+    const cacheKey = scrapeCacheKey(url, translateTo);
+    const cachedResult = scrapeCache.get(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult);
+    }
+
     // URL format validation
     let parsedUrl: URL;
     try {
@@ -684,7 +702,7 @@ export async function POST(request: Request) {
 
     const authorGender = await authorGenderPromise;
 
-    return NextResponse.json({
+    const responseBody = {
       title,
       author,
       authorGender,
@@ -694,7 +712,14 @@ export async function POST(request: Request) {
       category,
       imageUrl,
       translationFailed,
-    });
+    };
+    // Solo se cachea el camino feliz completo — nunca las ramas de error (podrían ser
+    // transitorias, ej. ANTI_BOT_BLOCKED puntual) ni resultados con la traducción degradada
+    // por timeout, para no servir "sin traducir" en frío a la próxima request idéntica.
+    if (!translationFailed) {
+      scrapeCache.set(cacheKey, responseBody);
+    }
+    return NextResponse.json(responseBody);
   } catch (error: unknown) {
     console.error('Error in scrape endpoint:', error);
     return NextResponse.json(
