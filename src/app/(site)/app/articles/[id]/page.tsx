@@ -12,7 +12,7 @@ import { useLocale, Locale, MessageKey } from '@/contexts/LocaleContext';
 import { DisplayError, translateApiError } from '@/lib/i18n/apiError';
 import {
   Xmark, InfoCircle, NavArrowUp, NavArrowDown, OpenNewWindow, ControlSlider, WarningTriangle,
-  Language, Refresh, Label, ArrowLeft, EditPencil, Check, ShareIos, Pause, Play,
+  Language, Refresh, Label, ArrowLeft, EditPencil, Check, ShareIos, Pause, Play, SidebarExpand,
 } from 'iconoir-react';
 
 const LOCALE_TO_BCP47: Record<Locale, string> = {
@@ -645,11 +645,11 @@ export default function ArticleReader() {
         {/* Fixed topbar — with toggle on the right */}
         <div className="reader-topbar" style={{ top: headerHeight }}>
           <div className="reader-topbar-inner">
-            <Link href="/app" className="back-link">
-              <ArrowLeft /> {t('reader.backToLibrary')}
+            <Link href="/app" className="back-link" title={t('reader.backToLibrary')} aria-label={t('reader.backToLibrary')}>
+              <ArrowLeft aria-hidden="true" />
             </Link>
             <button ref={sidebarToggleRef} className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title={t('reader.options')} aria-label={t('reader.options')}>
-              <span className="cta-label">{t('reader.options')}</span><span className="panel-toggle-icon" aria-hidden="true"></span>
+              <SidebarExpand aria-hidden="true" />
             </button>
           </div>
         </div>

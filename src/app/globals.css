@@ -122,8 +122,7 @@
 :root[data-theme="dark"] .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
 :root[data-theme="dark"] .main-footer { border-top: 1px solid var(--border-color); }
 :root[data-theme="dark"] .back-link { color: var(--color-primary); }
-:root[data-theme="dark"] .sidebar-toggle-btn svg,
-:root[data-theme="dark"] .panel-toggle-icon { color: var(--color-primary); }
+:root[data-theme="dark"] .sidebar-toggle-btn svg { color: var(--color-primary); }
 :root[data-theme="dark"] .reader-topbar { background: #121d37; border-bottom-color: var(--border-color); }
 
 @media (prefers-color-scheme: dark) {
@@ -131,8 +130,7 @@
   :root:not([data-theme="light"]) .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
   :root:not([data-theme="light"]) .main-footer { border-top: 1px solid var(--border-color); }
   :root:not([data-theme="light"]) .back-link { color: var(--color-primary); }
-  :root:not([data-theme="light"]) .sidebar-toggle-btn svg,
-  :root:not([data-theme="light"]) .panel-toggle-icon { color: var(--color-primary); }
+  :root:not([data-theme="light"]) .sidebar-toggle-btn svg { color: var(--color-primary); }
   :root:not([data-theme="light"]) .reader-topbar { background: #121d37; border-bottom-color: var(--border-color); }
 }
 
@@ -1669,44 +1667,6 @@ select.form-control {
 
 .sidebar-toggle-btn svg {
   color: var(--color-secondary);
-  margin-right: 6px;
-}
-
-.sidebar-toggle-btn .cta-label {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  letter-spacing: -0.03em;
-}
-
-.panel-toggle-icon {
-  position: relative;
-  width: 23px;
-  height: 23px;
-  flex: 0 0 23px;
-  border: 3px solid currentColor;
-  border-radius: 8px;
-  color: var(--color-secondary);
-}
-
-.panel-toggle-icon::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  left: 7px;
-  border-left: 3px solid currentColor;
-}
-
-.panel-toggle-icon::after {
-  content: '';
-  position: absolute;
-  left: 2px;
-  top: 4px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 9px 0 currentColor;
 }
 
 .sidebar-backdrop {
