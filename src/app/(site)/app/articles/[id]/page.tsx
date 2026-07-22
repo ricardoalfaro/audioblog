@@ -703,18 +703,18 @@ export default function ArticleReader() {
                   onClick={startEditing}
                   title={t('reader.editArticle')}
                   aria-label={t('reader.editArticle')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1 }}
                 >
-                  <EditPencil /><span className="cta-label"> {t('reader.edit')}</span>
+                  <EditPencil /><span className="cta-label">{t('reader.edit')}</span>
                 </button>
                 {article.url !== 'manual' && (
                   <button
                     onClick={handleShare}
                     title={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
                     aria-label={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1 }}
                   >
-                    {shareCopied ? <Check /> : <ShareIos />}<span className="cta-label">{shareCopied ? ` ${t('reader.copied')}` : ` ${t('reader.share')}`}</span>
+                    {shareCopied ? <Check /> : <ShareIos />}<span className="cta-label">{shareCopied ? t('reader.copied') : t('reader.share')}</span>
                   </button>
                 )}
                 <button
@@ -728,8 +728,8 @@ export default function ArticleReader() {
                   }}
                 >
                   {playingArticle?.id === article.id && isPlaying && !isPaused
-                    ? <><Pause /><span className="cta-label"> {t('reader.pause')}</span></>
-                    : <><Play /><span className="cta-label"> {t('reader.listen')}</span></>
+                    ? <><Pause /><span className="cta-label">{t('reader.pause')}</span></>
+                    : <><Play /><span className="cta-label">{t('reader.listen')}</span></>
                   }
                 </button>
               </div>
