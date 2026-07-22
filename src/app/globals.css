@@ -2392,6 +2392,12 @@ input:checked + .slider:before {
   color: var(--text-muted);
 }
 
+.import-success .import-warning {
+  color: var(--color-primary);
+  font-weight: 600;
+  max-width: 320px;
+}
+
 /* Hero — used by SplashScreen */
 @keyframes gradientMove {
   0% { background-position: 0% 50%; }

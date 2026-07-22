@@ -40,6 +40,9 @@ function HomeContent() {
   const [scrapeError, setScrapeError] = useState('');
   const [scrapeStep, setScrapeStep] = useState<0|1|2|3|4>(0);
   const [importSuccess, setImportSuccess] = useState(false);
+  // R6: refleja el flag `translationFailed` de /api/scrape — antes, si Google Translate y
+  // MyMemory fallaban los dos, el artículo se guardaba sin traducir sin que el usuario lo notara.
+  const [importTranslationFailed, setImportTranslationFailed] = useState(false);
   // URL recibida por parámetro ?url= — se procesa después de que los artículos carguen
   const pendingAutoImportRef = useRef<{ url: string; lang?: string } | null>(null);
   const emptyAutoImportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -306,6 +309,7 @@ function HomeContent() {
     setIsScraping(true);
     setScrapeError('');
     setScrapeStep(1);
+    setImportTranslationFailed(false);
 
     // translateToOverride: usado por el auto-import (F8, ?lang=) para no depender del
     // estado translateTo, que todavía no se actualizó cuando se llama a runScrape en el mismo tick
@@ -337,6 +341,8 @@ function HomeContent() {
 
       setScrapeStep(isTranslating ? 4 : 3);
       const scrapeData = await scrapeRes.json();
+
+      if (isTranslating && scrapeData.translationFailed) setImportTranslationFailed(true);
 
       if (scrapeCategory !== 'auto') scrapeData.category = scrapeCategory;
 
@@ -885,6 +891,9 @@ function HomeContent() {
                 <CheckCircle className="success-icon" />
                 <p>{t('modal.saved')}</p>
                 <span>{t('modal.savedSubtitle')}</span>
+                {importTranslationFailed && (
+                  <span className="import-warning">{t('modal.translationFailedWarning')}</span>
+                )}
               </div>
             ) : (
               <>

@@ -127,10 +127,17 @@ async function detectAuthorGender(author: string): Promise<'male' | 'female' | n
     const res = await fetch(`https://api.genderize.io/?name=${encodeURIComponent(firstName)}`, {
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[scrape] genderize.io respondió ${res.status} para "${firstName}"`);
+      return null;
+    }
     const json = await res.json();
     return json?.gender === 'male' || json?.gender === 'female' ? json.gender : null;
-  } catch {
+  } catch (err) {
+    // R6: sin log, un fallo sistémico de genderize.io (ej. rate limit, caído) era indistinguible
+    // de "este nombre puntual no se pudo clasificar" — no bloquea el import (F12 cae a voz por
+    // defecto), pero antes no había ninguna forma de notarlo en los logs.
+    console.warn('[scrape] genderize.io falló:', err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -397,7 +404,10 @@ async function tryMediumRSS(targetUrl: string): Promise<ScrapedRaw | null> {
       signal: AbortSignal.timeout(8000),
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/rss+xml, application/xml, text/xml' },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[scrape] RSS de Medium (${feedUrl}) respondió ${res.status}`);
+      return null;
+    }
     const xml = await res.text();
 
     const itemRe = /<item>([\s\S]*?)<\/item>/g;
@@ -429,8 +439,12 @@ async function tryMediumRSS(targetUrl: string): Promise<ScrapedRaw | null> {
         imageUrl,
       };
     }
+    // R6: el feed respondió bien pero ningún <item> matcheó el hash del artículo pedido —
+    // sin log esto era indistinguible de "el feed venía vacío" o "regex desactualizado".
+    console.warn(`[scrape] RSS de Medium (${feedUrl}) no tenía ningún item con hash ${targetHash}`);
     return null;
-  } catch {
+  } catch (err) {
+    console.warn('[scrape] RSS de Medium falló:', err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -443,10 +457,14 @@ async function tryMediumArchive(targetUrl: string): Promise<ScrapedRaw | null> {
       signal: AbortSignal.timeout(15_000),
       headers: { 'User-Agent': USER_AGENT },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[scrape] archive.org respondió ${res.status} para ${targetUrl}`);
+      return null;
+    }
     const html = await res.text();
     return extractFromHtml(html);
-  } catch {
+  } catch (err) {
+    console.warn('[scrape] archive.org falló:', err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -605,16 +623,24 @@ export async function POST(request: Request) {
     }
 
     // Apply translation if chosen and not 'original'
+    let translationFailed = false;
     if (translateTo && translateTo !== 'original' && translateTo !== 'none') {
       try {
-        title = await translateText(title, translateTo);
-        excerpt = await translateText(excerpt, translateTo);
-
+        const titleResult = await translateText(title, translateTo);
+        const excerptResult = await translateText(excerpt, translateTo);
         // Translate paragraphs with capped concurrency to avoid hammering the translate API
-        paragraphs = await translateConcurrent(paragraphs, translateTo, 5);
+        const paragraphsResult = await translateConcurrent(paragraphs, translateTo, 5);
+
+        title = titleResult.text;
+        excerpt = excerptResult.text;
+        paragraphs = paragraphsResult.texts;
+        // R6: antes esto se perdía en silencio para el cliente — el artículo se guardaba sin
+        // traducir y el usuario no tenía forma de saber que no era lo que había pedido.
+        translationFailed = titleResult.failed || excerptResult.failed || paragraphsResult.failed;
       } catch (transErr) {
         console.error('Failed to translate content:', transErr);
         // Fall back to original language on translation crash
+        translationFailed = true;
       }
     }
 
@@ -629,6 +655,7 @@ export async function POST(request: Request) {
       paragraphs,
       category,
       imageUrl,
+      translationFailed,
     });
   } catch (error: unknown) {
     console.error('Error in scrape endpoint:', error);

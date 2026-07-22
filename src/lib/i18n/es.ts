@@ -89,6 +89,7 @@ const es = {
   'modal.saveArticle': 'Guardar artículo',
   'modal.saved': '¡Artículo guardado!',
   'modal.savedSubtitle': 'Ya está disponible en tu biblioteca',
+  'modal.translationFailedWarning': 'No se pudo traducir el texto en este momento — se guardó en el idioma original. Puedes reintentar la traducción desde el artículo.',
 
   'reader.backToLibrary': 'Volver a la biblioteca',
   'reader.errorTitle': 'Error al cargar el artículo',

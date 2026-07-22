@@ -89,6 +89,7 @@ const fr = {
   'modal.saveArticle': "Enregistrer l'article",
   'modal.saved': 'Article enregistré !',
   'modal.savedSubtitle': 'Il est maintenant disponible dans votre bibliothèque',
+  'modal.translationFailedWarning': "La traduction a échoué pour le moment — le texte a été enregistré dans sa langue d'origine. Vous pouvez réessayer la traduction depuis l'article.",
 
   'reader.backToLibrary': 'Retour à la bibliothèque',
   'reader.errorTitle': "Erreur lors du chargement de l'article",

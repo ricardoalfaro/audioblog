@@ -32,16 +32,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'TEXT_TOO_LONG' }, { status: 400 });
     }
 
-    const [translatedTitle, translatedExcerpt, translatedParagraphs] = await Promise.all([
+    const [titleResult, excerptResult, paragraphsResult] = await Promise.all([
       translateText(title, targetLang),
       translateText(excerpt, targetLang),
       translateConcurrent(paragraphs, targetLang, 5),
     ]);
 
     return NextResponse.json({
-      title: translatedTitle,
-      excerpt: translatedExcerpt,
-      paragraphs: translatedParagraphs,
+      title: titleResult.text,
+      excerpt: excerptResult.text,
+      paragraphs: paragraphsResult.texts,
+      // R6: mismo flag que /api/scrape — ver translation.ts
+      translationFailed: titleResult.failed || excerptResult.failed || paragraphsResult.failed,
     });
   } catch (error: unknown) {
     console.error('Error in translate endpoint:', error);

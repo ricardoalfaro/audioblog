@@ -89,6 +89,7 @@ const en = {
   'modal.saveArticle': 'Save article',
   'modal.saved': 'Article saved!',
   'modal.savedSubtitle': 'It’s now available in your library',
+  'modal.translationFailedWarning': "We couldn't translate the text right now — it was saved in its original language. You can retry translation from the article.",
 
   'reader.backToLibrary': 'Back to library',
   'reader.errorTitle': 'Error loading article',
