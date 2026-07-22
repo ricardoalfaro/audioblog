@@ -174,6 +174,7 @@ const fr = {
   'errors.scrapeGeneric': "Une erreur s'est produite lors de l'extraction de l'article.",
   'errors.serverErrorStatus': 'Erreur du serveur (code {status}).',
   'errors.importGeneric': "Erreur lors de l'import de l'article.",
+  'errors.storageQuotaExceeded': "Plus d'espace de stockage disponible dans ce navigateur. Supprimez un article pour libérer de l'espace et réessayez.",
   'errors.manualFieldsRequired': 'Le titre et le contenu sont obligatoires.',
   'errors.manualNoParagraphs': 'Le contenu doit contenir au moins un paragraphe.',
   'errors.manualSaveGeneric': "Erreur lors de l'enregistrement de l'article.",

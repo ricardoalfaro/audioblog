@@ -181,6 +181,7 @@ const es = {
   'errors.scrapeGeneric': 'Ocurrió un error al extraer el artículo.',
   'errors.serverErrorStatus': 'Error del servidor (código {status}).',
   'errors.importGeneric': 'Error al importar el artículo.',
+  'errors.storageQuotaExceeded': 'No hay espacio de almacenamiento disponible en este navegador. Borra algún artículo para liberar espacio e intenta de nuevo.',
   'errors.manualFieldsRequired': 'El título y el contenido son obligatorios.',
   'errors.manualNoParagraphs': 'El contenido debe tener al menos un párrafo.',
   'errors.manualSaveGeneric': 'Error al guardar el artículo.',

@@ -174,6 +174,7 @@ const de = {
   'errors.scrapeGeneric': 'Beim Extrahieren des Artikels ist ein Fehler aufgetreten.',
   'errors.serverErrorStatus': 'Serverfehler (Code {status}).',
   'errors.importGeneric': 'Fehler beim Importieren des Artikels.',
+  'errors.storageQuotaExceeded': 'Kein Speicherplatz mehr in diesem Browser verfügbar. Lösche einen Artikel, um Platz zu schaffen, und versuche es erneut.',
   'errors.manualFieldsRequired': 'Titel und Inhalt sind erforderlich.',
   'errors.manualNoParagraphs': 'Der Inhalt muss mindestens einen Absatz enthalten.',
   'errors.manualSaveGeneric': 'Fehler beim Speichern des Artikels.',

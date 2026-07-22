@@ -12,13 +12,46 @@ export function validateArticle(a: unknown): a is Article {
   );
 }
 
-export function getArticlesList(): Article[] {
+// R5: si `JSON.parse` de la clave 'articles' falla (corrupción), antes se devolvía [] sin
+// más — la clave corrupta quedaba intacta en localStorage y cada carga repetía el mismo fallo
+// en silencio (solo console.error), sin forma de recuperar los datos ni de que el estado se
+// auto-repare. Ahora se hace una copia de respaldo bajo una clave nueva (recuperable a mano
+// desde devtools si hace falta) y se limpia 'articles' para que la próxima escritura parta
+// de un estado consistente en vez de seguir chocando contra el JSON roto.
+export function backupAndResetCorruptedArticles(raw: string): void {
   try {
-    const data = localStorage.getItem('articles');
-    if (!data) return [];
+    localStorage.setItem(`articles_corrupt_backup_${Date.now()}`, raw);
+  } catch {
+    // Si ni el backup entra (quota llena), no hay más margen — se sigue con el reset igual.
+  }
+  try {
+    localStorage.removeItem('articles');
+  } catch {}
+}
+
+// R5: QuotaExceededError no tiene un `name` único entre navegadores — Chrome/Safari usan
+// 'QuotaExceededError', Firefox 'NS_ERROR_DOM_QUOTA_REACHED', y algunos entornos legacy solo
+// exponen el code 22 (o 1014 con NS_ERROR_DOM_QUOTA_REACHED). Se chequean las tres formas.
+export function isQuotaExceededError(err: unknown): boolean {
+  return (
+    err instanceof DOMException &&
+    (err.name === 'QuotaExceededError' ||
+      err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      err.code === 22 ||
+      err.code === 1014)
+  );
+}
+
+export function getArticlesList(): Article[] {
+  const data = localStorage.getItem('articles');
+  if (!data) return [];
+  try {
     const raw: unknown[] = JSON.parse(data);
     return raw.filter(validateArticle);
-  } catch { return []; }
+  } catch {
+    backupAndResetCorruptedArticles(data);
+    return [];
+  }
 }
 
 function writeProgressNow(article: Article, paragraphIndex: number, updateLastPlayed: boolean): void {

@@ -174,6 +174,7 @@ const en = {
   'errors.scrapeGeneric': 'An error occurred while extracting the article.',
   'errors.serverErrorStatus': 'Server error (code {status}).',
   'errors.importGeneric': 'Error importing the article.',
+  'errors.storageQuotaExceeded': 'No storage space left in this browser. Delete an article to free up space and try again.',
   'errors.manualFieldsRequired': 'Title and content are required.',
   'errors.manualNoParagraphs': 'The content must have at least one paragraph.',
   'errors.manualSaveGeneric': 'Error saving the article.',

@@ -6,7 +6,7 @@ import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
 import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
-import { validateArticle, getArticlesList } from '@/lib/articleStorage';
+import { validateArticle, getArticlesList, backupAndResetCorruptedArticles, isQuotaExceededError } from '@/lib/articleStorage';
 import SplashScreen from '@/components/SplashScreen';
 import { useLocale } from '@/contexts/LocaleContext';
 import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
@@ -201,10 +201,26 @@ function HomeContent() {
       setIsLoading(true);
       const localData = localStorage.getItem('articles');
       if (localData) {
-        const raw: unknown[] = JSON.parse(localData);
-        const valid = raw.filter(validateArticle);
+        let valid: Article[];
+        try {
+          const raw: unknown[] = JSON.parse(localData);
+          valid = raw.filter(validateArticle);
+        } catch (parseErr) {
+          // R5: JSON corrupto — antes esto caía al catch de afuera sin limpiar `articles`
+          // (setArticles nunca se llamaba) y cada carga futura repetía el mismo fallo para
+          // siempre. Se hace backup de la clave rota y se resetea para arrancar en limpio.
+          console.error('Error parseando articles de localStorage, se resetea:', parseErr);
+          backupAndResetCorruptedArticles(localData);
+          valid = [];
+        }
         const pruned = pruneArticles(valid);
-        localStorage.setItem('articles', JSON.stringify(pruned));
+        try {
+          localStorage.setItem('articles', JSON.stringify(pruned));
+        } catch (writeErr) {
+          // No hay UI de error acá (esto corre en cada carga, no en un submit de import) —
+          // el estado en memoria sigue siendo correcto aunque no se pueda persistir todavía.
+          console.error('Error guardando articles en localStorage:', writeErr);
+        }
         setArticles(pruned);
       } else {
         setArticles([]);
@@ -229,6 +245,18 @@ function HomeContent() {
     }
   }, []);
 
+  // R5: sin esto, dos pestañas abiertas divergen en silencio — cada una escribe 'articles'
+  // sobre su propia copia en memoria y la última en guardar pisa a la otra sin avisar. El
+  // evento `storage` solo dispara en las pestañas que NO hicieron el cambio (nunca en la que
+  // escribió), así que es la señal correcta para refrescar sin loop.
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'articles' || e.key === null) fetchArticles();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // Refresh sections when the playing article changes (start, stop, next-in-queue).
   // Este efecto también corre en el montaje inicial (todo efecto corre una vez al montar,
   // sin importar sus dependencias) — sin el guard de abajo, pisaba el isLoading recién
@@ -250,6 +278,21 @@ function HomeContent() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+
+  // R5: localStorage.setItem puede tirar QuotaExceededError (nombre distinto por navegador,
+  // ver isQuotaExceededError) — antes cualquier catch genérico de import lo mostraba como
+  // "Error al importar el artículo", sin pista de que el problema es espacio agotado, no la
+  // importación en sí. Se usa en los submits (import por URL y manual) para poder distinguirlo.
+  const persistArticles = (list: Article[]): void => {
+    try {
+      localStorage.setItem('articles', JSON.stringify(list));
+    } catch (err) {
+      if (isQuotaExceededError(err)) {
+        throw new DisplayError(t('errors.storageQuotaExceeded'));
+      }
+      throw err;
+    }
+  };
 
   // --- Scraper / Import form submissions ---
   const resetScrapeForm = () => {
@@ -359,7 +402,7 @@ function HomeContent() {
 
       const updatedArticles = pruneArticles([newArticle, ...freshArticles]);
       setArticles(updatedArticles);
-      localStorage.setItem('articles', JSON.stringify(updatedArticles));
+      persistArticles(updatedArticles);
       notifyLibraryChanged(); // B28: hasNext/hasPrevious del reproductor pueden depender de esta lista
 
       setIsScraping(false);
@@ -440,7 +483,7 @@ function HomeContent() {
       // B25: mergear desde la copia fresca de localStorage, ver comentario en runScrape
       const updatedArticles = pruneArticles([newArticle, ...getArticlesList()]);
       setArticles(updatedArticles);
-      localStorage.setItem('articles', JSON.stringify(updatedArticles));
+      persistArticles(updatedArticles);
       notifyLibraryChanged(); // B28
 
       setIsSavingManual(false);
