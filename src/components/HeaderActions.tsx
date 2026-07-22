@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useLocale, LOCALES } from '@/contexts/LocaleContext';
+import { User, HalfMoon, Import, Check, ShareIos } from 'iconoir-react';
 
 export default function HeaderActions() {
   const router = useRouter();
@@ -93,14 +94,14 @@ export default function HeaderActions() {
           title={t('header.userOptions')}
           aria-label={t('header.userOptions')}
         >
-          <i className="fa-solid fa-user"></i>
+          <User />
         </button>
 
         {isDropdownOpen && (
           <div className="dropdown-menu">
             <div className="dropdown-section-label">{t('header.preferences')}</div>
             <div className="theme-switcher-dropdown">
-              <span className="icon-badge"><i className="fa-solid fa-circle-half-stroke"></i></span>
+              <span className="icon-badge"><HalfMoon /></span>
               <span>{t('header.theme')}</span>
               <ThemeSwitcher />
             </div>
@@ -117,11 +118,11 @@ export default function HeaderActions() {
                 }
               }}
             >
-              <span className="icon-badge"><i className="fa-solid fa-file-import"></i></span>
+              <span className="icon-badge"><Import /></span>
               {t('header.importArticle')}
             </button>
             <button className="dropdown-item" onClick={handleShare}>
-              <span className="icon-badge"><i className={`fa-solid ${linkCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`}></i></span>
+              <span className="icon-badge">{linkCopied ? <Check /> : <ShareIos />}</span>
               {linkCopied ? t('header.linkCopied') : t('header.shareApp')}
             </button>
           </div>

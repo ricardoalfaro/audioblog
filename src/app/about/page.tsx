@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
 import styles from '../landing.module.css';
+import { Github } from 'iconoir-react';
 
 export const metadata: Metadata = {
   title: 'Acerca de — Audiodocs',
@@ -56,7 +57,7 @@ export default function AboutPage() {
             rel="noopener noreferrer"
             className={styles.aboutGithub}
           >
-            <i className="fa-brands fa-github" aria-hidden="true" />
+            <Github aria-hidden="true" />
             github.com/ricardoalfaro/audioblog
           </a>
         </section>

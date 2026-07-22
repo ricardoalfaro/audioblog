@@ -10,6 +10,10 @@ import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
 import { STATIC_CATEGORIES } from '@/lib/categories';
 import { useLocale, Locale, MessageKey } from '@/contexts/LocaleContext';
 import { DisplayError, translateApiError } from '@/lib/i18n/apiError';
+import {
+  Xmark, InfoCircle, NavArrowUp, NavArrowDown, OpenNewWindow, ControlSlider, WarningTriangle,
+  Language, Refresh, Label, ArrowLeft, EditPencil, Check, ShareIos, Pause, Play,
+} from 'iconoir-react';
 
 const LOCALE_TO_BCP47: Record<Locale, string> = {
   es: 'es-ES', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE',
@@ -478,7 +482,7 @@ export default function ArticleReader() {
         <div className="sidebar-topbar">
           <span>{t('reader.options')}</span>
           <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)} title={t('reader.close')} aria-label={t('reader.close')}>
-            <i className="fa-solid fa-xmark"></i>
+            <Xmark />
           </button>
         </div>
         <div className="sidebar-panel glass">
@@ -486,8 +490,8 @@ export default function ArticleReader() {
           {/* Section: Detalles */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsMetaExpanded(v => !v)}>
-              <span><span className="icon-badge"><i className="fa-solid fa-circle-info"></i></span> {t('reader.articleDetails')}</span>
-              <i className={`fa-solid fa-chevron-${isMetaExpanded ? 'up' : 'down'} chevron`}></i>
+              <span><span className="icon-badge"><InfoCircle /></span> {t('reader.articleDetails')}</span>
+              {isMetaExpanded ? <NavArrowUp className="chevron" /> : <NavArrowDown className="chevron" />}
             </div>
             {isMetaExpanded && (
               <div className="sidebar-section-body">
@@ -495,7 +499,7 @@ export default function ArticleReader() {
                   <div className="meta-item">
                     <span className="meta-label">{t('reader.source')}</span>
                     <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      {t('reader.viewOriginal')} <i className="fa-solid fa-up-right-from-square" style={{ fontSize: '10px' }}></i>
+                      {t('reader.viewOriginal')} <OpenNewWindow style={{ fontSize: '10px' }} />
                     </a>
                   </div>
                 )}
@@ -516,8 +520,8 @@ export default function ArticleReader() {
           {/* Section: Ajustes */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsSettingsExpanded(v => !v)}>
-              <span><span className="icon-badge"><i className="fa-solid fa-sliders"></i></span> {t('reader.playbackSettings')}</span>
-              <i className={`fa-solid fa-chevron-${isSettingsExpanded ? 'up' : 'down'} chevron`}></i>
+              <span><span className="icon-badge"><ControlSlider /></span> {t('reader.playbackSettings')}</span>
+              {isSettingsExpanded ? <NavArrowUp className="chevron" /> : <NavArrowDown className="chevron" />}
             </div>
             {isSettingsExpanded && (
               <div className="sidebar-section-body">
@@ -548,7 +552,7 @@ export default function ArticleReader() {
                 </div>
                 {audioEngine === 'device' && (
                   <div className="sidebar-note">
-                    <i className="fa-solid fa-triangle-exclamation"></i>
+                    <WarningTriangle />
                     <span>{t('reader.localEngineWarning.pre')} <strong>{t('reader.naturalVoice')}</strong> {t('reader.localEngineWarning.post')}</span>
                   </div>
                 )}
@@ -561,8 +565,8 @@ export default function ArticleReader() {
           {/* Section: Traducción */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsTranslationExpanded(v => !v)}>
-              <span><span className="icon-badge"><i className="fa-solid fa-language"></i></span> {t('reader.translation')}</span>
-              <i className={`fa-solid fa-chevron-${isTranslationExpanded ? 'up' : 'down'} chevron`}></i>
+              <span><span className="icon-badge"><Language /></span> {t('reader.translation')}</span>
+              {isTranslationExpanded ? <NavArrowUp className="chevron" /> : <NavArrowDown className="chevron" />}
             </div>
             {isTranslationExpanded && (
               <div className="sidebar-section-body">
@@ -585,11 +589,11 @@ export default function ArticleReader() {
                   onClick={retranslateArticle}
                   disabled={isRetranslating}
                 >
-                  <i className={`fa-solid ${isRetranslating ? 'fa-spinner fa-spin' : 'fa-language'}`}></i>
+                  {isRetranslating ? <Refresh className="icon-spin" /> : <Language />}
                   <span>{isRetranslating ? t('reader.retranslating') : t('reader.retranslateArticle')}</span>
                 </button>
                 <p className="sidebar-note">
-                  <i className="fa-solid fa-circle-info"></i>
+                  <InfoCircle />
                   <span>{t('reader.retranslateHint')}</span>
                 </p>
                 {retranslateMessage && (
@@ -606,8 +610,8 @@ export default function ArticleReader() {
           {/* Section: Categoría */}
           <div className="sidebar-section">
             <div className="sidebar-section-header" onClick={() => setIsCategoryExpanded(v => !v)}>
-              <span><span className="icon-badge"><i className="fa-solid fa-tag"></i></span> {t('reader.category')}</span>
-              <i className={`fa-solid fa-chevron-${isCategoryExpanded ? 'up' : 'down'} chevron`}></i>
+              <span><span className="icon-badge"><Label /></span> {t('reader.category')}</span>
+              {isCategoryExpanded ? <NavArrowUp className="chevron" /> : <NavArrowDown className="chevron" />}
             </div>
             {isCategoryExpanded && (
               <div className="sidebar-section-body">
@@ -642,7 +646,7 @@ export default function ArticleReader() {
         <div className="reader-topbar" style={{ top: headerHeight }}>
           <div className="reader-topbar-inner">
             <Link href="/app" className="back-link">
-              <i className="fa-solid fa-arrow-left"></i> {t('reader.backToLibrary')}
+              <ArrowLeft /> {t('reader.backToLibrary')}
             </Link>
             <button ref={sidebarToggleRef} className="sidebar-toggle-btn" onClick={() => setIsSidebarOpen(o => !o)} title={t('reader.options')} aria-label={t('reader.options')}>
               <span className="cta-label">{t('reader.options')}</span><span className="panel-toggle-icon" aria-hidden="true"></span>
@@ -701,7 +705,7 @@ export default function ArticleReader() {
                   aria-label={t('reader.editArticle')}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
                 >
-                  <i className="fa-solid fa-pen-to-square" /><span className="cta-label"> {t('reader.edit')}</span>
+                  <EditPencil /><span className="cta-label"> {t('reader.edit')}</span>
                 </button>
                 {article.url !== 'manual' && (
                   <button
@@ -710,7 +714,7 @@ export default function ArticleReader() {
                     aria-label={shareCopied ? t('reader.linkCopied') : t('reader.shareArticle')}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: shareCopied ? 'var(--color-primary)' : 'var(--text-secondary)', fontSize: '15px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
                   >
-                    <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`} /><span className="cta-label">{shareCopied ? ` ${t('reader.copied')}` : ` ${t('reader.share')}`}</span>
+                    {shareCopied ? <Check /> : <ShareIos />}<span className="cta-label">{shareCopied ? ` ${t('reader.copied')}` : ` ${t('reader.share')}`}</span>
                   </button>
                 )}
                 <button
@@ -724,8 +728,8 @@ export default function ArticleReader() {
                   }}
                 >
                   {playingArticle?.id === article.id && isPlaying && !isPaused
-                    ? <><i className="fa-solid fa-pause"></i><span className="cta-label"> {t('reader.pause')}</span></>
-                    : <><i className="fa-solid fa-play"></i><span className="cta-label"> {t('reader.listen')}</span></>
+                    ? <><Pause /><span className="cta-label"> {t('reader.pause')}</span></>
+                    : <><Play /><span className="cta-label"> {t('reader.listen')}</span></>
                   }
                 </button>
               </div>

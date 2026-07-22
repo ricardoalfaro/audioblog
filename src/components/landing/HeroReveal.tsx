@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import Link from 'next/link';
 import styles from '@/app/landing.module.css';
 import { useSectionProgress } from './useSectionProgress';
+import { ArrowRight, SkipPrev, Play, SkipNext } from 'iconoir-react';
 
 /* Alturas deterministas (mismo HTML en server y cliente) para la waveform del hero.
    Muchas columnas finas para cubrir todo el ancho del viewport con puntitos. */
@@ -67,7 +68,7 @@ export default function HeroReveal() {
       <div className={styles.ctaRow}>
         <Link href="/registro" className={styles.btnPrimary}>
           Empezar ahora
-          <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+          <ArrowRight aria-hidden="true" />
         </Link>
         <a href="#como-funciona" className={styles.btnGhost}>
           Ver cómo funciona
@@ -99,11 +100,11 @@ export default function HeroReveal() {
           <i />
         </div>
         <div className={styles.playerControls}>
-          <i className="fa-solid fa-backward-step" />
+          <SkipPrev />
           <span className={styles.playButton}>
-            <i className="fa-solid fa-play" />
+            <Play />
           </span>
-          <i className="fa-solid fa-forward-step" />
+          <SkipNext />
         </div>
       </div>
     </div>

@@ -37,7 +37,6 @@ const en = {
 
   'app.listening': 'Listening...',
   'app.importDocument': 'Import',
-  'app.importNewArticle': 'Import a new article',
   'app.readyToListen': 'Ready to listen',
   'app.backToListen': 'Listen again',
   'app.emptyLibraryTitle': 'Your library is empty',

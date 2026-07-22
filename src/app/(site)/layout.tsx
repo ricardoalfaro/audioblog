@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 
 import Providers from '@/components/Providers';
+import { User } from 'iconoir-react';
 
 export default function SiteLayout({
   children,
@@ -27,7 +28,7 @@ export default function SiteLayout({
                 <div className="avatar-dropdown">
                   <button className="locale-btn" aria-label="Idioma">es</button>
                 </div>
-                <div className="avatar-dropdown"><button className="avatar-btn" aria-label="Opciones de usuario"><i className="fa-solid fa-user"></i></button></div>
+                <div className="avatar-dropdown"><button className="avatar-btn" aria-label="Opciones de usuario"><User /></button></div>
               </div>
             }>
               <HeaderActions />

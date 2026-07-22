@@ -7,6 +7,7 @@ import MomentsPinned from '@/components/landing/MomentsPinned';
 import Reveal from '@/components/landing/Reveal';
 import Parallax from '@/components/landing/Parallax';
 import styles from './landing.module.css';
+import { Microphone, Language, Folder, Forward, Car, Label, SmartphoneDevice, Page, Lock, Shield } from 'iconoir-react';
 
 export const metadata: Metadata = {
   title: 'Audiodocs — Escucha cualquier artículo como podcast',
@@ -42,31 +43,31 @@ const TRANSLATION_FLAGS = [
 
 const FEATURES = [
   {
-    icon: 'fa-microphone-lines',
+    icon: Microphone,
     title: 'Voces que no suenan a robot',
     text: 'Síntesis neural de última generación, con voces masculinas y femeninas y acentos por región. Audiodocs incluso sugiere la voz según quién escribió el artículo.',
     wide: true,
     chips: ['Español (MX)', 'Español (ES)', 'English', 'Português', 'Français', 'Deutsch'],
   },
   {
-    icon: 'fa-language',
+    icon: Language,
     title: 'Traducción al importar',
     text: 'El artículo llega en inglés y se escucha en español. Cinco idiomas disponibles al momento de importar.',
     wide: true,
     flags: true,
   },
   {
-    icon: 'fa-layer-group',
+    icon: Folder,
     title: 'Biblioteca que se ordena sola',
     text: 'Cada artículo se clasifica por tema automáticamente. Tu lista de pendientes deja de ser un cajón desordenado.',
   },
   {
-    icon: 'fa-forward',
+    icon: Forward,
     title: 'Cola y velocidad',
     text: 'Encadena artículos como una playlist y ajusta la velocidad de reproducción a tu ritmo.',
   },
   {
-    icon: 'fa-car',
+    icon: Car,
     title: 'Compatible con CarPlay y Android Auto',
     text: 'Lleva tus artículos a la pantalla del auto y controla la reproducción desde el volante. Tus trayectos se convierten en tiempo de lectura.',
   },
@@ -107,32 +108,32 @@ const MOMENTS = [
 
 const FAQS = [
   {
-    icon: 'fa-tag',
+    icon: Label,
     q: '¿Cuánto cuesta?',
     a: 'Nada. Audiodocs está en beta abierta y es gratis mientras la construimos junto a los primeros usuarios.',
   },
   {
-    icon: 'fa-mobile-screen-button',
+    icon: SmartphoneDevice,
     q: '¿Tengo que instalar algo?',
     a: 'No. Funciona directo en el navegador del teléfono o del computador. Si quieres, puedes instalarla como app desde el mismo navegador.',
   },
   {
-    icon: 'fa-newspaper',
+    icon: Page,
     q: '¿Qué artículos puedo importar?',
     a: 'Casi cualquier página con texto: blogs, Medium, prensa, newsletters públicas. Pegas el link y Audiodocs hace el resto.',
   },
   {
-    icon: 'fa-language',
+    icon: Language,
     q: '¿Puedo escucharlos en otro idioma?',
     a: 'Sí. Al importar puedes traducir el artículo a español, inglés, portugués, francés o alemán, con voces naturales para cada idioma.',
   },
   {
-    icon: 'fa-lock',
+    icon: Lock,
     q: '¿Funciona con la pantalla bloqueada?',
     a: 'Sí. Controlas la reproducción desde la pantalla de bloqueo o los audífonos, igual que en cualquier app de podcasts.',
   },
   {
-    icon: 'fa-shield-halved',
+    icon: Shield,
     q: '¿Dónde quedan mis datos?',
     a: 'Tu biblioteca vive en tu propio dispositivo. No creamos perfiles de lectura ni compartimos tus datos con nadie.',
   },
@@ -184,7 +185,7 @@ export default function LandingPage() {
                   className={`${styles.bentoCard}${feature.wide ? ` ${styles.bentoWide}` : ''}`}
                 >
                   <div className={styles.bentoIcon}>
-                    <i className={`fa-solid ${feature.icon}`} aria-hidden="true" />
+                    <feature.icon aria-hidden="true" />
                   </div>
                   <h3 className={styles.bentoTitle}>{feature.title}</h3>
                   <p className={styles.bentoText}>{feature.text}</p>
@@ -227,7 +228,7 @@ export default function LandingPage() {
               {FAQS.map((faq, i) => (
                 <Reveal key={faq.q} delay={(i % 2) * 0.08} className={styles.faqItem}>
                   <span className={styles.faqIcon}>
-                    <i className={`fa-solid ${faq.icon}`} aria-hidden="true" />
+                    <faq.icon aria-hidden="true" />
                   </span>
                   <div>
                     <h3>{faq.q}</h3>

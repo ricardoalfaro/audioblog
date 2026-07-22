@@ -7,6 +7,7 @@ import { shareArticle } from '@/lib/shareArticle';
 import { getGradientClass } from '@/lib/gradientClass';
 import { useLocale } from '@/contexts/LocaleContext';
 import { getArticlesList } from '@/lib/articleStorage';
+import { WarningTriangle, Headset, SkipPrev, Pause, Play, SkipNext, Check, ShareIos } from 'iconoir-react';
 
 export default function GlobalPlayer() {
   const { t } = useLocale();
@@ -92,7 +93,7 @@ export default function GlobalPlayer() {
 
         {ttsError && (
           <div style={{ fontSize: '12px', color: '#d93025', textAlign: 'center', padding: '2px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <i className="fa-solid fa-triangle-exclamation"></i>
+            <WarningTriangle />
             {ttsError}
           </div>
         )}
@@ -111,7 +112,7 @@ export default function GlobalPlayer() {
                 title={t('player.emptyCoverImport')}
                 aria-label={t('player.emptyCoverImport')}
               >
-                <i className="fa-solid fa-headphones"></i>
+                <Headset />
               </button>
             )}
           </div>
@@ -132,17 +133,17 @@ export default function GlobalPlayer() {
 
           <div className="player-core" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '16px', flexShrink: 0 }}>
             <button className="player-btn" onClick={handleSkipBackward} disabled={!hasArticle || !hasPrevious} title="Artículo anterior">
-              <i className="fa-solid fa-backward-step"></i>
+              <SkipPrev />
             </button>
             <button className="player-btn player-btn-play" onClick={handlePlayPause} disabled={!hasArticle || isLoading} title={hasArticle ? undefined : t('player.emptyPlayDisabled')}>
               {isLoading ? (
                 <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '3px' }}></div>
               ) : (
-                <i className={`fa-solid ${isPlaying && !isPaused ? 'fa-pause' : 'fa-play'}`}></i>
+                isPlaying && !isPaused ? <Pause /> : <Play />
               )}
             </button>
             <button className="player-btn" onClick={handleSkipForward} disabled={!hasArticle || !hasNext} title="Siguiente artículo">
-              <i className="fa-solid fa-forward-step"></i>
+              <SkipNext />
             </button>
           </div>
           
@@ -160,7 +161,7 @@ export default function GlobalPlayer() {
               title={shareCopied ? 'Enlace copiado' : 'Compartir artículo'}
               aria-label={shareCopied ? 'Enlace copiado' : 'Compartir artículo'}
             >
-              <i className={`fa-solid ${shareCopied ? 'fa-check' : 'fa-arrow-up-from-bracket'}`}></i>
+              {shareCopied ? <Check /> : <ShareIos />}
             </button>
           </div>
         </div>

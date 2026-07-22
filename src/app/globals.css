@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 :root {
   /* Light Theme */
@@ -28,7 +28,7 @@
   --article-info-border: #D4D4D4;
   
   /* Layout */
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* --font-sans la define next/font (Plus Jakarta Sans) vía className en <html>, ver layout.tsx */
   --font-serif: 'Playfair Display', Georgia, serif;
   
   --border-radius-sm: 8px;
@@ -122,7 +122,7 @@
 :root[data-theme="dark"] .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
 :root[data-theme="dark"] .main-footer { border-top: 1px solid var(--border-color); }
 :root[data-theme="dark"] .back-link { color: var(--color-primary); }
-:root[data-theme="dark"] .sidebar-toggle-btn i,
+:root[data-theme="dark"] .sidebar-toggle-btn svg,
 :root[data-theme="dark"] .panel-toggle-icon { color: var(--color-primary); }
 :root[data-theme="dark"] .reader-topbar { background: #121d37; border-bottom-color: var(--border-color); }
 
@@ -131,7 +131,7 @@
   :root:not([data-theme="light"]) .tabs-container { background: #121d37; border-bottom: 1px solid var(--border-color); }
   :root:not([data-theme="light"]) .main-footer { border-top: 1px solid var(--border-color); }
   :root:not([data-theme="light"]) .back-link { color: var(--color-primary); }
-  :root:not([data-theme="light"]) .sidebar-toggle-btn i,
+  :root:not([data-theme="light"]) .sidebar-toggle-btn svg,
   :root:not([data-theme="light"]) .panel-toggle-icon { color: var(--color-primary); }
   :root:not([data-theme="light"]) .reader-topbar { background: #121d37; border-bottom-color: var(--border-color); }
 }
@@ -452,10 +452,10 @@ a {
   color: var(--text-primary);
 }
 
-.dropdown-item i {
+.dropdown-item svg {
   color: var(--color-primary);
   width: 16px;
-  text-align: center;
+  height: 16px;
   flex-shrink: 0;
 }
 
@@ -470,9 +470,9 @@ a {
   flex-shrink: 0;
 }
 
-.icon-badge i {
-  width: auto;
-  font-size: 12px;
+.icon-badge svg {
+  width: 12px;
+  height: 12px;
   color: var(--color-primary);
 }
 
@@ -596,6 +596,11 @@ a {
 }
 
 @media (max-width: 600px) {
+  .tabs-container {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
   .tabs-scroll-wrapper {
     display: none;
   }
@@ -632,7 +637,6 @@ a {
 
 .view-btn.active, .view-btn:hover {
   color: var(--color-secondary);
-  background: #FFFFFF;
 }
 
 :root[data-theme="dark"] .view-btn.active,
@@ -649,22 +653,11 @@ a {
   }
 }
 
-/* CTA de Importar en la barra de tabs (sticky) — a diferencia de .view-btn (icon-only, muted),
-   este debe destacar como acción principal, no mimetizarse con el toggle de grid/list. */
+/* CTA de Importar en la barra de tabs (sticky): reutiliza el estilo visual de
+   .import-inline-btn (antes duplicado junto a los títulos de sección) para que la
+   etiqueta "Importar" quede siempre visible, también en mobile. */
 .tabs-import-btn {
-  width: auto;
-  padding: 0 12px;
-  gap: 6px;
-  color: var(--color-primary);
-  background: var(--color-primary-glow);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tabs-import-btn:hover {
-  color: var(--color-primary);
-  background: var(--color-primary-glow);
-  opacity: 0.85;
+  flex-shrink: 0;
 }
 
 /* Sections */
@@ -1578,6 +1571,11 @@ select.form-control {
   to { transform: rotate(360deg); }
 }
 
+/* Reemplaza la utilidad fa-spin de Font Awesome para íconos de Iconoir en estado de carga */
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Reader Page (Accordion & Data styles restored) */
 
 
@@ -1669,7 +1667,7 @@ select.form-control {
   background: var(--bg-card-hover);
 }
 
-.sidebar-toggle-btn i {
+.sidebar-toggle-btn svg {
   color: var(--color-secondary);
   margin-right: 6px;
 }
@@ -1884,7 +1882,7 @@ select.form-control {
   color: var(--text-secondary);
 }
 
-.sidebar-note i {
+.sidebar-note svg {
   margin-top: 1px;
   flex-shrink: 0;
 }

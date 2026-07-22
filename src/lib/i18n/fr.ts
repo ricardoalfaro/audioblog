@@ -37,7 +37,6 @@ const fr = {
 
   'app.listening': 'En écoute...',
   'app.importDocument': 'Importer',
-  'app.importNewArticle': 'Importer un nouvel article',
   'app.readyToListen': 'Prêts à écouter',
   'app.backToListen': 'Réécouter',
   'app.emptyLibraryTitle': 'Votre bibliothèque est vide',

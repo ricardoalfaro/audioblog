@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { IconoirProvider } from "iconoir-react";
 import "./globals.css";
-import '@fortawesome/fontawesome-free/css/all.min.css';
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 // D2: sin NEXT_PUBLIC_APP_URL en prod, metadataBase cae en silencio a localhost:3000 y rompe
 // las URLs absolutas de OG/Twitter (ver .env.example) — se avisa una vez al arrancar el server.
@@ -62,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={plusJakartaSans.variable} suppressHydrationWarning>
       <head>
         {/* Inline script to prevent theme flashing on page load */}
         <script
@@ -98,7 +104,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <IconoirProvider iconProps={{ width: '1em', height: '1em', strokeWidth: 2 }}>
+          {children}
+        </IconoirProvider>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLocale } from '@/contexts/LocaleContext';
+import { SunLight, HalfMoon, Computer } from 'iconoir-react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -44,7 +45,7 @@ export default function ThemeSwitcher() {
         title={t('theme.light')}
         aria-label={t('theme.light')}
       >
-        <i className="fa-solid fa-sun"></i>
+        <SunLight />
       </button>
       <button
         className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
@@ -52,7 +53,7 @@ export default function ThemeSwitcher() {
         title={t('theme.dark')}
         aria-label={t('theme.dark')}
       >
-        <i className="fa-solid fa-moon"></i>
+        <HalfMoon />
       </button>
       <button
         className={`theme-btn ${theme === 'system' ? 'active' : ''}`}
@@ -60,7 +61,7 @@ export default function ThemeSwitcher() {
         title={t('theme.system')}
         aria-label={t('theme.system')}
       >
-        <i className="fa-solid fa-desktop"></i>
+        <Computer />
       </button>
     </div>
   );

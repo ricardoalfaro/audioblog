@@ -37,7 +37,6 @@ const pt = {
 
   'app.listening': 'Ouvindo...',
   'app.importDocument': 'Importar',
-  'app.importNewArticle': 'Importar um novo artigo',
   'app.readyToListen': 'Prontos para ouvir',
   'app.backToListen': 'Voltar a ouvir',
   'app.emptyLibraryTitle': 'Sua biblioteca está vazia',

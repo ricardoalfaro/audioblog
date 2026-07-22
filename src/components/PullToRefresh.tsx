@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, ReactNode } from 'react';
+import { Refresh } from 'iconoir-react';
 
 const THRESHOLD = 70;
 const MAX_PULL = 120;
@@ -80,10 +81,10 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
     <>
       <div className="pull-to-refresh-indicator">
         {refreshing ? (
-          <i className="fa-solid fa-circle-notch fa-spin pull-to-refresh-icon" />
+          <Refresh className="pull-to-refresh-icon icon-spin" />
         ) : (
-          <i
-            className="fa-solid fa-arrow-rotate-right pull-to-refresh-icon"
+          <Refresh
+            className="pull-to-refresh-icon"
             style={{ transform: `rotate(${progress * 180}deg)`, opacity: progress }}
           />
         )}

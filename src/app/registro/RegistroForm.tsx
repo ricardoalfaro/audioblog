@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '../landing.module.css';
+import { ArrowRight } from 'iconoir-react';
 
 const LEAD_KEY = 'audiodocs_lead_registered';
 
@@ -166,7 +167,7 @@ export default function RegistroForm() {
 
           <button type="submit" className={`${styles.btnPrimary} ${styles.registerSubmit}`} disabled={submitting}>
             {submitting ? 'Entrando…' : 'Entrar a Audiodocs'}
-            {!submitting && <i className="fa-solid fa-arrow-right" aria-hidden="true" />}
+            {!submitting && <ArrowRight aria-hidden="true" />}
           </button>
 
           <p className={styles.registerHint}>

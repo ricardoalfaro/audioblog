@@ -11,6 +11,10 @@ import SplashScreen from '@/components/SplashScreen';
 import { useLocale } from '@/contexts/LocaleContext';
 import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
 import { getGradientClass } from '@/lib/gradientClass';
+import {
+  Trash, Pause, Play, MoreVert, MinusCircle, PlusCircle, List, Import, Headset, Drawer, Undo,
+  Xmark, CheckCircle, Check, Refresh, Circle, FloppyDisk, DotsGrid3x3,
+} from 'iconoir-react';
 
 const VALID_TRANSLATE_LANGS = ['es', 'en', 'pt', 'de', 'fr'];
 
@@ -532,7 +536,7 @@ function HomeContent() {
           {confirmDeleteId === article.id && (
             <div className="card-delete-overlay card-delete-overlay--inline" onClick={e => e.stopPropagation()}>
               <div className="card-delete-overlay-info">
-                <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
+                <Trash className="card-delete-overlay-icon" />
                 <p>{t('card.confirmDelete')}</p>
               </div>
               <div className="card-delete-overlay-actions">
@@ -557,7 +561,7 @@ function HomeContent() {
             onClick={(e) => { e.stopPropagation(); handlePlayDirectly(e, article); }}
             style={{ width: '32px', height: '32px', fontSize: '14px', flexShrink: 0 }}
           >
-            {isCurrentPlaying ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
+            {isCurrentPlaying ? <Pause /> : <Play />}
           </button>
           <div className="list-kebab-wrapper" onClick={e => e.stopPropagation()}>
             <button
@@ -566,7 +570,7 @@ function HomeContent() {
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === article.id ? null : article.id); }}
               title={t('card.moreOptions')}
             >
-              <i className="fa-solid fa-ellipsis-vertical"></i>
+              <MoreVert />
             </button>
             {openMenuId === article.id && (
               <div className="card-menu card-menu--left">
@@ -575,14 +579,14 @@ function HomeContent() {
                   onClick={(e) => { e.stopPropagation(); if (queue.find(a => a.id === article.id)) { removeFromQueue(article.id); } else { addToQueue(article); } setOpenMenuId(null); }}
                 >
                   {queue.find(a => a.id === article.id)
-                    ? <><i className="fa-solid fa-circle-minus"></i> {t('card.removeFromQueue')}</>
-                    : <><i className="fa-solid fa-circle-plus"></i> {t('card.addToQueue')}</>}
+                    ? <><MinusCircle /> {t('card.removeFromQueue')}</>
+                    : <><PlusCircle /> {t('card.addToQueue')}</>}
                 </button>
                 <button
                   className="card-menu-item card-menu-item--danger"
                   onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); setOpenMenuId(null); }}
                 >
-                  <i className="fa-solid fa-trash-can"></i> {t('card.delete')}
+                  <Trash /> {t('card.delete')}
                 </button>
               </div>
             )}
@@ -596,7 +600,7 @@ function HomeContent() {
         {confirmDeleteId === article.id && (
           <div className="card-delete-overlay" onClick={e => e.stopPropagation()}>
             <div className="card-delete-overlay-info">
-              <i className="fa-solid fa-trash-can card-delete-overlay-icon"></i>
+              <Trash className="card-delete-overlay-icon" />
               <p>{t('card.confirmDelete')}</p>
             </div>
             <div className="card-delete-overlay-actions">
@@ -611,7 +615,7 @@ function HomeContent() {
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(openMenuId === article.id ? null : article.id); }}
             title={t('card.moreOptions')}
           >
-            <i className="fa-solid fa-ellipsis-vertical"></i>
+            <MoreVert />
           </button>
           {openMenuId === article.id && (
             <div className="card-menu">
@@ -620,14 +624,14 @@ function HomeContent() {
                 onClick={(e) => { e.stopPropagation(); if (queue.find(a => a.id === article.id)) { removeFromQueue(article.id); } else { addToQueue(article); } setOpenMenuId(null); }}
               >
                 {queue.find(a => a.id === article.id)
-                  ? <><i className="fa-solid fa-circle-minus"></i> {t('card.removeFromQueue')}</>
-                  : <><i className="fa-solid fa-circle-plus"></i> {t('card.addToQueue')}</>}
+                  ? <><MinusCircle /> {t('card.removeFromQueue')}</>
+                  : <><PlusCircle /> {t('card.addToQueue')}</>}
               </button>
               <button
                 className="card-menu-item card-menu-item--danger"
                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(article.id); setOpenMenuId(null); }}
               >
-                <i className="fa-solid fa-trash-can"></i> {t('card.delete')}
+                <Trash /> {t('card.delete')}
               </button>
             </div>
           )}
@@ -638,7 +642,7 @@ function HomeContent() {
           <div className="card-gradient-overlay"></div>
           {queuePos >= 0 && (
             <div className="queue-badge">
-              <i className="fa-solid fa-list-ol"></i> #{queuePos + 1}
+              <List /> #{queuePos + 1}
             </div>
           )}
           <div className="card-title-wrapper">
@@ -660,7 +664,7 @@ function HomeContent() {
               onClick={(e) => { e.stopPropagation(); handlePlayDirectly(e, article); }}
               title={isCurrentPlaying ? t('card.pause') : t('card.playNow')}
             >
-              {isCurrentPlaying ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
+              {isCurrentPlaying ? <Pause /> : <Play />}
             </button>
           </div>
         </div>
@@ -718,15 +722,14 @@ function HomeContent() {
             onClick={() => toggleViewMode(viewMode === 'grid' ? 'list' : 'grid')}
             title={viewMode === 'grid' ? t('card.gridView') : t('card.listView')}
           >
-            <i className={`fa-solid ${viewMode === 'grid' ? 'fa-grip' : 'fa-list'}`}></i>
+            {viewMode === 'grid' ? <DotsGrid3x3 /> : <List />}
           </button>
           <button
-            className="view-btn tabs-import-btn"
+            className="import-inline-btn tabs-import-btn"
             onClick={() => setIsModalOpen(true)}
             title={t('modal.importArticle')}
-            aria-label={t('modal.importArticle')}
           >
-            <i className="fa-solid fa-file-import"></i><span className="cta-label"> {t('modal.import')}</span>
+            <Import /> {t('modal.import')}
           </button>
         </div>
       </section>}
@@ -763,12 +766,7 @@ function HomeContent() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingTop: '16px' }}>
               {listeningArticles.length > 0 && (
                 <section>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 className="section-title" style={{ marginBottom: 0 }}><i className="fa-solid fa-headphones" style={{marginRight: '2px', fontSize: '16px'}}></i> {t('app.listening')}</h2>
-                    <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title={t('app.importNewArticle')}>
-                      <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
-                    </button>
-                  </div>
+                  <h2 className="section-title" style={{ marginBottom: '16px' }}><Headset style={{marginRight: '2px', fontSize: '16px'}} /> {t('app.listening')}</h2>
                   <div ref={listeningCarouselRef} className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                     {listeningArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
@@ -777,16 +775,9 @@ function HomeContent() {
 
               {newArticles.length > 0 && (
                 <section>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 className="section-title" style={{ marginBottom: 0 }}>
-                      <i className="fa-solid fa-inbox" style={{ marginRight: '2px', fontSize: '16px' }}></i> {t('app.readyToListen')}
-                    </h2>
-                    {listeningArticles.length === 0 && (
-                      <button className="import-inline-btn" onClick={() => setIsModalOpen(true)} title={t('app.importNewArticle')}>
-                        <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
-                      </button>
-                    )}
-                  </div>
+                  <h2 className="section-title" style={{ marginBottom: '16px' }}>
+                    <Drawer style={{ marginRight: '2px', fontSize: '16px' }} /> {t('app.readyToListen')}
+                  </h2>
                   <div ref={newArticlesCarouselRef} className={viewMode === 'grid' ? 'listening-carousel' : 'articles-list'}>
                     {newArticles.map(article => renderArticleCard(article, 'card-vertical'))}
                   </div>
@@ -797,7 +788,7 @@ function HomeContent() {
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}>
-                      <i className="fa-solid fa-rotate-left" style={{ marginRight: '6px', fontSize: '16px' }}></i> {t('app.backToListen')}
+                      <Undo style={{ marginRight: '6px', fontSize: '16px' }} /> {t('app.backToListen')}
                     </h2>
                   </div>
                   <div ref={archivedCarouselRef} className={viewMode === 'grid' ? 'listening-carousel archived-cards' : 'articles-list archived-cards'}>
@@ -816,7 +807,7 @@ function HomeContent() {
                     <h3>{t('app.emptyLibraryTitle')}</h3>
                     <p>{t('app.emptyLibrarySubtitle')}</p>
                     <button className="btn btn-primary" style={{ marginTop: '24px', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
-                      <i className="fa-solid fa-file-import"></i> {t('app.importDocument')}
+                      <Import /> {t('app.importDocument')}
                     </button>
                   </>
                 ) : (
@@ -843,12 +834,12 @@ function HomeContent() {
             onClick={e => e.stopPropagation()}
           >
             <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual} aria-label={t('modal.close')}>
-              <i className="fa-solid fa-xmark" />
+              <Xmark />
             </button>
 
             {importSuccess ? (
               <div className="import-success">
-                <i className="fa-solid fa-circle-check success-icon" />
+                <CheckCircle className="success-icon" />
                 <p>{t('modal.saved')}</p>
                 <span>{t('modal.savedSubtitle')}</span>
               </div>
@@ -873,13 +864,13 @@ function HomeContent() {
                       <div className="import-steps">
                         <div className={`import-step ${scrapeStep >= 1 ? 'active' : ''} ${scrapeStep > 1 ? 'done' : ''}`}>
                           <span className="step-icon">
-                            {scrapeStep > 1 ? <i className="fa-solid fa-check" /> : scrapeStep === 1 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                            {scrapeStep > 1 ? <Check /> : scrapeStep === 1 ? <Refresh className="icon-spin" /> : <Circle />}
                           </span>
                           {t('modal.stepReading')}
                         </div>
                         <div className={`import-step ${scrapeStep >= 2 ? 'active' : ''} ${scrapeStep > 2 ? 'done' : ''}`}>
                           <span className="step-icon">
-                            {scrapeStep > 2 ? <i className="fa-solid fa-check" /> : scrapeStep === 2 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                            {scrapeStep > 2 ? <Check /> : scrapeStep === 2 ? <Refresh className="icon-spin" /> : <Circle />}
                           </span>
                           {t('modal.stepExtracting')}
                         </div>
@@ -887,13 +878,13 @@ function HomeContent() {
                           <>
                             <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''} ${scrapeStep > 3 ? 'done' : ''}`}>
                               <span className="step-icon">
-                                {scrapeStep > 3 ? <i className="fa-solid fa-check" /> : scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                                {scrapeStep > 3 ? <Check /> : scrapeStep === 3 ? <Refresh className="icon-spin" /> : <Circle />}
                               </span>
                               {t('modal.stepTranslating')}
                             </div>
                             <div className={`import-step ${scrapeStep >= 4 ? 'active' : ''}`}>
                               <span className="step-icon">
-                                {scrapeStep === 4 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                                {scrapeStep === 4 ? <Refresh className="icon-spin" /> : <Circle />}
                               </span>
                               {t('modal.stepSaving')}
                             </div>
@@ -901,7 +892,7 @@ function HomeContent() {
                         ) : (
                           <div className={`import-step ${scrapeStep >= 3 ? 'active' : ''}`}>
                             <span className="step-icon">
-                              {scrapeStep === 3 ? <i className="fa-solid fa-circle-notch fa-spin" /> : <i className="fa-solid fa-circle" />}
+                              {scrapeStep === 3 ? <Refresh className="icon-spin" /> : <Circle />}
                             </span>
                             {t('modal.stepSaving')}
                           </div>
@@ -934,7 +925,7 @@ function HomeContent() {
                       </div>
                       {scrapeError && <p className="modal-error">{scrapeError}</p>}
                       <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                        <i className="fa-solid fa-file-import" /> {t('modal.import')}
+                        <Import /> {t('modal.import')}
                       </button>
                     </form>
                   )
@@ -952,7 +943,7 @@ function HomeContent() {
                     </div>
                     {manualError && <p className="modal-error">{manualError}</p>}
                     <button type="submit" className="btn btn-primary" disabled={isSavingManual} style={{ width: '100%', justifyContent: 'center' }}>
-                      {isSavingManual ? <><i className="fa-solid fa-circle-notch fa-spin" /> {t('modal.saving')}</> : <><i className="fa-solid fa-floppy-disk" /> {t('modal.saveArticle')}</>}
+                      {isSavingManual ? <><Refresh className="icon-spin" /> {t('modal.saving')}</> : <><FloppyDisk /> {t('modal.saveArticle')}</>}
                     </button>
                   </form>
                 )}

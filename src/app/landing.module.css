@@ -453,7 +453,7 @@
   color: var(--lp-navy);
 }
 
-.playerControls i {
+.playerControls svg {
   font-size: 15px;
   opacity: 0.65;
 }
@@ -469,7 +469,7 @@
   box-shadow: 0 8px 20px rgba(252, 163, 17, 0.4);
 }
 
-.playButton i {
+.playButton svg {
   font-size: 17px;
   opacity: 1;
   color: var(--lp-navy);
@@ -797,7 +797,7 @@
   margin-bottom: 18px;
 }
 
-.bentoIcon i {
+.bentoIcon svg {
   color: var(--lp-amber);
   font-size: 16px;
 }
@@ -945,7 +945,7 @@
   justify-content: center;
 }
 
-.faqIcon i {
+.faqIcon svg {
   font-size: 16px;
   color: #C87D06;
 }
@@ -1063,7 +1063,7 @@
   padding-bottom: 3px;
 }
 
-.aboutGithub i {
+.aboutGithub svg {
   font-size: 18px;
 }
 
