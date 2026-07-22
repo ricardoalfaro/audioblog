@@ -482,6 +482,192 @@ async function tryMediumArchive(targetUrl: string, timeoutMs: number): Promise<S
   }
 }
 
+// F22: x.com/twitter.com es una SPA — un fetch sin sesión recibe el shell vacío o un muro de
+// login, Readability no encuentra texto real. Se resuelve vía APIs no oficiales de terceros
+// (fxtwitter/vxtwitter, que reexponen la API interna de X como JSON estructurado) con
+// fallback al oEmbed oficial de X (publish.twitter.com) si ambas fallan. Decisión consciente
+// (confirmada con el usuario): fxtwitter/vxtwitter son estables en la práctica y ampliamente
+// usados, pero no son un producto oficial de X — pueden bloquearse o desaparecer sin aviso;
+// el fallback a oEmbed cubre ese caso con el tweet suelto (sin hilo/imágenes) en vez de fallar
+// del todo.
+function isTwitterHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return h === 'x.com' || h === 'www.x.com' || h === 'mobile.x.com' ||
+    h === 'twitter.com' || h === 'www.twitter.com' || h === 'mobile.twitter.com';
+}
+
+// Extrae el ID numérico del tweet de cualquier variante de URL: /usuario/status/123,
+// /usuario/statuses/123, /i/status/123, con o sin querystring.
+function extractTweetId(rawUrl: string): string | null {
+  try {
+    const path = new URL(rawUrl).pathname;
+    const m = path.match(/\/status(?:es)?\/(\d+)/);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+interface FxTwitterStatus {
+  text?: string;
+  author?: { name?: string; screen_name?: string };
+  media?: {
+    photos?: { url?: string }[];
+    external?: { thumbnail_url?: string };
+  };
+}
+
+interface FxTwitterThreadResponse {
+  code?: number;
+  status?: FxTwitterStatus | null;
+  thread?: FxTwitterStatus[] | null;
+}
+
+function truncate(text: string, maxLen: number): string {
+  return text.length > maxLen ? text.slice(0, maxLen).trimEnd() + '...' : text;
+}
+
+// El endpoint /2/thread de fxtwitter ("unrolled thread") ya devuelve los tweets del hilo en
+// orden cuando el tweet pedido es parte de uno — no hace falta reconstruirlo a mano acá.
+function mapFxTwitterThreadToScrapedRaw(data: FxTwitterThreadResponse): ScrapedRaw | null {
+  const tweets = (data.thread && data.thread.length > 0) ? data.thread : (data.status ? [data.status] : []);
+  if (tweets.length === 0) return null;
+
+  const paragraphs = tweets.map(t => (t.text || '').trim()).filter(Boolean);
+  if (paragraphs.length === 0) return null;
+
+  const firstAuthor = tweets[0].author;
+  const author = firstAuthor?.screen_name
+    ? `${firstAuthor.name || firstAuthor.screen_name} (@${firstAuthor.screen_name})`
+    : 'X (Twitter)';
+
+  // Primera imagen que aparezca en cualquier tweet del hilo — foto antes que thumbnail de video.
+  let imageUrl = '';
+  for (const t of tweets) {
+    const photo = t.media?.photos?.[0]?.url;
+    if (photo) { imageUrl = photo; break; }
+    if (!imageUrl && t.media?.external?.thumbnail_url) imageUrl = t.media.external.thumbnail_url;
+  }
+
+  return {
+    title: truncate(paragraphs[0], 80),
+    author,
+    excerpt: truncate(paragraphs[0], 160),
+    paragraphs,
+    imageUrl,
+  };
+}
+
+async function tryFxTwitter(tweetId: string, timeoutMs: number): Promise<ScrapedRaw | null> {
+  try {
+    const res = await safeFetch(`https://api.fxtwitter.com/2/thread/${tweetId}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`[scrape] fxtwitter respondió ${res.status} para tweet ${tweetId}`);
+      return null;
+    }
+    const data = await res.json() as FxTwitterThreadResponse;
+    return mapFxTwitterThreadToScrapedRaw(data);
+  } catch (err) {
+    console.warn('[scrape] fxtwitter falló:', err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+interface VxTwitterResponse {
+  text?: string;
+  user_name?: string;
+  user_screen_name?: string;
+  mediaURLs?: string[];
+}
+
+// vxtwitter no tiene un endpoint de "hilo" propio — solo devuelve el tweet suelto pedido.
+// Segundo fallback (después de fxtwitter), no primero: fxtwitter reconstruye el hilo, esto no.
+async function tryVxTwitter(tweetId: string, timeoutMs: number): Promise<ScrapedRaw | null> {
+  try {
+    const res = await safeFetch(`https://api.vxtwitter.com/i/status/${tweetId}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`[scrape] vxtwitter respondió ${res.status} para tweet ${tweetId}`);
+      return null;
+    }
+    const data = await res.json() as VxTwitterResponse;
+    const text = (data.text || '').trim();
+    if (!text) return null;
+    const author = data.user_screen_name
+      ? `${data.user_name || data.user_screen_name} (@${data.user_screen_name})`
+      : 'X (Twitter)';
+    return {
+      title: truncate(text, 80),
+      author,
+      excerpt: truncate(text, 160),
+      paragraphs: [text],
+      imageUrl: data.mediaURLs?.[0] || '',
+    };
+  } catch (err) {
+    console.warn('[scrape] vxtwitter falló:', err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+// Última opción: oEmbed oficial de X. Estable (es de X mismo, no un proxy no oficial) pero
+// limitado — solo el tweet suelto (sin hilo), y el texto viene embebido en un <blockquote> de
+// HTML en vez de JSON estructurado, así que no expone imágenes utilizables.
+async function tryTwitterOEmbed(targetUrl: string, timeoutMs: number): Promise<ScrapedRaw | null> {
+  try {
+    const res = await safeFetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(targetUrl)}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`[scrape] oEmbed de X respondió ${res.status} para ${targetUrl}`);
+      return null;
+    }
+    const data = await res.json() as { html?: string; author_name?: string };
+    if (!data.html) return null;
+    const { document } = parseHTML(data.html);
+    const text = document.querySelector('p')?.textContent?.trim() || '';
+    if (!text) return null;
+    return {
+      title: truncate(text, 80),
+      author: data.author_name || 'X (Twitter)',
+      excerpt: truncate(text, 160),
+      paragraphs: [text],
+      imageUrl: '',
+    };
+  } catch (err) {
+    console.warn('[scrape] oEmbed de X falló:', err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+// R7: fxtwitter → vxtwitter → oEmbed son 3 intentos secuenciales — sin repartir el
+// presupuesto entre ellos, el peor caso (los 3 lentos/colgados) podría sumar mucho más que
+// el timeout individual de cada uno. `remaining` es el mismo reloj compartido de R7 (ver POST).
+const MIN_TWITTER_STAGE_BUDGET_MS = 1500;
+
+async function tryTwitter(targetUrl: string, remaining: () => number): Promise<ScrapedRaw | null> {
+  const tweetId = extractTweetId(targetUrl);
+  if (tweetId) {
+    if (remaining() >= MIN_TWITTER_STAGE_BUDGET_MS) {
+      const fx = await tryFxTwitter(tweetId, Math.min(8000, remaining()));
+      if (fx) return fx;
+    }
+    if (remaining() >= MIN_TWITTER_STAGE_BUDGET_MS) {
+      const vx = await tryVxTwitter(tweetId, Math.min(8000, remaining()));
+      if (vx) return vx;
+    }
+  }
+  if (remaining() >= MIN_TWITTER_STAGE_BUDGET_MS) {
+    return tryTwitterOEmbed(targetUrl, Math.min(8000, remaining()));
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   if (!rateLimit(getIP(request), 10, 60_000)) {
     return NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429 });
@@ -516,102 +702,110 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL_INVALID' }, { status: 400 });
     }
 
-    // Fetch — 10s timeout; safeFetch blocks private IPs and validates every redirect (SSRF, R1)
-    const controller = new AbortController();
-    const fetchTimeout = setTimeout(() => controller.abort(), 10_000);
-
-    let response: Response | null = null;
-    let fetchBlocked = false;
-    try {
-      response = await safeFetch(url, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-        },
-      });
-    } catch (fetchErr: unknown) {
-      clearTimeout(fetchTimeout);
-      if ((fetchErr as Error).name === 'AbortError') {
-        if (!isMediumHost(parsedUrl.hostname)) {
-          return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
-        }
-        fetchBlocked = true;
-      } else if ((fetchErr as Error).message === 'SSRF_BLOCKED' || (fetchErr as Error).message === 'DNS_FAIL') {
-        return NextResponse.json({ error: 'URL_INVALID' }, { status: 400 });
-      } else {
-        throw fetchErr;
-      }
-    }
-    clearTimeout(fetchTimeout);
-
     let scraped: ScrapedRaw | null = null;
 
-    if (!fetchBlocked && response) {
-      if (!response.ok) {
-        if (isMediumHost(parsedUrl.hostname)) {
+    if (isTwitterHost(parsedUrl.hostname)) {
+      // F22: x.com/twitter.com es una SPA — un fetch sin sesión nunca tiene texto real que
+      // extraer con Readability (login wall / shell vacío), así que se salta directo a la
+      // rama dedicada en vez de gastar el timeout del fetch normal en un intento condenado
+      // a fallar.
+      scraped = await tryTwitter(url, remaining);
+    } else {
+      // Fetch — 10s timeout; safeFetch blocks private IPs and validates every redirect (SSRF, R1)
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 10_000);
+
+      let response: Response | null = null;
+      let fetchBlocked = false;
+      try {
+        response = await safeFetch(url, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+          },
+        });
+      } catch (fetchErr: unknown) {
+        clearTimeout(fetchTimeout);
+        if ((fetchErr as Error).name === 'AbortError') {
+          if (!isMediumHost(parsedUrl.hostname)) {
+            return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
+          }
           fetchBlocked = true;
+        } else if ((fetchErr as Error).message === 'SSRF_BLOCKED' || (fetchErr as Error).message === 'DNS_FAIL') {
+          return NextResponse.json({ error: 'URL_INVALID' }, { status: 400 });
         } else {
-          return NextResponse.json({ error: 'FETCH_FAILED', httpStatus: response.status }, { status: 500 });
+          throw fetchErr;
         }
-      } else {
-        // Reject responses that are too large to avoid OOM (R4)
-        const MAX_HTML_BYTES = 5 * 1024 * 1024; // 5 MB
-        const contentLength = response.headers.get('content-length');
-        if (contentLength && parseInt(contentLength, 10) > MAX_HTML_BYTES) {
-          return NextResponse.json({ error: 'CONTENT_TOO_LARGE' }, { status: 413 });
-        }
+      }
+      clearTimeout(fetchTimeout);
 
-        const html = await response.text();
-        if (html.length > MAX_HTML_BYTES) {
-          return NextResponse.json({ error: 'CONTENT_TOO_LARGE' }, { status: 413 });
-        }
-
-        // isMediumHost cubre medium.com/*.medium.com; isMediumPoweredHtml detecta además
-        // dominios propios de publicaciones (uxdesign.cc, etc.) vía los meta tags que Medium
-        // inyecta en toda página, sin depender del hostname.
-        const isMediumPage = isMediumHost(parsedUrl.hostname) || isMediumPoweredHtml(html);
-
-        // Detect Cloudflare bot challenge (common on Medium and similar sites)
-        const isChallenge = html.includes('id="challenge-running"') || html.includes('cf-browser-verification') || (html.includes('Just a moment') && html.includes('cloudflare'));
-        if (isChallenge && isMediumPage) {
-          fetchBlocked = true;
-        } else if (isChallenge) {
-          return NextResponse.json({ error: 'ANTI_BOT_BLOCKED' }, { status: 422 });
-        } else if (isMediumPage && isMediumPaywalledHtml(html)) {
-          // 200 OK y Readability podría "parsear algo", pero es el preview truncado del muro
-          // de pago — el usuario puede verlo completo en el navegador si está logueado en
-          // Medium, pero el scraper (sin sesión) solo recibe el recorte. No usar ese contenido
-          // parcial en silencio: directo a la cascada RSS → archive.org.
-          fetchBlocked = true;
-        } else {
-          scraped = extractFromHtml(html);
-          if (!scraped && isMediumPage) {
+      if (!fetchBlocked && response) {
+        if (!response.ok) {
+          if (isMediumHost(parsedUrl.hostname)) {
             fetchBlocked = true;
-          } else if (!scraped) {
-            return NextResponse.json({ error: 'EXTRACT_FAILED' }, { status: 422 });
+          } else {
+            return NextResponse.json({ error: 'FETCH_FAILED', httpStatus: response.status }, { status: 500 });
+          }
+        } else {
+          // Reject responses that are too large to avoid OOM (R4)
+          const MAX_HTML_BYTES = 5 * 1024 * 1024; // 5 MB
+          const contentLength = response.headers.get('content-length');
+          if (contentLength && parseInt(contentLength, 10) > MAX_HTML_BYTES) {
+            return NextResponse.json({ error: 'CONTENT_TOO_LARGE' }, { status: 413 });
+          }
+
+          const html = await response.text();
+          if (html.length > MAX_HTML_BYTES) {
+            return NextResponse.json({ error: 'CONTENT_TOO_LARGE' }, { status: 413 });
+          }
+
+          // isMediumHost cubre medium.com/*.medium.com; isMediumPoweredHtml detecta además
+          // dominios propios de publicaciones (uxdesign.cc, etc.) vía los meta tags que Medium
+          // inyecta en toda página, sin depender del hostname.
+          const isMediumPage = isMediumHost(parsedUrl.hostname) || isMediumPoweredHtml(html);
+
+          // Detect Cloudflare bot challenge (common on Medium and similar sites)
+          const isChallenge = html.includes('id="challenge-running"') || html.includes('cf-browser-verification') || (html.includes('Just a moment') && html.includes('cloudflare'));
+          if (isChallenge && isMediumPage) {
+            fetchBlocked = true;
+          } else if (isChallenge) {
+            return NextResponse.json({ error: 'ANTI_BOT_BLOCKED' }, { status: 422 });
+          } else if (isMediumPage && isMediumPaywalledHtml(html)) {
+            // 200 OK y Readability podría "parsear algo", pero es el preview truncado del muro
+            // de pago — el usuario puede verlo completo en el navegador si está logueado en
+            // Medium, pero el scraper (sin sesión) solo recibe el recorte. No usar ese contenido
+            // parcial en silencio: directo a la cascada RSS → archive.org.
+            fetchBlocked = true;
+          } else {
+            scraped = extractFromHtml(html);
+            if (!scraped && isMediumPage) {
+              fetchBlocked = true;
+            } else if (!scraped) {
+              return NextResponse.json({ error: 'EXTRACT_FAILED' }, { status: 422 });
+            }
           }
         }
       }
-    }
 
-    // F13: fetch directo bloqueado en un artículo de Medium — cascada RSS → archive.org
-    if (fetchBlocked && !scraped) {
-      const MIN_STAGE_BUDGET_MS = 1500;
-      if (remaining() < MIN_STAGE_BUDGET_MS) {
-        return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
-      }
-      scraped = await tryMediumRSS(url, Math.min(8000, remaining()));
-      if (!scraped && remaining() >= MIN_STAGE_BUDGET_MS) {
-        scraped = await tryMediumArchive(url, Math.min(15_000, remaining()));
-      }
-
-      if (!scraped) {
+      // F13: fetch directo bloqueado en un artículo de Medium — cascada RSS → archive.org
+      if (fetchBlocked && !scraped) {
+        const MIN_STAGE_BUDGET_MS = 1500;
         if (remaining() < MIN_STAGE_BUDGET_MS) {
           return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
         }
-        return NextResponse.json({ error: 'MEDIUM_BLOCKED' }, { status: 422 });
+        scraped = await tryMediumRSS(url, Math.min(8000, remaining()));
+        if (!scraped && remaining() >= MIN_STAGE_BUDGET_MS) {
+          scraped = await tryMediumArchive(url, Math.min(15_000, remaining()));
+        }
+
+        if (!scraped) {
+          if (remaining() < MIN_STAGE_BUDGET_MS) {
+            return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
+          }
+          return NextResponse.json({ error: 'MEDIUM_BLOCKED' }, { status: 422 });
+        }
       }
     }
 
