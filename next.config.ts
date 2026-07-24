@@ -10,13 +10,19 @@ const isDev = process.env.NODE_ENV === 'development';
 // trade-off de rendimiento/costo. 'unsafe-inline' en script-src/style-src es la concesión
 // consciente de este approach — ver S9 en BACKLOG.md si más adelante se quiere migrar a
 // nonce vía `proxy.ts` (el nuevo nombre de middleware.ts en esta versión de Next).
+// FIX post-S6 (incidente en producción): el audio de TTS se reproduce vía data: URL
+// (audioToDataUrl en audioUtils.ts, no blob:), y media-src no incluía 'data:' — el navegador
+// bloqueaba la carga con "MEDIA_ELEMENT_ERROR: Media load rejected by URL safety check"
+// (MediaError code 4), rompiendo la reproducción de todo artículo en producción. Confirmado
+// en vivo: reproducir el mismo data: URL que genera audioToDataUrl() fallaba exactamente así
+// antes de este fix.
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''};
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
   img-src 'self' https: data: blob:;
-  media-src 'self' blob:;
+  media-src 'self' blob: data:;
   connect-src 'self';
   object-src 'none';
   base-uri 'self';
