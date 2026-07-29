@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# notas de sesión locales (ver AGENTS.md) — snapshot de contexto entre sesiones, no versionado
+.claude/SESSION_NOTES.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
