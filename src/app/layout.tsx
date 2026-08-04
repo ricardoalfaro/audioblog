@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { IconoirProvider } from "iconoir-react";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -107,6 +108,7 @@ export default function RootLayout({
         <IconoirProvider iconProps={{ width: '1em', height: '1em', strokeWidth: 2 }}>
           {children}
         </IconoirProvider>
+        <Analytics />
       </body>
     </html>
   );

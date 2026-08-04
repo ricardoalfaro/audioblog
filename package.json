@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
+    "@vercel/analytics": "^2.0.1",
     "edge-tts-universal": "^1.4.0",
     "iconoir-react": "^7.11.1",
     "linkedom": "^0.18.12",
