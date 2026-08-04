@@ -44,7 +44,7 @@ interface AudioPlayerContextType {
 
   playArticle: (article: Article, forceParagraphIndex?: number) => void;
   handlePlayPause: () => void;
-  handleStop: () => void;
+  handleStop: (opts?: { preserveMediaSession?: boolean }) => void;
   handleSkipForward: () => void;
   handleSkipBackward: () => void;
   handleParagraphClick: (index: number) => void;
@@ -83,6 +83,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // la voz nunca "pegaba"); y (b) persistir cambios de voz aunque el usuario haya detenido la
   // reproducción antes de cambiarla (handleStop pone playingArticle en null).
   const currentArticleIdRef = useRef<string | null>(null);
+  // B29: última metadata mostrada en la Media Session del SO (lock screen/Control Center) —
+  // sobrevive a handleStop() cuando el stop es por fin natural de la reproducción (nada más
+  // en cola), para que el widget del SO quede coherente ("pausado en el último artículo") en
+  // vez de nulearse de golpe, que en iOS deja un widget fantasma con los defaults del PWA
+  // (título "Audiodocs", favicon pixelado) en vez de desaparecer. Se limpia solo cuando el
+  // stop es explícito (borrar/editar el artículo en curso, ver handleStop).
+  const lastMediaSessionArticleRef = useRef<Article | null>(null);
   // Increments on every new play session (new article, engine change, stop)
   // so in-flight TTS fetches from a previous session are discarded.
   const playSessionRef = useRef(0);
@@ -221,7 +228,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         const next = consumeNextInQueue();
         if (next) { playArticle(next, 0); return; }
       }
-      handleStop();
+      // B29: fin real de la biblioteca (no un stop explícito del usuario) — preservar la
+      // Media Session en vez de nulearla, ver comentario de lastMediaSessionArticleRef.
+      handleStop({ preserveMediaSession: true });
       return;
     }
 
@@ -337,7 +346,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         const next = consumeNextInQueue();
         if (next) { playArticle(next, 0); return; }
       }
-      handleStop();
+      // B29: fin real de la biblioteca (no un stop explícito del usuario) — preservar la
+      // Media Session en vez de nulearla, ver comentario de lastMediaSessionArticleRef.
+      handleStop({ preserveMediaSession: true });
       return;
     }
 
@@ -601,7 +612,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const handleStop = () => {
+  const handleStop = (opts?: { preserveMediaSession?: boolean }) => {
     playSessionRef.current += 1;
     flushArticleProgress(); // P6: persistir de inmediato el último progreso pendiente del debounce
     if (typeof window !== 'undefined') {
@@ -629,6 +640,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentCharIndex(-1);
     setPlayingArticle(null);
     playingArticleIdRef.current = null;
+    if (!opts?.preserveMediaSession) lastMediaSessionArticleRef.current = null;
   };
 
   const handleSkipForward = () => {
@@ -759,23 +771,26 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
 
-    if (!playingArticle) {
+    if (playingArticle) lastMediaSessionArticleRef.current = playingArticle;
+    const article = playingArticle ?? lastMediaSessionArticleRef.current;
+
+    if (!article) {
       navigator.mediaSession.metadata = null;
       return;
     }
 
     // Sin fallback explícito, iOS/Safari elige su propio candidato (el favicon de 32x32)
     // y lo estira al tile grande del lock screen, quedando pixelado (B13)
-    const artwork = playingArticle.imageUrl
-      ? [{ src: playingArticle.imageUrl }]
+    const artwork = article.imageUrl
+      ? [{ src: article.imageUrl }]
       : [
           { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
         ];
 
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: playingArticle.title,
-      artist: playingArticle.author,
+      title: article.title,
+      artist: article.author,
       artwork,
     });
 
@@ -787,7 +802,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
-    if (!playingArticle) {
+    if (!playingArticle && !lastMediaSessionArticleRef.current) {
       navigator.mediaSession.playbackState = 'none';
     } else {
       navigator.mediaSession.playbackState = isPlaying && !isPaused ? 'playing' : 'paused';
