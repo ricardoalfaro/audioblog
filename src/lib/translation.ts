@@ -1,22 +1,48 @@
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+// Idiomas soportados por traducción/detección en toda la app — antes duplicado en
+// AppClient.tsx y en translate/route.ts.
+export const VALID_TRANSLATE_LANGS = new Set(['es', 'en', 'pt', 'fr', 'de']);
+
+// sl=auto hace que este endpoint no oficial devuelva también el idioma origen detectado en
+// json[2] (comportamiento no documentado, pero es el mismo servicio ya usado para traducir).
+async function fetchGoogleTranslate(text: string, targetLang: string): Promise<unknown[] | null> {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
+    headers: { 'User-Agent': USER_AGENT },
+  });
+  if (!res.ok) {
+    console.warn(`[translation] Google Translate respondió ${res.status} (targetLang=${targetLang})`);
+    return null;
+  }
+  return res.json();
+}
+
 async function translateWithGoogle(text: string, targetLang: string): Promise<string | null> {
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(8000),
-      headers: { 'User-Agent': USER_AGENT },
-    });
-    if (!res.ok) {
-      console.warn(`[translation] Google Translate respondió ${res.status} (targetLang=${targetLang})`);
-      return null;
-    }
-    const json = await res.json();
+    const json = await fetchGoogleTranslate(text, targetLang);
+    if (!json) return null;
     return (json[0] as [string, ...unknown[]][])?.map((part) => part[0]).join('') || null;
   } catch (err) {
     // R6: antes esto se tragaba en silencio — sin log no había forma de distinguir "Google
     // Translate está caído para todos" de "este texto puntual falló" al revisar los logs.
     console.warn('[translation] Google Translate falló:', err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+// Detecta el idioma de un texto reusando el mismo endpoint no oficial de traducción — se
+// descarta el texto traducido (json[0]) y solo se lee el idioma detectado (json[2]). Sin esto
+// habría que sumar una librería o servicio nuevo solo para detectar idioma.
+export async function detectLanguage(text: string): Promise<string | null> {
+  try {
+    const json = await fetchGoogleTranslate(text, 'en');
+    if (!json) return null;
+    const detected = json[2];
+    return typeof detected === 'string' && detected ? detected : null;
+  } catch (err) {
+    console.warn('[translation] Detección de idioma falló:', err instanceof Error ? err.message : err);
     return null;
   }
 }

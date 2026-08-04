@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { rateLimit, getIP } from '@/lib/rate-limit';
-import { translateConcurrent, translateText } from '@/lib/translation';
+import { translateConcurrent, translateText, VALID_TRANSLATE_LANGS } from '@/lib/translation';
 
 export const maxDuration = 30;
 
-const VALID_TRANSLATE_LANGS = new Set(['es', 'en', 'pt', 'fr', 'de']);
 const MAX_TEXT_CHARS = 120_000;
 const MAX_PARAGRAPHS = 500;
 

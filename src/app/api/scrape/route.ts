@@ -5,7 +5,7 @@ import dns from 'node:dns/promises';
 import crypto from 'node:crypto';
 import { Agent } from 'undici';
 import { rateLimit, getIP } from '@/lib/rate-limit';
-import { translateConcurrent, translateText } from '@/lib/translation';
+import { translateConcurrent, translateText, detectLanguage, VALID_TRANSLATE_LANGS } from '@/lib/translation';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 import { MemoryCache } from '@/lib/memoryCache';
 
@@ -19,8 +19,13 @@ const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 // (15 min, no 30) porque acá sí importa la frescura — el artículo fuente puede cambiar.
 const scrapeCache = new MemoryCache<Record<string, unknown>>(60, 15 * 60_000);
 
-function scrapeCacheKey(url: string, translateTo: unknown): string {
-  return crypto.createHash('sha256').update(`${url}|${typeof translateTo === 'string' ? translateTo : 'none'}`).digest('hex');
+function scrapeCacheKey(url: string, translateTo: unknown, preferredLang: unknown): string {
+  const translatePart = typeof translateTo === 'string' ? translateTo : 'none';
+  // El import masivo (translateTo:'auto') traduce a un idioma distinto según quién pida la
+  // request — sin esto, dos usuarios/pestañas con preferredLang distinto compartirían la misma
+  // key y uno se llevaría la traducción calculada para el otro.
+  const preferredPart = translatePart === 'auto' && typeof preferredLang === 'string' ? preferredLang : '';
+  return crypto.createHash('sha256').update(`${url}|${translatePart}|${preferredPart}`).digest('hex');
 }
 
 // S4: dns.lookup() puede devolver una IPv4 disfrazada de IPv6 — mapeada (::ffff:a.b.c.d o su
@@ -683,12 +688,15 @@ export async function POST(request: Request) {
   const remaining = () => deadline - Date.now();
 
   try {
-    const { url, translateTo } = await request.json();
+    const { url, translateTo, preferredLang } = await request.json();
     if (!url) {
       return NextResponse.json({ error: 'URL_REQUIRED' }, { status: 400 });
     }
+    if (translateTo === 'auto' && !VALID_TRANSLATE_LANGS.has(preferredLang)) {
+      return NextResponse.json({ error: 'TRANSLATE_LANG_INVALID' }, { status: 400 });
+    }
 
-    const cacheKey = scrapeCacheKey(url, translateTo);
+    const cacheKey = scrapeCacheKey(url, translateTo, preferredLang);
     const cachedResult = scrapeCache.get(cacheKey);
     if (cachedResult) {
       return NextResponse.json(cachedResult);
@@ -853,9 +861,32 @@ export async function POST(request: Request) {
       category = 'Noticias';
     }
 
+    // translateTo:'auto' (import masivo, F-bulk): a diferencia del flujo manual, donde el
+    // usuario ya eligió explícitamente traducir, acá hay que decidir SI corresponde traducir —
+    // se detecta el idioma del artículo y solo se traduce si no coincide con preferredLang.
+    // Detección conservadora: si falla, no se traduce (decisión confirmada con el usuario) en
+    // vez de arriesgar traducir un artículo que ya estaba en su idioma.
+    let detectedLang: string | null = null;
+    let effectiveTranslateTo = translateTo;
+    if (translateTo === 'auto') {
+      if (remaining() < 1500) {
+        console.warn('[scrape] Sin presupuesto de tiempo para detectar idioma, se conserva el idioma original');
+        effectiveTranslateTo = 'none';
+      } else {
+        const sample = `${title} ${paragraphs[0] ?? ''}`.slice(0, 500);
+        try {
+          detectedLang = await withTimeout(detectLanguage(sample), remaining(), 'DETECT_TIMEOUT');
+        } catch (detectErr) {
+          console.warn('[scrape] Detección de idioma excedió el presupuesto de tiempo:', detectErr instanceof Error ? detectErr.message : detectErr);
+          detectedLang = null;
+        }
+        effectiveTranslateTo = detectedLang && detectedLang !== preferredLang ? preferredLang : 'none';
+      }
+    }
+
     // Apply translation if chosen and not 'original'
     let translationFailed = false;
-    if (translateTo && translateTo !== 'original' && translateTo !== 'none') {
+    if (effectiveTranslateTo && effectiveTranslateTo !== 'original' && effectiveTranslateTo !== 'none') {
       if (remaining() < 1500) {
         // R7: sin presupuesto para traducir sin arriesgar exceder maxDuration — se prioriza
         // devolver el artículo en el idioma original antes que colgar la request entera.
@@ -867,10 +898,10 @@ export async function POST(request: Request) {
           // traducciones a un único timeout compartido (remaining()) con withTimeout.
           const [titleResult, excerptResult, paragraphsResult] = await withTimeout(
             Promise.all([
-              translateText(title, translateTo),
-              translateText(excerpt, translateTo),
+              translateText(title, effectiveTranslateTo),
+              translateText(excerpt, effectiveTranslateTo),
               // Translate paragraphs with capped concurrency to avoid hammering the translate API
-              translateConcurrent(paragraphs, translateTo, 5),
+              translateConcurrent(paragraphs, effectiveTranslateTo, 5),
             ]),
             remaining(),
             'TRANSLATE_TIMEOUT',
@@ -896,6 +927,8 @@ export async function POST(request: Request) {
 
     const authorGender = await authorGenderPromise;
 
+    const translatedTo = effectiveTranslateTo !== 'original' && effectiveTranslateTo !== 'none' ? effectiveTranslateTo : null;
+
     const responseBody = {
       title,
       author,
@@ -906,6 +939,8 @@ export async function POST(request: Request) {
       category,
       imageUrl,
       translationFailed,
+      detectedLang,
+      translatedTo,
     };
     // Solo se cachea el camino feliz completo — nunca las ramas de error (podrían ser
     // transitorias, ej. ANTI_BOT_BLOCKED puntual) ni resultados con la traducción degradada

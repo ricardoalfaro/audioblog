@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Article } from '@/types';
 import { STATIC_CATEGORIES, detectCategory } from '@/lib/categories';
 import { defaultArticles } from '@/data/defaultArticles';
-import { useAudioPlayer, EDGE_VOICES } from '@/contexts/AudioPlayerContext';
+import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { validateArticle, getArticlesList, backupAndResetCorruptedArticles, isQuotaExceededError } from '@/lib/articleStorage';
+import { VALID_TRANSLATE_LANGS } from '@/lib/translation';
+import { buildArticleFromScrape } from '@/lib/buildArticleFromScrape';
+import BulkImportPanel from './BulkImportPanel';
 import SplashScreen from '@/components/SplashScreen';
 import { useLocale } from '@/contexts/LocaleContext';
 import { translateApiError, DisplayError } from '@/lib/i18n/apiError';
@@ -16,7 +19,6 @@ import {
   Xmark, CheckCircle, Check, Refresh, Circle, FloppyDisk, DotsGrid3x3,
 } from 'iconoir-react';
 
-const VALID_TRANSLATE_LANGS = ['es', 'en', 'pt', 'de', 'fr'];
 
 function HomeContent() {
   const router = useRouter();
@@ -30,7 +32,7 @@ function HomeContent() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<'url' | 'manual'>('url');
+  const [modalTab, setModalTab] = useState<'url' | 'list' | 'manual'>('url');
   
   // Scraper form state
   const [scrapeUrl, setScrapeUrl] = useState('');
@@ -77,7 +79,7 @@ function HomeContent() {
     if (sharedUrl) {
       // F8: si quien compartió el link tradujo el artículo, ?lang= hace que se importe ya traducido igual
       const lang = params.get('lang');
-      pendingAutoImportRef.current = { url: sharedUrl, lang: lang && VALID_TRANSLATE_LANGS.includes(lang) ? lang : undefined };
+      pendingAutoImportRef.current = { url: sharedUrl, lang: lang && VALID_TRANSLATE_LANGS.has(lang) ? lang : undefined };
       window.history.replaceState(window.history.state, '', '/app');
     }
 
@@ -297,6 +299,17 @@ function HomeContent() {
     }
   };
 
+  // Persistencia de un artículo importado desde la pestaña "Lista" (BulkImportPanel) — mismo
+  // patrón que la cola de persistencia de runScrape (B25: lee la copia fresca de localStorage
+  // antes de escribir, para no pisar progress/lastPlayedAt de otras pestañas).
+  const handleBulkArticleImported = (newArticle: Article) => {
+    const freshArticles = getArticlesList();
+    const updatedArticles = pruneArticles([newArticle, ...freshArticles]);
+    setArticles(updatedArticles);
+    persistArticles(updatedArticles);
+    notifyLibraryChanged();
+  };
+
   // --- Scraper / Import form submissions ---
   const resetScrapeForm = () => {
     setScrapeUrl('');
@@ -344,48 +357,10 @@ function HomeContent() {
 
       if (isTranslating && scrapeData.translationFailed) setImportTranslationFailed(true);
 
-      if (scrapeCategory !== 'auto') scrapeData.category = scrapeCategory;
-
-      const wordCount = scrapeData.paragraphs?.join(' ').split(/\s+/).filter(Boolean).length || 0;
-      const durationSeconds = Math.max(30, Math.round((wordCount / 160) * 60));
-
-      const newArticle: Article = {
-        id: Date.now().toString(),
-        title: scrapeData.title || 'Artículo sin título',
-        author: scrapeData.author || 'Desconocido',
-        url: scrapeData.url || 'manual',
-        addedAt: new Date().toISOString(),
-        category: scrapeData.category || 'General',
-        excerpt: scrapeData.excerpt || (scrapeData.paragraphs?.[0] ? scrapeData.paragraphs[0].slice(0, 160) + '...' : ''),
-        duration: durationSeconds,
-        paragraphs: scrapeData.paragraphs || [],
-        imageUrl: scrapeData.imageUrl || undefined,
-        progress: 0,
-        translateTo: isTranslating ? effectiveTranslateTo : undefined,
-      };
-
-      // Autoseleccionar voz según género del autor (detectado server-side con genderize.io).
-      // Si el import tradujo el artículo, la voz debe ser del idioma AL QUE se tradujo (para
-      // que la experiencia sea coherente de punta a punta) — no del idioma de la voz que
-      // estaba en uso antes de este import. Sin traducción, se mantiene el idioma actual
-      // (no sabemos con certeza el idioma original del artículo). Si no se detecta género,
-      // se deja el default.
-      if (scrapeData.authorGender === 'male' || scrapeData.authorGender === 'female') {
-        const gender = scrapeData.authorGender;
-        const targetLangPrefix = isTranslating ? effectiveTranslateTo : EDGE_VOICES.find(v => v.value === selectedEdgeVoice)?.lang.split('-')[0];
-        let matchedVoice: typeof EDGE_VOICES[number] | undefined;
-        if (targetLangPrefix) {
-          const currentVoice = EDGE_VOICES.find(v => v.value === selectedEdgeVoice);
-          // Preferir la misma región (ej. es-MX) que la voz actual, si coincide con el idioma
-          // destino, antes de conformarse con la primera variante regional del idioma en
-          // EDGE_VOICES — que por default es la mexicana (ver orden del array), no la española.
-          if (currentVoice && currentVoice.lang.startsWith(targetLangPrefix)) {
-            matchedVoice = EDGE_VOICES.find(v => v.lang === currentVoice.lang && v.gender === gender);
-          }
-          matchedVoice ??= EDGE_VOICES.find(v => v.lang.startsWith(targetLangPrefix) && v.gender === gender);
-        }
-        if (matchedVoice) newArticle.preferredEdgeVoice = matchedVoice.value;
-      }
+      const newArticle = buildArticleFromScrape(scrapeData, {
+        categoryOverride: scrapeCategory !== 'auto' ? scrapeCategory : undefined,
+        selectedEdgeVoice,
+      });
 
       // B25: usar la copia más fresca de localStorage (no el estado `articles`, que puede
       // estar stale si el player escribió progress/lastPlayedAt directo vía articleStorage.ts
@@ -898,17 +873,24 @@ function HomeContent() {
             ) : (
               <>
                 <div className="modal-header">
-                  <h2>{modalTab === 'url' ? t('modal.importArticle') : t('modal.createArticle')}</h2>
+                  <h2>{modalTab === 'manual' ? t('modal.createArticle') : t('modal.importArticle')}</h2>
                 </div>
 
                 <div className="modal-tabs">
                   <button className={`modal-tab-btn ${modalTab === 'url' ? 'active' : ''}`} onClick={() => setModalTab('url')}>
                     {t('modal.byUrl')}
                   </button>
+                  <button className={`modal-tab-btn ${modalTab === 'list' ? 'active' : ''}`} onClick={() => setModalTab('list')}>
+                    {t('modal.bulkTab')}
+                  </button>
                   <button className={`modal-tab-btn ${modalTab === 'manual' ? 'active' : ''}`} onClick={() => setModalTab('manual')}>
                     {t('modal.manual')}
                   </button>
                 </div>
+
+                {modalTab === 'list' && (
+                  <BulkImportPanel onArticleImported={handleBulkArticleImported} />
+                )}
 
                 {modalTab === 'url' && (
                   isScraping ? (
