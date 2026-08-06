@@ -737,9 +737,11 @@ export async function POST(request: Request) {
       } catch (fetchErr: unknown) {
         clearTimeout(fetchTimeout);
         if ((fetchErr as Error).name === 'AbortError') {
-          if (!isMediumHost(parsedUrl.hostname)) {
-            return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
-          }
+          // No solo Medium: sitios con bot-mitigation tipo Akamai (ej. mckinsey.com, confirmado
+          // con curl — TLS handshake ok, cero bytes de respuesta, cuelga indefinidamente en vez
+          // de devolver un 403/challenge) no dan ninguna señal salvo el timeout. archive.org
+          // (tryMediumArchive pese al nombre no tiene nada específico de Medium — solo pide
+          // `web.archive.org/web/2/<url>`) es un intento razonable antes de rendirse.
           fetchBlocked = true;
         } else if ((fetchErr as Error).message === 'SSRF_BLOCKED' || (fetchErr as Error).message === 'DNS_FAIL') {
           return NextResponse.json({ error: 'URL_INVALID' }, { status: 400 });
@@ -751,7 +753,13 @@ export async function POST(request: Request) {
 
       if (!fetchBlocked && response) {
         if (!response.ok) {
-          if (isMediumHost(parsedUrl.hostname)) {
+          // 403/429/503 son los status típicos de bot-mitigation (Akamai, Cloudflare, etc. —
+          // ej. mckinsey.com responde 403 acá aunque el mismo sitio cuelga la conexión sin
+          // responder nada si se prueba con curl, el bloqueo no siempre se manifiesta igual).
+          // Vale la pena intentar la cascada RSS/archive.org antes de rendirse, no solo para
+          // Medium. Otros códigos (404, 500...) no son señal de bloqueo — ahí el fallback no
+          // tiene sentido, se falla directo.
+          if (isMediumHost(parsedUrl.hostname) || response.status === 403 || response.status === 429 || response.status === 503) {
             fetchBlocked = true;
           } else {
             return NextResponse.json({ error: 'FETCH_FAILED', httpStatus: response.status }, { status: 500 });
@@ -797,7 +805,10 @@ export async function POST(request: Request) {
         }
       }
 
-      // F13: fetch directo bloqueado en un artículo de Medium — cascada RSS → archive.org
+      // F13: fetch directo bloqueado (Medium o cualquier otro sitio con bot-mitigation que
+      // cuelga la conexión, ver comentario en el catch del AbortError más arriba) — cascada
+      // RSS de Medium (no-op rápido si la URL no es de Medium, ver getMediumHash) → archive.org
+      // (genérico, cualquier dominio).
       if (fetchBlocked && !scraped) {
         const MIN_STAGE_BUDGET_MS = 1500;
         if (remaining() < MIN_STAGE_BUDGET_MS) {
@@ -812,7 +823,13 @@ export async function POST(request: Request) {
           if (remaining() < MIN_STAGE_BUDGET_MS) {
             return NextResponse.json({ error: 'SCRAPE_TIMEOUT' }, { status: 504 });
           }
-          return NextResponse.json({ error: 'MEDIUM_BLOCKED' }, { status: 422 });
+          // MEDIUM_BLOCKED trae texto específico de Medium (RSS del autor, "friend link") que
+          // no aplica a otros sitios — ANTI_BOT_BLOCKED es el genérico que ya existía para el
+          // caso de challenge de Cloudflare detectado en un sitio no-Medium (más arriba).
+          return NextResponse.json(
+            { error: isMediumHost(parsedUrl.hostname) ? 'MEDIUM_BLOCKED' : 'ANTI_BOT_BLOCKED' },
+            { status: 422 },
+          );
         }
       }
     }
