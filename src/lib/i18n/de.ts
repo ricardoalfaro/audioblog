@@ -75,6 +75,7 @@ const de = {
   'modal.categoryAuto': 'Automatisch (KI)',
   'modal.translateTo': 'Übersetzen nach',
   'modal.optional': '(optional)',
+  'modal.translateAuto': 'Automatisch — Sprache der Benutzeroberfläche',
   'modal.translateNone': 'Nicht übersetzen — Originalsprache',
   'modal.langEs': 'Spanisch',
   'modal.langEn': 'Englisch',

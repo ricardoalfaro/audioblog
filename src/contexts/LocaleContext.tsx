@@ -45,6 +45,7 @@ function interpolate(raw: string, params?: TParams): string {
 
 interface LocaleContextValue {
   locale: Locale;
+  isLocaleReady: boolean;
   setLocale: (locale: Locale) => void;
   t: (key: MessageKey, params?: TParams) => string;
   tCategory: (category: string) => string;
@@ -54,6 +55,7 @@ interface LocaleContextValue {
 // consumirlo vía `static contextType` — los hooks no están disponibles en class components.
 export const LocaleContext = createContext<LocaleContextValue>({
   locale: DEFAULT_LOCALE,
+  isLocaleReady: false,
   setLocale: () => {},
   t: (key: MessageKey, params?: TParams) => interpolate(MESSAGES[DEFAULT_LOCALE][key], params),
   tCategory: makeTCategory(DEFAULT_LOCALE),
@@ -63,6 +65,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   // 'es' es el valor seguro para SSR; el efecto sincroniza con localStorage tras la
   // hidratación (mismo patrón que ThemeSwitcher, evita mismatch de hidratación).
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const [isLocaleReady, setIsLocaleReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -72,6 +75,9 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
         setLocaleState(saved);
       }
     } catch { /* storage no disponible */ }
+    // Los flujos que dependen del idioma (como el auto-import) deben esperar a que se lea
+    // localStorage: de otro modo usarían el español del SSR aunque la interfaz real sea otra.
+    setIsLocaleReady(true);
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
@@ -86,7 +92,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const tCategory = useCallback((category: string) => makeTCategory(locale)(category), [locale]);
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t, tCategory }}>
+    <LocaleContext.Provider value={{ locale, isLocaleReady, setLocale, t, tCategory }}>
       {children}
     </LocaleContext.Provider>
   );

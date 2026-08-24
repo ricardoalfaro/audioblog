@@ -75,6 +75,7 @@ const en = {
   'modal.categoryAuto': 'Automatic (AI)',
   'modal.translateTo': 'Translate to',
   'modal.optional': '(optional)',
+  'modal.translateAuto': 'Automatic — interface language',
   'modal.translateNone': 'No translation — original language',
   'modal.langEs': 'Spanish',
   'modal.langEn': 'English',

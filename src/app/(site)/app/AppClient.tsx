@@ -22,7 +22,7 @@ import {
 
 function HomeContent() {
   const router = useRouter();
-  const { t, tCategory } = useLocale();
+  const { t, tCategory, locale, isLocaleReady } = useLocale();
   const [articles, setArticles] = useState<Article[]>([]);
   // Arranca en true: la lectura de localStorage es síncrona (dura ~0ms), así que sin esto
   // nunca se llega a pintar el estado de carga — pasa directo de "vacío" a poblado en el
@@ -37,7 +37,9 @@ function HomeContent() {
   // Scraper form state
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [scrapeCategory, setScrapeCategory] = useState('auto');
-  const [translateTo, setTranslateTo] = useState('none');
+  // Regla de import: por defecto se detecta el idioma y se traduce al idioma de la interfaz
+  // solo si difieren. El usuario puede conservar el original o elegir otro destino explícito.
+  const [translateTo, setTranslateTo] = useState('auto');
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
   const [scrapeStep, setScrapeStep] = useState<0|1|2|3|4>(0);
@@ -314,7 +316,7 @@ function HomeContent() {
   const resetScrapeForm = () => {
     setScrapeUrl('');
     setScrapeCategory('auto');
-    setTranslateTo('none');
+    setTranslateTo('auto');
   };
 
   const runScrape = async (url: string, redirectOnSuccess = false, translateToOverride?: string) => {
@@ -335,7 +337,11 @@ function HomeContent() {
       const scrapeRes = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, translateTo: effectiveTranslateTo }),
+        body: JSON.stringify({
+          url,
+          translateTo: effectiveTranslateTo,
+          preferredLang: effectiveTranslateTo === 'auto' ? locale : undefined,
+        }),
       });
 
       clearTimeout(stepTimer1);
@@ -352,10 +358,10 @@ function HomeContent() {
         throw new DisplayError(errorMsg);
       }
 
-      setScrapeStep(isTranslating ? 4 : 3);
       const scrapeData = await scrapeRes.json();
+      setScrapeStep(scrapeData.translatedTo ? 4 : 3);
 
-      if (isTranslating && scrapeData.translationFailed) setImportTranslationFailed(true);
+      if (scrapeData.translationFailed) setImportTranslationFailed(true);
 
       const newArticle = buildArticleFromScrape(scrapeData, {
         categoryOverride: scrapeCategory !== 'auto' ? scrapeCategory : undefined,
@@ -412,14 +418,16 @@ function HomeContent() {
 
   // Dispara el auto-import una vez que los artículos han cargado.
   useEffect(() => {
-    if (!isLoading && pendingAutoImportRef.current) {
+    // Esperar a que LocaleProvider lea el idioma real de localStorage. Esto importa para los
+    // enlaces que abre la extensión: el primer render siempre parte en español por SSR.
+    if (!isLoading && isLocaleReady && pendingAutoImportRef.current) {
       const { url, lang } = pendingAutoImportRef.current;
       pendingAutoImportRef.current = null;
       setScrapeUrl(url);
       if (lang) setTranslateTo(lang);
-      runScrape(url, true, lang);
+      runScrape(url, true, lang ?? 'auto');
     }
-  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoading, isLocaleReady, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScrapeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -949,6 +957,7 @@ function HomeContent() {
                       <div>
                         <label className="form-label">{t('modal.translateTo')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('modal.optional')}</span></label>
                         <select className="form-control" value={translateTo} onChange={e => setTranslateTo(e.target.value)}>
+                          <option value="auto">{t('modal.translateAuto')}</option>
                           <option value="none">{t('modal.translateNone')}</option>
                           <option value="es">{t('modal.langEs')}</option>
                           <option value="en">{t('modal.langEn')}</option>

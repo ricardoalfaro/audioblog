@@ -75,6 +75,7 @@ const pt = {
   'modal.categoryAuto': 'Automática (IA)',
   'modal.translateTo': 'Traduzir para',
   'modal.optional': '(opcional)',
+  'modal.translateAuto': 'Automático — idioma da interface',
   'modal.translateNone': 'Não traduzir — idioma original',
   'modal.langEs': 'Espanhol',
   'modal.langEn': 'Inglês',
