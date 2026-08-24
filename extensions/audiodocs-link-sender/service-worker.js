@@ -7,7 +7,7 @@ function createContextMenu() {
       {
         id: MENU_ID,
         title: "Abrir en Audiodocs",
-        contexts: ["link"],
+        contexts: ["page", "link"],
       },
       () => {
         if (chrome.runtime.lastError) {
@@ -37,11 +37,13 @@ chrome.runtime.onInstalled.addListener(createContextMenu);
 chrome.runtime.onStartup.addListener(createContextMenu);
 
 chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId !== MENU_ID || !info.linkUrl) {
+  if (info.menuItemId !== MENU_ID) {
     return;
   }
 
-  const importUrl = buildImportUrl(info.linkUrl);
+  // Sobre un enlace se prioriza su destino. En el resto de la página, `pageUrl` entrega
+  // la dirección de la pestaña actual sin necesitar permisos para leer su contenido.
+  const importUrl = buildImportUrl(info.linkUrl ?? info.pageUrl);
   if (importUrl) {
     chrome.tabs.create({ url: importUrl });
   }
