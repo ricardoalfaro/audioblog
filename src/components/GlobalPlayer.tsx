@@ -92,7 +92,7 @@ export default function GlobalPlayer() {
         </div>
 
         {ttsError && (
-          <div style={{ fontSize: '12px', color: '#d93025', textAlign: 'center', padding: '2px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--color-danger)', textAlign: 'center', padding: '2px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <WarningTriangle />
             {ttsError}
           </div>
@@ -125,41 +125,53 @@ export default function GlobalPlayer() {
               {playingArticle?.author ?? t('player.emptySubtitle')}
               {queue.length > 0 && (
                 <span style={{ marginLeft: '6px', color: 'var(--color-primary)', fontWeight: 500 }}>
-                  · {queue.length} en cola
+                  · {t('player.queueCount', { count: queue.length })}
                 </span>
               )}
             </div>
           </div>
 
           <div className="player-core" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '16px', flexShrink: 0 }}>
-            <button className="player-btn" onClick={handleSkipBackward} disabled={!hasArticle || !hasPrevious} title="Artículo anterior">
+            <button className="player-btn" onClick={handleSkipBackward} disabled={!hasArticle || !hasPrevious} title={t('player.previous')} aria-label={t('player.previous')}>
               <SkipPrev />
             </button>
-            <button className="player-btn player-btn-play" onClick={handlePlayPause} disabled={!hasArticle || isLoading} title={hasArticle ? undefined : t('player.emptyPlayDisabled')}>
+            <button
+              className="player-btn player-btn-play"
+              onClick={handlePlayPause}
+              disabled={!hasArticle || isLoading}
+              title={hasArticle ? (isPlaying && !isPaused ? t('player.pause') : t('player.play')) : t('player.emptyPlayDisabled')}
+              aria-label={hasArticle ? (isPlaying && !isPaused ? t('player.pause') : t('player.play')) : t('player.emptyPlayDisabled')}
+            >
               {isLoading ? (
                 <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '3px' }}></div>
               ) : (
                 isPlaying && !isPaused ? <Pause /> : <Play />
               )}
             </button>
-            <button className="player-btn" onClick={handleSkipForward} disabled={!hasArticle || !hasNext} title="Siguiente artículo">
+            <button className="player-btn" onClick={handleSkipForward} disabled={!hasArticle || !hasNext} title={t('player.next')} aria-label={t('player.next')}>
               <SkipNext />
             </button>
           </div>
-          
+
           <div className="player-settings" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
             <span className="player-remaining-time" aria-live="off">
               {hasArticle ? formatRemainingTime(getRemainingTime()) : '--:--'}
             </span>
-            <button className="player-btn player-speed-btn" onClick={toggleSpeed} disabled={!hasArticle} title="Velocidad">
+            <button
+              className="player-btn player-speed-btn"
+              onClick={toggleSpeed}
+              disabled={!hasArticle}
+              title={t('player.speed')}
+              aria-label={t('player.speedLabel', { rate: speechRate })}
+            >
               {speechRate}x
             </button>
             <button
               className="player-btn"
               onClick={handleShare}
               disabled={!playingArticle || playingArticle.url === 'manual'}
-              title={shareCopied ? 'Enlace copiado' : 'Compartir artículo'}
-              aria-label={shareCopied ? 'Enlace copiado' : 'Compartir artículo'}
+              title={shareCopied ? t('player.shareCopied') : t('player.shareArticle')}
+              aria-label={shareCopied ? t('player.shareCopied') : t('player.shareArticle')}
             >
               {shareCopied ? <Check /> : <ShareIos />}
             </button>

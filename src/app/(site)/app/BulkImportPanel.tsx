@@ -185,7 +185,7 @@ export default function BulkImportPanel({ onArticleImported }: BulkImportPanelPr
       case 'done': return <Check style={{ color: 'var(--color-primary)' }} />;
       case 'duplicate': return <InfoCircle style={{ color: 'var(--text-muted)' }} />;
       case 'invalid':
-      case 'error': return <WarningTriangle style={{ color: '#d93025' }} />;
+      case 'error': return <WarningTriangle style={{ color: 'var(--color-danger)' }} />;
       case 'scraping':
       case 'translating':
       case 'retrying': return <Refresh className="icon-spin" />;
