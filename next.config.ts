@@ -32,6 +32,10 @@ const cspHeader = `
 `;
 
 const nextConfig: NextConfig = {
+  // pdf-parse usa binarios nativos para proveer CanvasFactory a pdf.js. En Vercel estos
+  // paquetes deben resolverse con require de Node, no quedar incompletos en el bundle.
+  serverExternalPackages: ['pdf-parse', '@napi-rs/canvas'],
+
   // Permite probar el dev server desde otros dispositivos en la red local (ej. el teléfono
   // entrando por la IP de la Mac). Sin esto, Next bloquea los recursos internos de dev
   // (HMR, chunks de JS) por seguridad y la app carga el HTML pero no hidrata: los botones

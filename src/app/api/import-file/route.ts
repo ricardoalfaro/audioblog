@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import mammoth from 'mammoth';
-import { PDFParse } from 'pdf-parse';
 import { parseHTML } from 'linkedom';
 import { Readability } from '@mozilla/readability';
 import { rateLimit, getIP } from '@/lib/rate-limit';
@@ -33,7 +32,11 @@ async function extractFile(file: File, bytes: Uint8Array) {
 
   if (extension === 'pdf') {
     if (String.fromCharCode(...bytes.slice(0, 5)) !== '%PDF-') throw new Error('FILE_INVALID');
-    const parser = new PDFParse({ data: bytes });
+    // pdf-parse usa pdf.js, que necesita CanvasFactory/worker en Node serverless. Cargarlos
+    // recién para PDF evita que su runtime nativo afecte los imports HTML/DOCX/TXT.
+    const { CanvasFactory } = await import('pdf-parse/worker');
+    const { PDFParse } = await import('pdf-parse');
+    const parser = new PDFParse({ data: bytes, CanvasFactory });
     try {
       const [info, text] = await Promise.all([parser.getInfo(), parser.getText()]);
       return { title: info.info?.Title?.trim() || fallbackTitle, author: info.info?.Author?.trim() || 'Documento importado', paragraphs: textParagraphs(text.text) };
