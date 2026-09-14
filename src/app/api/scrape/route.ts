@@ -8,6 +8,7 @@ import { rateLimit, getIP } from '@/lib/rate-limit';
 import { translateConcurrent, translateText, detectLanguage, VALID_TRANSLATE_LANGS } from '@/lib/translation';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 import { MemoryCache } from '@/lib/memoryCache';
+import { extractParagraphs } from '@/lib/extractParagraphs';
 
 export const maxDuration = 30;
 
@@ -158,128 +159,6 @@ async function detectAuthorGender(author: string): Promise<'male' | 'female' | n
     console.warn('[scrape] genderize.io falló:', err instanceof Error ? err.message : err);
     return null;
   }
-}
-
-// Tags whose subtree we skip entirely (decorative / metadata)
-const SKIP_TAGS = new Set([
-  'FIGURE', 'FIGCAPTION', 'IMG', 'PICTURE', 'SUP', 'SUB',
-  'STYLE', 'SCRIPT', 'NOSCRIPT', 'LABEL', 'CITE',
-  'BUTTON', 'NAV', 'FORM', 'INPUT', 'FOOTER', 'ASIDE',
-]);
-
-// Block-level elements that act as paragraph boundaries
-const BLOCK_TAGS = new Set([
-  'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-  'LI', 'DIV', 'ARTICLE', 'SECTION', 'UL', 'OL', 'BLOCKQUOTE', 'TD', 'TH',
-]);
-
-const HEADER_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
-
-// Patterns that identify junk paragraphs (image credits, read-time, bylines…)
-const JUNK_RE = [
-  /^\d+\s*min(ute)?\s*(read|de lectura)/i,
-  /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d/i,
-  /^(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\s+\d/i,
-  /^press enter or (space|click)/i,
-  /^imagen generada/i,
-  /^image generated/i,
-  /^(photo|foto)\s*(by|por|credit|:)/i,
-  /^(fuente|source|credit|crédito)\s*:/i,
-  /^--+$/,
-  /^·+$/,
-];
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isNoise(node: any): boolean {
-  if (!node.getAttribute) return false;
-  // Medium metadata elements only — matched by specific testId values
-  const testId = node.getAttribute('data-testid') || '';
-  if (testId && ['authorName','storyReadTime','storyPublishDate','publicationName',
-                 'post-footer','overflow-button'].some(id => testId.includes(id))) return true;
-  // NOTE: deliberately NOT checking aria-hidden — some CMSes (HubSpot) set
-  // aria-hidden="true" on the main article container, which would skip all content.
-  return false;
-}
-
-// Convierte HTML de contenido (el de Readability, o el de <content:encoded> de un RSS) en
-// una lista de párrafos planos. Se extrajo a función standalone para poder reusarla tanto en
-// el flujo normal como en los fallbacks de Medium (F13) sin duplicar la lógica de traversal.
-function extractParagraphs(contentHtml: string, fallbackTextContent: string): string[] {
-  const { document: doc } = parseHTML(contentHtml || '');
-
-  const paragraphs: string[] = [];
-  let currentParagraph: string[] = [];
-
-  function flushParagraph(tagName: string) {
-    if (currentParagraph.length === 0) return;
-    const joined = currentParagraph.join(' ').replace(/\s+/g, ' ').trim();
-    currentParagraph = [];
-    if (!joined) return;
-    // Keep headers even if short; body paragraphs need ≥ 15 chars
-    const isHeader = HEADER_TAGS.has(tagName);
-    if (!isHeader && joined.length < 15) return;
-    if (JUNK_RE.some(rx => rx.test(joined))) return;
-    paragraphs.push(joined);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function traverse(node: any) {
-    if (!node) return;
-
-    // TEXT_NODE (nodeType 3)
-    if (node.nodeType === 3) {
-      const text = (node.nodeValue || '').trim();
-      if (text) currentParagraph.push(text);
-      return;
-    }
-
-    // DOCUMENT_NODE (nodeType 9) — linkedom wraps parsed HTML in a document;
-    // descend into its children directly
-    if (node.nodeType === 9) {
-      for (let i = 0; i < node.childNodes.length; i++) {
-        traverse(node.childNodes[i]);
-      }
-      return;
-    }
-
-    // ELEMENT_NODE (nodeType 1)
-    if (node.nodeType !== 1) return;
-
-    const tagName = (node.tagName || '').toUpperCase();
-
-    if (SKIP_TAGS.has(tagName)) return;
-    if (isNoise(node)) return;
-
-    // <br> is a hard paragraph break (common in HubSpot / CMS editors)
-    if (tagName === 'BR') {
-      flushParagraph('BR');
-      return;
-    }
-
-    const isBlock = BLOCK_TAGS.has(tagName);
-
-    if (isBlock) flushParagraph(tagName);
-
-    for (let i = 0; i < node.childNodes.length; i++) {
-      traverse(node.childNodes[i]);
-    }
-
-    if (isBlock) flushParagraph(tagName);
-  }
-
-  traverse(doc);
-  flushParagraph('DIV'); // final flush
-
-  // Fallback if DOM traversal yielded nothing
-  if (paragraphs.length === 0 && fallbackTextContent) {
-    const rawLines = fallbackTextContent
-      .split('\n')
-      .map((line: string) => line.trim())
-      .filter((line: string) => line.length > 15 && !JUNK_RE.some(rx => rx.test(line)));
-    paragraphs.push(...rawLines);
-  }
-
-  return paragraphs;
 }
 
 interface ScrapedRaw {
