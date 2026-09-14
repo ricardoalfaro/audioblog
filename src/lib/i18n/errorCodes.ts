@@ -23,6 +23,13 @@ export const ERROR_CODES = [
   'SHORTEN_FAILED',
   'TRANSLATE_LANG_INVALID',
   'TRANSLATE_INTERNAL',
+  'FILE_REQUIRED',
+  'FILE_UNSUPPORTED',
+  'FILE_EMPTY',
+  'FILE_TOO_LARGE',
+  'FILE_INVALID',
+  'PDF_NO_TEXT',
+  'FILE_EXTRACT_FAILED',
 ] as const;
 
 export type ErrorCode = typeof ERROR_CODES[number];

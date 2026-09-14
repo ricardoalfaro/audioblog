@@ -32,7 +32,7 @@ function HomeContent() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<'url' | 'list' | 'manual'>('url');
+  const [modalTab, setModalTab] = useState<'url' | 'list' | 'file' | 'manual'>('url');
   
   // Scraper form state
   const [scrapeUrl, setScrapeUrl] = useState('');
@@ -197,6 +197,9 @@ function HomeContent() {
   const [manualContent, setManualContent] = useState('');
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState('');
+  const [isImportingFile, setIsImportingFile] = useState(false);
 
   // withMinDuration: solo para la carga inicial (U17) — el refetch al cambiar de artículo
   // reproduciéndose (más abajo) debe seguir siendo instantáneo, si no cada play/skip mostraría
@@ -433,6 +436,53 @@ function HomeContent() {
     e.preventDefault();
     if (!scrapeUrl) return;
     await runScrape(scrapeUrl, false);
+  };
+
+  const handleFileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      setFileError(t('errors.fileRequired'));
+      return;
+    }
+    setIsImportingFile(true);
+    setFileError('');
+    setImportTranslationFailed(false);
+    try {
+      const formData = new FormData();
+      formData.set('file', selectedFile);
+      formData.set('translateTo', translateTo);
+      formData.set('preferredLang', locale);
+      const response = await fetch('/api/import-file', { method: 'POST', body: formData });
+      if (!response.ok) {
+        let message = t('errors.importGeneric');
+        try { message = translateApiError(t, await response.json(), 'errors.importGeneric'); } catch { /* response without JSON */ }
+        throw new DisplayError(message);
+      }
+      const data = await response.json();
+      const newArticle = buildArticleFromScrape(data, {
+        categoryOverride: scrapeCategory !== 'auto' ? scrapeCategory : undefined,
+        selectedEdgeVoice,
+      });
+      const freshArticles = getArticlesList();
+      const existing = freshArticles.find((article) => article.url === newArticle.url);
+      if (!existing) {
+        const updatedArticles = pruneArticles([newArticle, ...freshArticles]);
+        setArticles(updatedArticles);
+        persistArticles(updatedArticles);
+        notifyLibraryChanged();
+      }
+      setImportTranslationFailed(Boolean(data.translationFailed));
+      setSelectedFile(null);
+      setIsImportingFile(false);
+      setImportSuccess(true);
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setImportSuccess(false);
+      }, 1600);
+    } catch (err: unknown) {
+      setFileError(err instanceof DisplayError ? err.message : t('errors.importGeneric'));
+      setIsImportingFile(false);
+    }
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
@@ -856,7 +906,7 @@ function HomeContent() {
 
 
       {isModalOpen && (
-        <div className="modal-overlay" role="presentation" onClick={() => { if (!isScraping && !isSavingManual) setIsModalOpen(false); }}>
+        <div className="modal-overlay" role="presentation" onClick={() => { if (!isScraping && !isSavingManual && !isImportingFile) setIsModalOpen(false); }}>
           <div
             ref={modalContentRef}
             className="modal-content"
@@ -865,7 +915,7 @@ function HomeContent() {
             aria-label={t('modal.importArticle')}
             onClick={e => e.stopPropagation()}
           >
-            <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual} aria-label={t('modal.close')}>
+            <button className="modal-close" onClick={() => setIsModalOpen(false)} disabled={isScraping || isSavingManual || isImportingFile} aria-label={t('modal.close')}>
               <Xmark />
             </button>
 
@@ -890,6 +940,9 @@ function HomeContent() {
                   </button>
                   <button className={`modal-tab-btn ${modalTab === 'list' ? 'active' : ''}`} onClick={() => setModalTab('list')}>
                     {t('modal.bulkTab')}
+                  </button>
+                  <button className={`modal-tab-btn ${modalTab === 'file' ? 'active' : ''}`} onClick={() => setModalTab('file')}>
+                    {t('modal.file')}
                   </button>
                   <button className={`modal-tab-btn ${modalTab === 'manual' ? 'active' : ''}`} onClick={() => setModalTab('manual')}>
                     {t('modal.manual')}
@@ -972,6 +1025,33 @@ function HomeContent() {
                       </button>
                     </form>
                   )
+                )}
+
+                {modalTab === 'file' && (
+                  <form onSubmit={handleFileSubmit} className="modal-form">
+                    <div>
+                      <label className="form-label" htmlFor="import-file">{t('modal.chooseFile')}</label>
+                      <input id="import-file" type="file" className="form-control" accept=".pdf,.docx,.html,.htm,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html,text/plain,text/markdown" onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)} disabled={isImportingFile} />
+                      <small style={{ color: 'var(--text-muted)' }}>{t('modal.fileHint')}</small>
+                    </div>
+                    <div>
+                      <label className="form-label">{t('modal.category')}</label>
+                      <select className="form-control" value={scrapeCategory} onChange={e => setScrapeCategory(e.target.value)} disabled={isImportingFile}>
+                        <option value="auto">{t('modal.categoryAuto')}</option>
+                        {STATIC_CATEGORIES.map(cat => <option key={cat} value={cat}>{tCategory(cat)}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">{t('modal.translateTo')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('modal.optional')}</span></label>
+                      <select className="form-control" value={translateTo} onChange={e => setTranslateTo(e.target.value)} disabled={isImportingFile}>
+                        <option value="auto">{t('modal.translateAuto')}</option><option value="none">{t('modal.translateNone')}</option><option value="es">{t('modal.langEs')}</option><option value="en">{t('modal.langEn')}</option><option value="pt">{t('modal.langPt')}</option><option value="de">{t('modal.langDe')}</option><option value="fr">{t('modal.langFr')}</option>
+                      </select>
+                    </div>
+                    {fileError && <p className="modal-error">{fileError}</p>}
+                    <button type="submit" className="btn btn-primary" disabled={isImportingFile} style={{ width: '100%', justifyContent: 'center' }}>
+                      {isImportingFile ? <><Refresh className="icon-spin" /> {t('modal.saving')}</> : <><Import /> {t('modal.importFile')}</>}
+                    </button>
+                  </form>
                 )}
 
                 {modalTab === 'manual' && (

@@ -22,6 +22,13 @@ const ERROR_CODE_TO_KEY: Record<ErrorCode, MessageKey> = {
   SHORTEN_FAILED: 'errors.shortenFailed',
   TRANSLATE_LANG_INVALID: 'errors.translateLangInvalid',
   TRANSLATE_INTERNAL: 'errors.translateInternal',
+  FILE_REQUIRED: 'errors.fileRequired',
+  FILE_UNSUPPORTED: 'errors.fileUnsupported',
+  FILE_EMPTY: 'errors.fileEmpty',
+  FILE_TOO_LARGE: 'errors.fileTooLarge',
+  FILE_INVALID: 'errors.fileInvalid',
+  PDF_NO_TEXT: 'errors.pdfNoText',
+  FILE_EXTRACT_FAILED: 'errors.fileExtractFailed',
 };
 
 type TFn = (key: MessageKey, params?: Record<string, string | number>) => string;
