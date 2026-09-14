@@ -38,7 +38,10 @@ async function extractFile(file: File, bytes: Uint8Array) {
     const { PDFParse } = await import('pdf-parse');
     const parser = new PDFParse({ data: bytes, CanvasFactory });
     try {
-      const [info, text] = await Promise.all([parser.getInfo(), parser.getText()]);
+      // Ambos métodos cargan el documento internamente. Ejecutarlos en paralelo intenta
+      // transferir el mismo buffer dos veces al worker de pdf.js en Vercel.
+      const info = await parser.getInfo();
+      const text = await parser.getText();
       return { title: info.info?.Title?.trim() || fallbackTitle, author: info.info?.Author?.trim() || 'Documento importado', paragraphs: textParagraphs(text.text) };
     } finally {
       await parser.destroy();
